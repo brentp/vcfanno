@@ -1,0 +1,15 @@
+[[annotation]]
+file="example/exac.vcf"
+fields = ["AC_AFR", "AC_AMR", "AC_EAS"]
+ops=["first", "first", "first"]
+
+[[annotation]]
+file="example/fitcons.bed"
+columns = [4]
+names=["fitcons_mean"]
+ops=["mean"]
+
+[[annotation]]
+#count is currently the only valid option for a bam
+file="example/ex.bam"
+names=["ex_bam_depth"]
