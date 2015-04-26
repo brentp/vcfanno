@@ -84,7 +84,7 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 		panic(err)
 	}
 
-	for interval := range irelate.IRelate(irelate.CheckRelatedByOverlap, false, 0, streams...) {
+	for interval := range irelate.IRelate(irelate.CheckRelatedByOverlap, 0, streams...) {
 		variant := interval.(*irelate.Variant)
 		if len(variant.Related()) > 0 {
 			for i, cfg := range files {
