@@ -31,11 +31,36 @@ type Annotations struct {
 	Annotation []anno
 }
 
-func fixBam(as []anno, j int) {
+// can get a bam without an op. default it to 'count'
+func fixBam(as []anno, j int) anno {
 	a := as[j]
 	if strings.HasSuffix(a.File, ".bam") {
 		as[j].Columns = []int{0}
 		as[j].Ops = []string{"count"}
+	}
+	return as[j]
+}
+
+// updateHeader adds a new info item to the header for each new annotation
+func updateHeader(files []anno, j int, query *vcfgo.Reader) {
+	cfg := files[j]
+	for i, name := range cfg.Names {
+		ntype := "Character"
+		if strings.HasSuffix(cfg.File, ".bam") || cfg.isNumber(i) {
+			ntype = "Float"
+		}
+		var desc string
+		// write the VCF header.
+		if strings.HasSuffix(cfg.File, ".bam") {
+			cfg = fixBam(files, j)
+			desc = fmt.Sprintf("calculated by coverage from %s", cfg.File)
+		} else if cfg.Fields != nil {
+			desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", cfg.Ops[i], cfg.Fields[i], cfg.File)
+		} else {
+			desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", cfg.Ops[i], cfg.Columns[i], cfg.File)
+		}
+		query.Header.Infos[name] = &vcfgo.Info{Id: name, Number: "1", Type: ntype, Description: desc}
+
 	}
 }
 
@@ -47,6 +72,7 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 	query := irelate.Vopen(queryVCF)
 
 	streams = append(streams, irelate.StreamVCF(query))
+
 	for j, cfg := range files {
 		if cfg.Names == nil {
 			if cfg.Fields == nil {
@@ -55,23 +81,7 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 			cfg.Names = cfg.Fields
 			files[j].Names = cfg.Fields
 		}
-		for i, name := range cfg.Names {
-			ntype := "Character"
-			if strings.HasSuffix(cfg.File, ".bam") || cfg.isNumber(i) {
-				ntype = "Float"
-			}
-			var desc string
-			// write the VCF header.
-			if strings.HasSuffix(cfg.File, ".bam") {
-				fixBam(files, j)
-				desc = fmt.Sprintf("calculated by coverage from %s", cfg.File)
-			} else if cfg.Fields != nil {
-				desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", cfg.Ops[i], cfg.Fields[i], cfg.File)
-			} else {
-				desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", cfg.Ops[i], cfg.Columns[i], cfg.File)
-			}
-			query.Header.Infos[name] = &vcfgo.Info{Id: name, Number: "1", Type: ntype, Description: desc}
-		}
+		updateHeader(files, j, query)
 		if strings.HasSuffix(cfg.File, ".vcf.gz") || strings.HasSuffix(cfg.File, ".vcf") {
 			v := irelate.Vopen(cfg.File)
 			streams = append(streams, irelate.StreamVCF(v))
@@ -87,18 +97,26 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 	for interval := range irelate.IRelate(irelate.CheckRelatedByOverlap, 0, streams...) {
 		variant := interval.(*irelate.Variant)
 		if len(variant.Related()) > 0 {
-			for i, cfg := range files {
-				valsByFld := Collect(variant, cfg, uint32(i))
-				for i, vals := range valsByFld {
-					if len(vals) == 0 {
-						continue
-					}
-					variant.Info.Add(cfg.Names[i], Reducers[cfg.Ops[i]](vals))
-				}
-			}
+			sep := Partition(variant, len(streams)-1)
+			updateInfo(variant.Variant, sep, files)
 
 		}
 		fmt.Fprintln(out, variant)
+	}
+}
+
+func updateInfo(v *vcfgo.Variant, sep [][]irelate.Relatable, files []anno) {
+	for i, cfg := range files {
+
+		valsByFld := Collect(v, sep[i], cfg)
+
+		for i, vals := range valsByFld {
+			// currently we don't do anything without overlaps.
+			if len(vals) == 0 {
+				continue
+			}
+			v.Info.Add(cfg.Names[i], Reducers[cfg.Ops[i]](vals))
+		}
 	}
 }
 

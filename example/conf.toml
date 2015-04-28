@@ -11,5 +11,6 @@ ops=["mean"]
 
 [[annotation]]
 #count is currently the only valid option for a bam
+#current method is to count alignments that are mapped (-F4) with mapq > 0
 file="example/ex.bam"
 names=["ex_bam_depth"]

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/brentp/irelate"
+	"github.com/brentp/vcfgo"
 	"strconv"
 	"strings"
 )
@@ -30,6 +31,10 @@ func max(vals []interface{}) interface{} {
 
 func asfloat32(i interface{}) float32 {
 	switch i.(type) {
+	case uint32:
+		return float32(i.(uint32))
+	case uint64:
+		return float32(i.(uint64))
 	case int:
 		return float32(i.(int))
 	case float32:
@@ -57,7 +62,11 @@ func concat(vals []interface{}) interface{} {
 		if v == nil {
 			continue
 		}
-		s = append(s, v.(string))
+		if str, ok := v.(string); ok {
+			s = append(s, str)
+		} else {
+			s = append(s, fmt.Sprintf("%d", v))
+		}
 	}
 	return strings.Join(s, ",")
 }
@@ -67,7 +76,7 @@ func count(vals []interface{}) interface{} {
 }
 
 func uniq(vals []interface{}) interface{} {
-	var m map[interface{}]bool
+	m := make(map[interface{}]bool)
 	var uvals []interface{}
 	for _, v := range vals {
 		if _, ok := m[v]; !ok {
@@ -75,7 +84,7 @@ func uniq(vals []interface{}) interface{} {
 			uvals = append(uvals, v)
 		}
 	}
-	return uvals
+	return concat(uvals)
 }
 
 func first(vals []interface{}) interface{} {
@@ -86,12 +95,9 @@ func first(vals []interface{}) interface{} {
 }
 
 // Collect the fields associated with a variant into a single slice.
-func Collect(v *irelate.Variant, cfg anno, src uint32) [][]interface{} {
+func Collect(v *vcfgo.Variant, rels []irelate.Relatable, cfg anno) [][]interface{} {
 	annos := make([][]interface{}, len(cfg.Names))
-	for _, b := range v.Related() {
-		if b.Source()-uint32(1) != src {
-			continue
-		}
+	for _, b := range rels {
 		// VCF
 		if o, ok := b.(*irelate.Variant); ok {
 			// Is checks for same allele.
@@ -107,11 +113,11 @@ func Collect(v *irelate.Variant, cfg anno, src uint32) [][]interface{} {
 					}
 				}
 			}
+			// BED
 		} else if iv, ok := b.(*irelate.Interval); ok {
 			for i := range cfg.Names {
-				op := cfg.Ops[i]
 				val := iv.Fields[cfg.Columns[i]-1]
-				if op != "concat" && op != "uniq" && op != "count" && op != "first" {
+				if cfg.isNumber(i) {
 					v, e := strconv.ParseFloat(val, 32)
 					if e != nil {
 						panic(e)
@@ -121,6 +127,7 @@ func Collect(v *irelate.Variant, cfg anno, src uint32) [][]interface{} {
 					annos[i] = append(annos[i], val)
 				}
 			}
+			// BAM
 		} else if bam, ok := b.(*irelate.Bam); ok {
 			//if bam.MapQ() < 0 || bam.Flags&(0x4|0x8|0x100|0x200|0x400|0x800) != 0 {
 			if bam.MapQ() < 1 || bam.Flags&(0x4) != 0 {
@@ -143,9 +150,24 @@ func Collect(v *irelate.Variant, cfg anno, src uint32) [][]interface{} {
 var Reducers = map[string]Reducer{
 	"mean":   Reducer(mean),
 	"max":    Reducer(max),
-	"min":    Reducer(max),
+	"min":    Reducer(min),
 	"concat": Reducer(concat),
 	"count":  Reducer(count),
 	"uniq":   Reducer(uniq),
 	"first":  Reducer(first),
+}
+
+// Partition separates the Related() elements by source.
+func Partition(a irelate.Relatable, nSources int) [][]irelate.Relatable {
+	sep := make([][]irelate.Relatable, nSources)
+	for _, r := range a.Related() {
+		s := r.Source() - 1 // use -1 because we never include query
+		if sep[s] == nil {
+			sep[s] = make([]irelate.Relatable, 1)
+			sep[s][0] = r
+		} else {
+			sep[s] = append(sep[s], r)
+		}
+	}
+	return sep
 }
