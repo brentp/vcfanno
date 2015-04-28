@@ -83,7 +83,7 @@ AB=0.282443;ABP=56.8661;AC=11;AF=0.34375;AN=32;AO=45;CIGAR=1X;TYPE=snp
 
 and after:
 ```
-AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.0610
+AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061
 ```
 
 Operations
@@ -129,13 +129,13 @@ Again, this, along with the associated go libraries ([vcfgo](https://github.com/
 under active development. A number of things are not yet supported and a number of features
 will be added soon.
 
-- [ ] optionally strip 'chr' prefix from chroms to prevent lack of overlap due to different names.
-- [ ] handle structural variants correctly. (SVLEN <DEL/DUP> / <INS> [len=0])
+- [ ] add flag op. just check for presence/overlap with annotation.
+- [x] strip 'chr' prefix from chroms to prevent lack of overlap due to different names.
+- [x] handle structural variants correctly. (SVLEN <DEL/DUP> / <INS> [len=0])
 - [ ] decompose, normalize, and get allelic primitives for variants on the fly
       (we have code to do this, it just needs to be integrated)
 - [ ] improve test coverage for vcfanno (started, but needs more)
 - [x] correct order of contigs from vcf writer.
-- [ ] add flag op. just check for presence/overlap with annotation.
 - [ ] embed v8 to allow custom ops.
 
 <!--

@@ -94,7 +94,7 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 		panic(err)
 	}
 
-	for interval := range irelate.IRelate(irelate.CheckRelatedByOverlap, 0, streams...) {
+	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
 		variant := interval.(*irelate.Variant)
 		if len(variant.Related()) > 0 {
 			sep := Partition(variant, len(streams)-1)
