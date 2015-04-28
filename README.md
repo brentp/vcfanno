@@ -129,10 +129,15 @@ Again, this, along with the associated go libraries ([vcfgo](https://github.com/
 under active development. A number of things are not yet supported and a number of features
 will be added soon.
 
-- [ ] structural variants are not handled correctly. (SVLEN <DEL/DUP> / <INS> [len=0])
-- [ ] variants are not decomposed and normalized on the fly (we have code to do this, it just
-      needs to be integrated)
-- [ ] while we have extensive testing in the supporting libraries, the testing in `vcfanno` is light.
-- [ ] header ordering is random coming out of this tool.
-- [ ] add flag op.
-- [ ] embed v8.
+- [ ] optionally strip 'chr' prefix from chroms to prevent lack of overlap due to different names.
+- [ ] handle structural variants correctly. (SVLEN <DEL/DUP> / <INS> [len=0])
+- [ ] decompose, normalize, and get allelic primitives for variants on the fly
+      (we have code to do this, it just needs to be integrated)
+- [ ] improve test coverage for vcfanno (started, but needs more)
+- [x] correct order of contigs from vcf writer.
+- [ ] add flag op. just check for presence/overlap with annotation.
+- [ ] embed v8 to allow custom ops.
+
+<!--
+ goxc -include example/,README.md -d /tmp/vcfanno/ -pv=0.0.1 -bc='linux,darwin,windows,!arm'
+-->
