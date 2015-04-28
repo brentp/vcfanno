@@ -13,6 +13,7 @@ type AnnoSuite struct {
 	v1 *irelate.Variant
 	v2 *irelate.Variant
 	v3 *irelate.Variant
+	b  *irelate.Interval
 }
 
 var _ = Suite(&AnnoSuite{})
@@ -53,12 +54,17 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 
 	c.Assert(2, Equals, len(s.v1.Related()))
 
+	s.b = irelate.IntervalFromBedLine("chr1\t224\t244\t111\t222").(*irelate.Interval)
+	s.b.SetSource(2)
+	s.v1.AddRelated(s.b)
+
 }
 
 func (s *AnnoSuite) TestPartition(c *C) {
 
-	sep := Partition(s.v1, 1)
+	sep := Partition(s.v1, 2)
 	c.Assert(sep[0], DeepEquals, []irelate.Relatable{s.v2, s.v3})
+	c.Assert(sep[1], DeepEquals, []irelate.Relatable{s.b})
 
 }
 
@@ -70,8 +76,15 @@ func (s *AnnoSuite) TestAnno(c *C) {
 		Fields: []string{"DP", "DP", "DP", "DP", "DP", "DP", "DP"},
 		Names:  []string{"dp_mean", "dp_min", "dp_max", "dp_concat", "dp_uniq", "dp_first"},
 	}
-	sep := Partition(s.v1, 1)
-	updateInfo(s.v1.Variant, sep, []anno{cfg})
+	cfgBed := anno{
+		File:    "bed file",
+		Ops:     []string{"mean", "max"},
+		Columns: []int{4, 5},
+		Names:   []string{"bed_mean", "bed_max"},
+	}
+
+	sep := Partition(s.v1, 2)
+	updateInfo(s.v1.Variant, sep, []anno{cfg, cfgBed})
 
 	c.Assert(s.v1.Info["dp_mean"], Equals, float32(66.0))
 	c.Assert(s.v1.Info["dp_min"], Equals, float32(44.0))
@@ -80,4 +93,6 @@ func (s *AnnoSuite) TestAnno(c *C) {
 	c.Assert(s.v1.Info["dp_uniq"], Equals, "44,88")
 	c.Assert(s.v1.Info["dp_first"], Equals, uint32(44))
 
+	c.Assert(s.v1.Info["bed_mean"], Equals, float32(111))
+	c.Assert(s.v1.Info["bed_max"], Equals, float32(222))
 }
