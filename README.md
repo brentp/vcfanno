@@ -2,34 +2,29 @@ vcfanno
 =======
 
 vcfanno annotates a VCF with any number of *sorted* input BED, BAM, and VCF files.
-It does this by finding overlaps as it streams over the sorted files and applying
+It does this by finding overlaps as it streams over the data and applying
 user-defined operations on the overlapping fields.
 
-For VCF annotations, values are pulled by name from the INFO field. A variant from
-the query VCF will only be annotated with a variant from an annotation file if they
-have the same position and REF and share at least 1 ALT.
-
-For BED files, values are pulled from (1-based) column number.
-
-For BAM files, only depth (`count`) is currently supported.
+For VCF, values are pulled by name from the INFO field.
+For BED, values are pulled from (1-based) column number.
+For BAM, only depth (`count`) is currently supported.
 
 
-`vcfanno` is written in [go](http://golang.org) and will make use of multiple CPU's
-if your environment variable `GOMAXPROCS` is set to a number greater than 1. It can
-annotate ~ 5,000 variants per second with 5 annotations from 3 files on a modest laptop.
+`vcfanno` is written in [go](http://golang.org)
+It can annotate ~ 5,000 variants per second with 5 annotations from 3 files on a modest laptop.
 
-We are actively developing `vcfanno` and appreciate your feedback as we navigate the
-[fruit salad](https://www.biostars.org/p/7126/#7136) of the VCF format.
+We are actively developing `vcfanno` and appreciate feedback and bug reports.
 
 Usage
 =====
 
-Usage looks like:
+After downloading the binary for your system (see section below) usage looks like:
 
-    vcfanno config.toml $input.vcf > $annotated.vcf
+```Shell
+  ./vcfanno example/conf.toml example/query.vcf
+```
 
-Where config.toml contains the information on any number of annotation files.
-Example entries look like
+Where config.toml looks like:
 
 ```
 [[annotation]]
@@ -52,7 +47,7 @@ names=["ex_bam_depth"]
 
 So from `ExAC.vcf` we will pull the fields from the info field and apply the corresponding
 `operation` from the `ops` array. Users can add as many `[[annotation]]` blocks to the
-conf file as desired.
+conf file as desired. Files can be local as above, or available via http/https.
 
 Example
 -------
@@ -61,16 +56,12 @@ the example directory contains the data and conf for a full example. To run, eit
 the appropriate binary for your system from **TODO** or build with:
 
 ```Shell
+go get
 go build -o vcfanno
 ```
 
 from this directory.
 Then, you can annotate with:
-
-```Shell
-./vcfanno example/conf.toml example/query.vcf > annotated.vcf
-```
-Or, to get the result a bit sooner:
 
 ```Shell
 GOMAXPROCS=4 ./vcfanno example/conf.toml example/query.vcf > annotated.vcf
@@ -97,10 +88,11 @@ are `reduced`. Valid operations are:
  + mean
  + max
  + min
- + concat
- + count
+ + concat // comma delimited list of output
+ + count  // count the number of overlaps
  + uniq
- + first
+ + first 
+ + flag   // presense/absence via vcf flag
 
 Please open an issue if your desired operation is not supported.
 
@@ -124,18 +116,13 @@ vt decompose -s $VCF | vt normalize -r $REF - > $NORM_VCF
 Development
 ===========
 
-Again, this, along with the associated go libraries ([vcfgo](https://github.com/brentp/vcfgo),
+This, and the associated go libraries ([vcfgo](https://github.com/brentp/vcfgo),
 [irelate](https://github.com/brentp/irelate), [xopen](https://github.com/brentp/xopen)) are
-under active development. A number of things are not yet supported and a number of features
-will be added soon.
+under active development. The following are on our radar:
 
-- [ ] add flag op. just check for presence/overlap with annotation.
-- [x] strip 'chr' prefix from chroms to prevent lack of overlap due to different names.
-- [x] handle structural variants correctly. (SVLEN <DEL/DUP> / <INS> [len=0])
 - [ ] decompose, normalize, and get allelic primitives for variants on the fly
       (we have code to do this, it just needs to be integrated)
 - [ ] improve test coverage for vcfanno (started, but needs more)
-- [x] correct order of contigs from vcf writer.
 - [ ] embed v8 to allow custom ops.
 
 <!--

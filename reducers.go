@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/brentp/irelate"
-	"github.com/brentp/vcfgo"
 	"strconv"
 	"strings"
+
+	"github.com/brentp/irelate"
+	"github.com/brentp/vcfgo"
 )
 
 type Reducer func([]interface{}) interface{}
@@ -94,6 +95,11 @@ func first(vals []interface{}) interface{} {
 	return vals[0]
 }
 
+// named vflag because of conflict with builtin.
+func vflag(vals []interface{}) interface{} {
+	return len(vals) > 0
+}
+
 // Collect the fields associated with a variant into a single slice.
 func Collect(v *vcfgo.Variant, rels []irelate.Relatable, cfg anno) [][]interface{} {
 	annos := make([][]interface{}, len(cfg.Names))
@@ -155,6 +161,7 @@ var Reducers = map[string]Reducer{
 	"count":  Reducer(count),
 	"uniq":   Reducer(uniq),
 	"first":  Reducer(first),
+	"flag":   Reducer(vflag),
 }
 
 // Partition separates the Related() elements by source.

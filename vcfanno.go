@@ -94,6 +94,7 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 		panic(err)
 	}
 
+	// the *Prefix functions let 'chr1' == '1'
 	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
 		variant := interval.(*irelate.Variant)
 		if len(variant.Related()) > 0 {
@@ -120,6 +121,29 @@ func updateInfo(v *vcfgo.Variant, sep [][]irelate.Relatable, files []anno) {
 	}
 }
 
+func checkAnno(a anno) error {
+	if a.Fields == nil {
+		// Columns: BED/BAM
+		if a.Columns == nil {
+			return fmt.Errorf("must specify either 'fields' or 'columns' for %s", a.File)
+		}
+		if len(a.Ops) != len(a.Columns) && !strings.HasSuffix(a.File, ".bam") {
+			return fmt.Errorf("must specify same # of 'columns' as 'ops' for %s", a.File)
+		}
+		if len(a.Names) != len(a.Columns) && !strings.HasSuffix(a.File, ".bam") {
+			return fmt.Errorf("must specify same # of 'names' as 'ops' for %s", a.File)
+		}
+	}
+	// Fields: VCF
+	if a.Columns != nil {
+		return fmt.Errorf("specify only 'fields' or 'columns' not both %s", a.File)
+	}
+	if len(a.Ops) != len(a.Fields) {
+		return fmt.Errorf("must specify same # of 'fields' as 'ops' for %s", a.File)
+	}
+	return nil
+}
+
 func main() {
 
 	flag.Parse()
@@ -134,6 +158,9 @@ func main() {
 	var config Annotations
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
 		panic(err)
+	}
+	for _, a := range config.Annotation {
+		checkAnno(a)
 	}
 	Anno(inFiles[1], config, os.Stdout)
 }

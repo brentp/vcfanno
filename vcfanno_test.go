@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"testing"
+
 	"github.com/brentp/irelate"
 	"github.com/brentp/vcfgo"
 	. "gopkg.in/check.v1"
-	"testing"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -78,9 +80,9 @@ func (s *AnnoSuite) TestAnno(c *C) {
 	}
 	cfgBed := anno{
 		File:    "bed file",
-		Ops:     []string{"mean", "max"},
-		Columns: []int{4, 5},
-		Names:   []string{"bed_mean", "bed_max"},
+		Ops:     []string{"mean", "max", "flag"},
+		Columns: []int{4, 5, 1},
+		Names:   []string{"bed_mean", "bed_max", "bedFlag"},
 	}
 
 	sep := Partition(s.v1, 2)
@@ -95,4 +97,27 @@ func (s *AnnoSuite) TestAnno(c *C) {
 
 	c.Assert(s.v1.Info["bed_mean"], Equals, float32(111))
 	c.Assert(s.v1.Info["bed_max"], Equals, float32(222))
+
+	c.Assert(s.v1.Info["bedFlag"], Equals, true)
+
+	c.Assert(fmt.Sprintf("%s", s.v1.Info), Equals, "DP=35;dp_mean=66;dp_min=44;dp_max=88;dp_concat=44,88;dp_uniq=44,88;dp_first=44;bed_mean=111;bed_max=222;bedFlag")
+}
+
+func (s *AnnoSuite) TestCheck(c *C) {
+	cfgBed := anno{
+		File:    "bed file",
+		Ops:     []string{"mean", "max", "flag"},
+		Columns: []int{4, 5},
+		Names:   []string{"bed_mean", "bed_max", "bedFlag"},
+	}
+	e := checkAnno(cfgBed)
+	c.Assert(e, ErrorMatches, "must specify same # of 'columns' as 'ops' for bed file")
+
+	cfgBed.Fields = []string{"abc", "def"}
+	e = checkAnno(cfgBed)
+	c.Assert(e, ErrorMatches, "specify only 'fields' or 'columns' not both bed file")
+
+	cfgBed.Columns = nil
+	e = checkAnno(cfgBed)
+	c.Assert(e, ErrorMatches, "must specify same # of 'fields' as 'ops' for bed file")
 }
