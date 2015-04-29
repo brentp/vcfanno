@@ -53,7 +53,7 @@ Example
 -------
 
 the example directory contains the data and conf for a full example. To run, either download
-the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.1) for your system from **TODO** or build with:
+the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.1) for your system build with:
 
 ```Shell
 go get
