@@ -53,7 +53,7 @@ Example
 -------
 
 the example directory contains the data and conf for a full example. To run, either download
-the appropriate binary for your system from **TODO** or build with:
+the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.1) for your system from **TODO** or build with:
 
 ```Shell
 go get
@@ -99,8 +99,8 @@ Please open an issue if your desired operation is not supported.
 Binaries
 ========
 
-binary executables are available for *linux*, *mac* (darwin), and *windows* for *32* and *64* bit
-platforms.
+binary executables are available [here](https://github.com/brentp/vcfanno/releases/tag/v0.0.1)
+for *linux*, *mac* (darwin), and *windows* for *32* and *64* bit platforms.
 
 Preprocessing
 =============
