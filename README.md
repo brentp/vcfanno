@@ -18,7 +18,7 @@ We are actively developing `vcfanno` and appreciate feedback and bug reports.
 Usage
 =====
 
-After downloading the binary for your system (see section below) usage looks like:
+After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.1) (see section below) usage looks like:
 
 ```Shell
   ./vcfanno example/conf.toml example/query.vcf
