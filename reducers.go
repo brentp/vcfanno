@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/brentp/irelate"
-	"github.com/brentp/vcfgo"
 )
 
 type Reducer func([]interface{}) interface{}
@@ -101,13 +100,14 @@ func vflag(vals []interface{}) interface{} {
 }
 
 // Collect the fields associated with a variant into a single slice.
-func Collect(v *vcfgo.Variant, rels []irelate.Relatable, cfg anno) [][]interface{} {
+func Collect(iv *irelate.Variant, rels []irelate.Relatable, cfg anno, strict bool) [][]interface{} {
 	annos := make([][]interface{}, len(cfg.Names))
+	v := iv.Variant
 	for _, b := range rels {
 		// VCF
 		if o, ok := b.(*irelate.Variant); ok {
-			// Is checks for same allele.
-			if v.Is(o.Variant) {
+			// Is checks for same allele. but if it's not strict, we just check for overlap.
+			if (strict && v.Is(o.Variant)) || (!strict && irelate.CheckOverlapPrefix(iv, b)) {
 				for i := range cfg.Names {
 					val := o.Info[cfg.Fields[i]]
 					if arr, ok := val.([]interface{}); ok {
