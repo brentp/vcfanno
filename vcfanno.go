@@ -42,7 +42,7 @@ func fixBam(as []anno, j int) anno {
 }
 
 // updateHeader adds a new info item to the header for each new annotation
-func updateHeader(files []anno, j int, query *vcfgo.Reader) {
+func updateHeader(files []anno, j int, query *vcfgo.Reader, ends bool) {
 	cfg := files[j]
 	for i, name := range cfg.Names {
 		ntype := "Character"
@@ -60,6 +60,12 @@ func updateHeader(files []anno, j int, query *vcfgo.Reader) {
 			desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", cfg.Ops[i], cfg.Columns[i], cfg.File)
 		}
 		query.Header.Infos[name] = &vcfgo.Info{Id: name, Number: "1", Type: ntype, Description: desc}
+		if ends {
+			for _, end := range []string{LEFT, RIGHT} {
+				query.Header.Infos[end+name] = &vcfgo.Info{Id: end + name, Number: "1", Type: ntype,
+					Description: fmt.Sprintf("%s at %s end", desc, strings.TrimSuffix(end, "_"))}
+			}
+		}
 
 	}
 }
@@ -85,7 +91,7 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer, ends bool, stric
 			cfg.Names = cfg.Fields
 			files[j].Names = cfg.Fields
 		}
-		updateHeader(files, j, query)
+		updateHeader(files, j, query, ends)
 		if strings.HasSuffix(cfg.File, ".vcf.gz") || strings.HasSuffix(cfg.File, ".vcf") {
 			v := irelate.Vopen(cfg.File)
 			streams = append(streams, irelate.StreamVCF(v))
@@ -114,9 +120,9 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer, ends bool, stric
 	}
 }
 
-const LEFT = "left__"
-const RIGHT = "right__"
-const BOTH = "both__"
+const LEFT = "left_"
+const RIGHT = "right_"
+const BOTH = "both_"
 const INTERVAL = ""
 
 func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, ends string, strict bool) {

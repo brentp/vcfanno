@@ -86,7 +86,7 @@ func (s *AnnoSuite) TestAnno(c *C) {
 	}
 
 	sep := Partition(s.v1, 2)
-	updateInfo(s.v1.Variant, sep, []anno{cfg, cfgBed})
+	updateInfo(s.v1, sep, []anno{cfg, cfgBed}, "", true)
 
 	c.Assert(s.v1.Info["dp_mean"], Equals, float32(66.0))
 	c.Assert(s.v1.Info["dp_min"], Equals, float32(44.0))

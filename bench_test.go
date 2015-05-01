@@ -2,9 +2,10 @@ package main
 
 import (
 	"bufio"
-	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"testing"
+
+	"github.com/BurntSushi/toml"
 )
 
 func BenchmarkAnno(b *testing.B) {
@@ -15,7 +16,7 @@ func BenchmarkAnno(b *testing.B) {
 
 	out := bufio.NewWriter(ioutil.Discard)
 	for n := 0; n < b.N; n++ {
-		Anno("example/query.vcf", configs, out)
+		Anno("example/query.vcf", configs, out, false, true)
 		out.Flush()
 	}
 }
