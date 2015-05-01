@@ -128,10 +128,14 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			// we want to annotate ends of the interval independently.
 			// note that we automatically set strict to false.
 			updateInfo(iv, sep, files, INTERVAL, false)
-			updateInfo(iv, sep, files, LEFT, false)
-			updateInfo(iv, sep, files, RIGHT, false)
+			// only do this if the variant is longer than 1 base.
+			if iv.End()-iv.Start() > 1 {
+				//log.Println("interval:", v.Start(), v.End())
+				updateInfo(iv, sep, files, LEFT, false)
+				updateInfo(iv, sep, files, RIGHT, false)
+			}
 			return
-		} else if ends == "" {
+		} else if ends == INTERVAL {
 			valsByFld = Collect(iv, sep[i], cfg, strict)
 		} else if ends == LEFT {
 			// hack. We know end() is calculated as length of ref. so we set it to have len 1 temporarily.
@@ -139,6 +143,7 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			alt := v.Alt
 			v.Ref = "A"
 			v.Alt = []string{"T"}
+			//log.Println("left:", v.Start(), v.End())
 			valsByFld = Collect(iv, sep[i], cfg, strict)
 			v.Ref, v.Alt = ref, alt
 		} else if ends == RIGHT {
@@ -146,6 +151,7 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			pos, ref, alt := v.Pos, v.Ref, v.Alt
 			v.Pos = uint64(v.End())
 			v.Ref, v.Alt = "A", []string{"T"}
+			//log.Println("right:", v.Start(), v.End())
 			valsByFld = Collect(iv, sep[i], cfg, strict)
 			v.Pos, v.Ref, v.Alt = pos, ref, alt
 
