@@ -129,7 +129,7 @@ under active development. The following are on our radar:
 
 - [ ] decompose, normalize, and get allelic primitives for variants on the fly
       (we have code to do this, it just needs to be integrated)
-- [ ] improve test coverage for vcfanno (started, but needs more)
+- [x] improve test coverage for vcfanno
 - [ ] embed v8 to allow custom ops.
 
 
