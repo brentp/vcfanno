@@ -136,7 +136,6 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			updateInfo(iv, sep, files, INTERVAL, false)
 			// only do this if the variant is longer than 1 base.
 			if iv.End()-iv.Start() > 1 {
-				//log.Println("interval:", v.Start(), v.End())
 				updateInfo(iv, sep, files, LEFT, false)
 				updateInfo(iv, sep, files, RIGHT, false)
 			}
