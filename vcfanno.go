@@ -42,7 +42,7 @@ func fixBam(as []anno, j int) anno {
 }
 
 // updateHeader adds a new info item to the header for each new annotation
-func updateHeader(files []anno, j int, query *vcfgo.Reader) {
+func updateHeader(files []anno, j int, query *vcfgo.Reader, ends bool) {
 	cfg := files[j]
 	for i, name := range cfg.Names {
 		ntype := "Character"
@@ -60,11 +60,21 @@ func updateHeader(files []anno, j int, query *vcfgo.Reader) {
 			desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", cfg.Ops[i], cfg.Columns[i], cfg.File)
 		}
 		query.Header.Infos[name] = &vcfgo.Info{Id: name, Number: "1", Type: ntype, Description: desc}
+		if ends {
+			for _, end := range []string{LEFT, RIGHT} {
+				query.Header.Infos[end+name] = &vcfgo.Info{Id: end + name, Number: "1", Type: ntype,
+					Description: fmt.Sprintf("%s at %s end", desc, strings.TrimSuffix(end, "_"))}
+			}
+		}
 
 	}
 }
 
-func Anno(queryVCF string, configs Annotations, outw io.Writer) {
+// Anno takes a query vcf and a set of annotations, and writes to outw.
+// If ends is specified, then the query is annotated for start, end and the interval itself.
+// if strict is true a variant is only annotated with another variant if they share the same
+// position, the same ref allele, and at least 1 alt allele.
+func Anno(queryVCF string, configs Annotations, outw io.Writer, ends bool, strict bool) {
 
 	files := configs.Annotation
 
@@ -81,7 +91,7 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 			cfg.Names = cfg.Fields
 			files[j].Names = cfg.Fields
 		}
-		updateHeader(files, j, query)
+		updateHeader(files, j, query, ends)
 		if strings.HasSuffix(cfg.File, ".vcf.gz") || strings.HasSuffix(cfg.File, ".vcf") {
 			v := irelate.Vopen(cfg.File)
 			streams = append(streams, irelate.StreamVCF(v))
@@ -94,29 +104,70 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer) {
 		panic(err)
 	}
 
+	annotateEnds := INTERVAL
+	if ends {
+		annotateEnds = BOTH
+	}
 	// the *Prefix functions let 'chr1' == '1'
 	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
 		variant := interval.(*irelate.Variant)
 		if len(variant.Related()) > 0 {
 			sep := Partition(variant, len(streams)-1)
-			updateInfo(variant.Variant, sep, files)
+			updateInfo(variant, sep, files, annotateEnds, strict)
 
 		}
 		fmt.Fprintln(out, variant)
 	}
 }
 
-func updateInfo(v *vcfgo.Variant, sep [][]irelate.Relatable, files []anno) {
+const LEFT = "left_"
+const RIGHT = "right_"
+const BOTH = "both_"
+const INTERVAL = ""
+
+func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, ends string, strict bool) {
 	for i, cfg := range files {
 
-		valsByFld := Collect(v, sep[i], cfg)
+		v := iv.Variant
+		var valsByFld [][]interface{}
+		if ends == BOTH {
+			// we want to annotate ends of the interval independently.
+			// note that we automatically set strict to false.
+			updateInfo(iv, sep, files, INTERVAL, false)
+			// only do this if the variant is longer than 1 base.
+			if iv.End()-iv.Start() > 1 {
+				updateInfo(iv, sep, files, LEFT, false)
+				updateInfo(iv, sep, files, RIGHT, false)
+			}
+			return
+		} else if ends == INTERVAL {
+			valsByFld = Collect(iv, sep[i], cfg, strict)
+		} else if ends == LEFT {
+			// hack. We know end() is calculated as length of ref. so we set it to have len 1 temporarily.
+			ref := v.Ref
+			alt := v.Alt
+			v.Ref = "A"
+			v.Alt = []string{"T"}
+			//log.Println("left:", v.Start(), v.End())
+			valsByFld = Collect(iv, sep[i], cfg, strict)
+			v.Ref, v.Alt = ref, alt
+		} else if ends == RIGHT {
+			// artificially set end to be the right end of the interval.
+			pos, ref, alt := v.Pos, v.Ref, v.Alt
+			v.Pos = uint64(v.End())
+			v.Ref, v.Alt = "A", []string{"T"}
+			//log.Println("right:", v.Start(), v.End())
+			valsByFld = Collect(iv, sep[i], cfg, strict)
+			v.Pos, v.Ref, v.Alt = pos, ref, alt
+
+		}
 
 		for i, vals := range valsByFld {
 			// currently we don't do anything without overlaps.
 			if len(vals) == 0 {
 				continue
 			}
-			v.Info.Add(cfg.Names[i], Reducers[cfg.Ops[i]](vals))
+			v.Info.Add(ends+cfg.Names[i], Reducers[cfg.Ops[i]](vals))
 		}
 	}
 }
@@ -146,12 +197,17 @@ func checkAnno(a anno) error {
 
 func main() {
 
+	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
+	notstrict := flag.Bool("permissive-overlap", false, "allow variants to be annotated by another even if the don't"+
+		"share the same ref and alt alleles. Default is to require exact match between variants.")
 	flag.Parse()
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
 		fmt.Printf(`Usage:
 %s config.toml intput.vcf > annotated.vcf
+
 `, os.Args[0])
+		flag.PrintDefaults()
 		return
 	}
 
@@ -162,5 +218,6 @@ func main() {
 	for _, a := range config.Annotation {
 		checkAnno(a)
 	}
-	Anno(inFiles[1], config, os.Stdout)
+	strict := !*notstrict
+	Anno(inFiles[1], config, os.Stdout, *ends, strict)
 }

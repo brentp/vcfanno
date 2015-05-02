@@ -1,6 +1,11 @@
 vcfanno
 =======
 
+[![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
+[![Coverage Status](https://coveralls.io/repos/brentp/vcfanno/badge.svg)](https://coveralls.io/r/brentp/vcfanno)
+
+
+
 vcfanno annotates a VCF with any number of *sorted* input BED, BAM, and VCF files.
 It does this by finding overlaps as it streams over the data and applying
 user-defined operations on the overlapping fields.
