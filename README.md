@@ -54,6 +54,8 @@ So from `ExAC.vcf` we will pull the fields from the info field and apply the cor
 `operation` from the `ops` array. Users can add as many `[[annotation]]` blocks to the
 conf file as desired. Files can be local as above, or available via http/https.
 
+Also see the additional usage section at the bottom for additional details.
+
 Example
 -------
 
@@ -129,6 +131,36 @@ under active development. The following are on our radar:
       (we have code to do this, it just needs to be integrated)
 - [ ] improve test coverage for vcfanno (started, but needs more)
 - [ ] embed v8 to allow custom ops.
+
+
+Additional Usage
+================
+
+-ends
+-----
+
+For annotating large variants, such as CNVs or structural variants (SVs), it can be useful to
+annotate the *ends* of the variant in addition to the region itself. To do this, specify the `-ends`
+flag to `vcfanno`. e.g.:
+```Shell
+vcfanno -ends example/conf.toml example/query.vcf
+```
+In this case, the names field in the *conf* file contains, "fitcons\_mean". The output will contain
+`fitcons\_mean` as before along with `left\_fitcons\_mean` and `right\_fitcons\_mean` for any variants
+that are longer than 1 base. The *left* end will be for the single-base at the lowest base of the variant
+and the *right* end will be for the single base at the higher numbered base of the variant.
+
+-permissive-overlap
+-------------------
+
+By default, when annotating with a variant, in addition to the overlap requirement, the variants must share
+the same position, the same reference allele and at least one alternate allele (this is only used for
+variants, not for BED/BAM annotations). If this flag is specified, only overlap testing is used and shared
+REF/ALT are not required.
+
+```Shell
+vcfanno -permissive-overlap example/conf.toml example/query.vcf
+```
 
 <!--
  goxc -include example/,README.md -d /tmp/vcfanno/ -pv=0.0.1 -bc='linux,darwin,windows,!arm'
