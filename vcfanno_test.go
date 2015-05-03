@@ -73,14 +73,15 @@ func (s *AnnoSuite) TestPartition(c *C) {
 
 }
 
+var cfg = anno{
+	File:   "fake file",
+	Ops:    []string{"mean", "min", "max", "concat", "uniq", "first", "count"},
+	Fields: []string{"DP", "DP", "DP", "DP", "DP", "DP", "DP", "DP"},
+	Names:  []string{"dp_mean", "dp_min", "dp_max", "dp_concat", "dp_uniq", "dp_first", "dp_count"},
+}
+
 func (s *AnnoSuite) TestAnno(c *C) {
 
-	cfg := anno{
-		File:   "fake file",
-		Ops:    []string{"mean", "min", "max", "concat", "uniq", "first", "count"},
-		Fields: []string{"DP", "DP", "DP", "DP", "DP", "DP", "DP", "DP"},
-		Names:  []string{"dp_mean", "dp_min", "dp_max", "dp_concat", "dp_uniq", "dp_first", "dp_count"},
-	}
 	cfgBed := anno{
 		File:    "bed file",
 		Ops:     []string{"mean", "max", "flag"},
@@ -142,6 +143,22 @@ var cfgBed = anno{
 	Ops:     []string{"mean", "max", "flag"},
 	Columns: []int{4, 5, 5},
 	Names:   []string{"bed_mean", "bed_max", "bedFlag"},
+}
+
+var interval = irelate.IntervalFromBedLine("chr1\t224\t244")
+
+func (s *AnnoSuite) TestAnnoBed(c *C) {
+	interval.SetSource(2)
+	interval.AddRelated(s.v1)
+	interval.AddRelated(s.v2)
+	interval.AddRelated(s.v3)
+	interval.AddRelated(s.b)
+
+	sep := Partition(s.v1, 3)
+	bed := interval.(*irelate.Interval)
+	updateBed(bed, sep, []anno{cfg, cfgBed}, BOTH)
+
+	c.Assert(fmt.Sprintf("%s", bed.Fields[3]), Equals, "dp_mean=66;dp_min=44;dp_max=88;dp_concat=44,88;dp_uniq=44,88;dp_first=44;dp_count=2;bed_mean=111;bed_max=222;bedFlag;left_bed_mean=111;left_bed_max=222;left_bedFlag;right_bed_mean=111;right_bed_max=222;right_bedFlag")
 }
 
 func (s *AnnoSuite) TestCheck(c *C) {
@@ -208,6 +225,19 @@ func (s *AnnoSuite) TestAnnoMain(c *C) {
 	Anno("example/query.vcf", configs, out, false, true)
 	out.Flush()
 	Anno("example/query.vcf", configs, out, true, true)
+	out.Flush()
+
+}
+
+func (s *AnnoSuite) TestAnnoMainBed(c *C) {
+	var configs Annotations
+
+	if _, err := toml.DecodeFile("example/conf.toml", &configs); err != nil {
+		panic(err)
+	}
+
+	out := bufio.NewWriter(ioutil.Discard)
+	Anno("example/fitcons.bed", configs, out, false, false)
 	out.Flush()
 
 }

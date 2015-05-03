@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"io"
@@ -70,18 +71,33 @@ func updateHeader(files []anno, j int, query *vcfgo.Reader, ends bool) {
 	}
 }
 
+// if the annotation file is a bam, they aren't require to specify op or field, so we artificially
+// set it here. this is only called if query is a bed file.
+func fixBams(files []anno, j int) {
+	cfg := files[j]
+	if strings.HasSuffix(cfg.File, ".bam") {
+		cfg = fixBam(files, j)
+	}
+}
+
 // Anno takes a query vcf and a set of annotations, and writes to outw.
 // If ends is specified, then the query is annotated for start, end and the interval itself.
 // if strict is true a variant is only annotated with another variant if they share the same
 // position, the same ref allele, and at least 1 alt allele.
-func Anno(queryVCF string, configs Annotations, outw io.Writer, ends bool, strict bool) {
+func Anno(queryFile string, configs Annotations, outw io.Writer, ends bool, strict bool) {
 
 	files := configs.Annotation
 
+	isBed := false
 	streams := make([]irelate.RelatableChannel, 0)
-	query := irelate.Vopen(queryVCF)
-
-	streams = append(streams, irelate.StreamVCF(query))
+	var query *vcfgo.Reader
+	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
+		isBed = true
+		streams = append(streams, irelate.Streamer(queryFile))
+	} else {
+		query = irelate.Vopen(queryFile)
+		streams = append(streams, irelate.StreamVCF(query))
+	}
 
 	for j, cfg := range files {
 		if cfg.Names == nil {
@@ -91,17 +107,22 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer, ends bool, stric
 			cfg.Names = cfg.Fields
 			files[j].Names = cfg.Fields
 		}
-		updateHeader(files, j, query, ends)
-		if strings.HasSuffix(cfg.File, ".vcf.gz") || strings.HasSuffix(cfg.File, ".vcf") {
-			v := irelate.Vopen(cfg.File)
-			streams = append(streams, irelate.StreamVCF(v))
+		if !isBed {
+			updateHeader(files, j, query, ends)
 		} else {
-			streams = append(streams, irelate.Streamer(cfg.File))
+			fixBams(files, j)
 		}
+		streams = append(streams, irelate.Streamer(cfg.File))
 	}
-	out, err := vcfgo.NewWriter(outw, query.Header)
-	if err != nil {
-		panic(err)
+	var out io.Writer
+	var err error
+	if !isBed {
+		out, err = vcfgo.NewWriter(outw, query.Header)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		out = bufio.NewWriter(outw)
 	}
 
 	annotateEnds := INTERVAL
@@ -110,13 +131,25 @@ func Anno(queryVCF string, configs Annotations, outw io.Writer, ends bool, stric
 	}
 	// the *Prefix functions let 'chr1' == '1'
 	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
-		variant := interval.(*irelate.Variant)
-		if len(variant.Related()) > 0 {
-			sep := Partition(variant, len(streams)-1)
-			updateInfo(variant, sep, files, annotateEnds, strict)
+		if variant, ok := interval.(*irelate.Variant); ok {
+			if len(variant.Related()) > 0 {
+				sep := Partition(variant, len(streams)-1)
+				updateInfo(variant, sep, files, annotateEnds, strict)
+
+			}
+			fmt.Fprintln(out, variant)
+		} else {
+			bed, ok := interval.(*irelate.Interval)
+			if !ok {
+				log.Fatalf("not an interval or a variant: %v", interval)
+			}
+			if len(interval.Related()) > 0 {
+				sep := Partition(bed, len(streams)-1)
+				updateBed(bed, sep, files, annotateEnds)
+			}
+			fmt.Fprintln(out, bed)
 
 		}
-		fmt.Fprintln(out, variant)
 	}
 }
 
@@ -144,6 +177,7 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			valsByFld = Collect(iv, sep[i], cfg, strict)
 		} else if ends == LEFT {
 			// hack. We know end() is calculated as length of ref. so we set it to have len 1 temporarily.
+			// and we use the variant itself so the info is updated in-place.
 			ref := v.Ref
 			alt := v.Alt
 			v.Ref = "A"
@@ -170,6 +204,23 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			v.Info.Add(ends+cfg.Names[i], Reducers[cfg.Ops[i]](vals))
 		}
 	}
+}
+
+func updateBed(bed *irelate.Interval, sep [][]irelate.Relatable, files []anno, ends string) {
+	// create irelate.Variant with start, end equal to bed
+	// then add INFO to fields in bed.
+	m := make(vcfgo.InfoMap)
+	m["__order"] = []string{}
+	m["SVLEN"] = int(bed.End()-bed.Start()) - 1
+	v := &vcfgo.Variant{Chromosome: bed.Chrom(), Pos: uint64(bed.Start() + 1), Ref: "A",
+		Alt: []string{"<DEL>"}, Info: m}
+	if v.End() != bed.End() {
+		log.Fatalf("ends: %d and %d should be the same", v.End(), bed.End())
+	}
+	iv := irelate.NewVariant(v, bed.Source(), bed.Related())
+	updateInfo(iv, sep, files, ends, false)
+	delete(m, "SVLEN")
+	bed.Fields = append(bed.Fields, iv.Info.String())
 }
 
 func checkAnno(a anno) error {
