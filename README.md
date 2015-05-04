@@ -23,7 +23,7 @@ We are actively developing `vcfanno` and appreciate feedback and bug reports.
 Usage
 =====
 
-After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.1) (see section below) usage looks like:
+After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.2) (see section below) usage looks like:
 
 ```Shell
   ./vcfanno example/conf.toml example/query.vcf
@@ -60,7 +60,7 @@ Example
 -------
 
 the example directory contains the data and conf for a full example. To run, either download
-the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.1) for your system build with:
+the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.2) for your system build with:
 
 ```Shell
 go get
@@ -106,7 +106,7 @@ Please open an issue if your desired operation is not supported.
 Binaries
 ========
 
-binary executables are available [here](https://github.com/brentp/vcfanno/releases/tag/v0.0.1)
+binary executables are available [here](https://github.com/brentp/vcfanno/releases/tag/v0.0.2)
 for *linux*, *mac* (darwin), and *windows* for *32* and *64* bit platforms.
 
 Preprocessing
@@ -131,8 +131,7 @@ under active development. The following are on our radar:
       (we have code to do this, it just needs to be integrated)
 - [x] improve test coverage for vcfanno
 - [ ] embed v8 to allow custom ops.
-- [ ] support for annotating BED files.
-
+- [ ] support for annotating BED files (coming in v0.0.3)
 
 Additional Usage
 ================
