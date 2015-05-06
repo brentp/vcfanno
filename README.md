@@ -131,7 +131,8 @@ under active development. The following are on our radar:
       (we have code to do this, it just needs to be integrated)
 - [x] improve test coverage for vcfanno
 - [ ] embed v8 to allow custom ops.
-- [ ] support for annotating BED files (coming in v0.0.3)
+- [x] support for annotating BED files.
+
 
 Additional Usage
 ================
