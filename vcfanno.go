@@ -12,6 +12,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/brentp/irelate"
 	"github.com/brentp/vcfgo"
+	"github.com/robertkrimen/otto"
 )
 
 // anno holds information about the annotation files parsed from the toml config.
@@ -201,9 +202,31 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			if len(vals) == 0 {
 				continue
 			}
-			v.Info.Add(ends+cfg.Names[i], Reducers[cfg.Ops[i]](vals))
+			if strings.HasPrefix(cfg.Ops[i], "js:") {
+				// TODO when we see js: in the input, we can just make a custom reducer.
+				js := cfg.Ops[i][3:]
+				v.Info.Add(ends+cfg.Names[i], otto_run(v, js, vals))
+			} else {
+				v.Info.Add(ends+cfg.Names[i], Reducers[cfg.Ops[i]](vals))
+			}
 		}
 	}
+}
+
+var vm = otto.New()
+
+func otto_run(v *vcfgo.Variant, js string, vals []interface{}) interface{} {
+	value, err := vm.Run(js)
+	vm.Set("vals", vals)
+	if err != nil {
+		log.Println("js error:", err)
+	}
+	val, err := value.ToString()
+	if err != nil {
+		log.Println("js error:", err)
+		val = fmt.Sprintf("error:%s", err)
+	}
+	return val
 }
 
 func updateBed(bed *irelate.Interval, sep [][]irelate.Relatable, files []anno, ends string) {
