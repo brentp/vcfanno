@@ -1,5 +1,6 @@
 v0.0.3
 ------
 
++ custom ops with javascript.
 + proper support for <CNV>, <INV>
-+ option to annotated BED files.
++ option to annotate BED files.

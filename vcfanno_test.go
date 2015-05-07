@@ -241,3 +241,14 @@ func (s *AnnoSuite) TestAnnoMainBed(c *C) {
 	out.Flush()
 
 }
+
+func (s *AnnoSuite) TestOps(c *C) {
+
+	ops := []string{"js:=asdf"}
+	err := checkOps(ops)
+	c.Assert(err, ErrorMatches, "javascript syntax error .*")
+
+	ops = []string{"js:vals[0]"}
+	err = checkOps(ops)
+	c.Assert(err, IsNil)
+}

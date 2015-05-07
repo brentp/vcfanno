@@ -31,6 +31,7 @@ func (a *anno) isNumber(idx int) bool {
 
 type Annotations struct {
 	Annotation []anno
+	Js         string // custom js funcs to pre-populate otto.
 }
 
 // can get a bam without an op. default it to 'count'
@@ -89,6 +90,11 @@ func Anno(queryFile string, configs Annotations, outw io.Writer, ends bool, stri
 
 	files := configs.Annotation
 
+	_, err := vm.Run(configs.Js)
+	if err != nil {
+		log.Fatalf("error parsing custom js:%s", err)
+	}
+
 	isBed := false
 	streams := make([]irelate.RelatableChannel, 0)
 	var query *vcfgo.Reader
@@ -116,7 +122,6 @@ func Anno(queryFile string, configs Annotations, outw io.Writer, ends bool, stri
 		streams = append(streams, irelate.Streamer(cfg.File))
 	}
 	var out io.Writer
-	var err error
 	if !isBed {
 		out, err = vcfgo.NewWriter(outw, query.Header)
 		if err != nil {
@@ -289,7 +294,7 @@ func checkOps(ops []string) error {
 			js := o[3:]
 			_, err := vm.Compile("", js)
 			if err != nil {
-				return err
+				return fmt.Errorf("javascript syntax error in %s: %s", js, err)
 			}
 		}
 	}
@@ -319,7 +324,7 @@ func main() {
 	for _, a := range config.Annotation {
 		err := checkAnno(&a)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("checkAnno err:", err)
 		}
 	}
 	strict := !*notstrict

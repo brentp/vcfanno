@@ -39,9 +39,10 @@ ops=["first", "first", "min"]
 
 [[annotation]]
 file="fitcons.bed"
-columns = [4]
-names=["fitcons_mean"]
-ops=["mean"]
+columns = [4, 4]
+names=["fitcons_mean", "js_sum"]
+# note the 2nd op here is javascript that has access to `vals`
+ops=["mean", "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]}; vals"]
 
 [[annotation]]
 file="example/ex.bam"
@@ -81,7 +82,7 @@ AB=0.282443;ABP=56.8661;AC=11;AF=0.34375;AN=32;AO=45;CIGAR=1X;TYPE=snp
 
 and after:
 ```
-AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061
+AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;js_sum=0.061
 ```
 
 Operations
@@ -92,6 +93,7 @@ in the query VCF. However, it is possible that there will be multiple annotation
 from a single annotation file--in this case, the op determines how the many values
 are `reduced`. Valid operations are:
 
+ + js:$javascript // see below for more details
  + mean
  + max
  + min
@@ -101,7 +103,37 @@ are `reduced`. Valid operations are:
  + first 
  + flag   // presense/absence via vcf flag
 
-Please open an issue if your desired operation is not supported.
+Please open an issue, or use the javascript if your desired operation is not supported.
+
+custom ops (javascript)
+-----------------------
+
+we embed the javascript engine [otto](https://github.com/robertkrimen/otto) so that it's 
+possible to create a custom op if it is not provided. For example if the users wants to
+output the sum of the values, then the op would be:
+
+    "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]};sum"
+
+where the last value (in this case sum) is returned as the annotation value. It is encouraged
+to instead define javascript functions in a `js` tag in the config file, e.g. the above sum
+would be:
+
+	js="""
+	function sum(vals) {
+		isum=0
+		for(i=0;i<vals.length;i++){
+			isum += vals[i]
+		}
+		return isum
+	}
+	"""
+
+(note the triple quotes). Then it would be used in an op as:
+
+	"js:sum(vals)"
+
+See [examples/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
+for more examples.
 
 Binaries
 ========
