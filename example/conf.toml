@@ -18,8 +18,9 @@ function loc(chrom, start, end){
 
 [[annotation]]
 file="example/exac.vcf"
-fields = ["AC_AFR", "AC_AMR", "AC_EAS"]
-ops=["first", "first", "first"]
+# the special name 'ID' pulls out the rs id from the VCF
+fields = ["AC_AFR", "AC_AMR", "AC_EAS", "ID"]
+ops=["first", "first", "first", "first"]
 
 [[annotation]]
 file="example/fitcons.bed"

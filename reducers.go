@@ -119,13 +119,18 @@ func Collect(iv *irelate.Variant, rels []irelate.Relatable, cfg anno, strict boo
 			// Is checks for same allele. but if it's not strict, we just check for overlap.
 			if (strict && v.Is(o.Variant)) || (!strict && overlap(iv, b)) {
 				for i := range cfg.Names {
-					val := o.Info[cfg.Fields[i]]
-					if arr, ok := val.([]interface{}); ok {
-						annos[i] = append(annos[i], arr...)
-					} else if val == nil {
-						continue
+					// they wanted the rsid or whatever was in there.
+					if cfg.Fields[i] == "ID" {
+						annos[i] = append(annos[i], o.Id)
 					} else {
-						annos[i] = append(annos[i], val)
+						val := o.Info[cfg.Fields[i]]
+						if arr, ok := val.([]interface{}); ok {
+							annos[i] = append(annos[i], arr...)
+						} else if val == nil {
+							continue
+						} else {
+							annos[i] = append(annos[i], val)
+						}
 					}
 				}
 			}
