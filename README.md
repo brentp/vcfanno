@@ -162,7 +162,7 @@ under active development. The following are on our radar:
 - [ ] decompose, normalize, and get allelic primitives for variants on the fly
       (we have code to do this, it just needs to be integrated)
 - [x] improve test coverage for vcfanno
-- [ ] embed v8 to allow custom ops.
+- [x] embed otto js engine to allow custom ops.
 - [x] support for annotating BED files.
 
 
