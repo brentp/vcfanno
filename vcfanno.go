@@ -204,7 +204,7 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 			}
 			if strings.HasPrefix(cfg.Ops[i], "js:") {
 				// TODO when we see js: in the input, we can just make a custom reducer.
-				js := cfg.Ops[i][3:]
+				js := cfg.Ops[i]
 				v.Info.Add(ends+cfg.Names[i], otto_run(v, js, vals))
 			} else {
 				v.Info.Add(ends+cfg.Names[i], Reducers[cfg.Ops[i]](vals))
@@ -214,16 +214,20 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 }
 
 var vm = otto.New()
+var vm_compiled = make(map[string]*otto.Script)
 
 func otto_run(v *vcfgo.Variant, js string, vals []interface{}) interface{} {
-	value, err := vm.Run(js)
 	vm.Set("vals", vals)
+	vm.Set("start", v.Start())
+	vm.Set("end", v.End())
+	vm.Set("chrom", v.Chrom())
+	value, err := vm.Run(vm_compiled[js])
 	if err != nil {
-		log.Println("js error:", err)
+		log.Println("js-error:", err)
 	}
 	val, err := value.ToString()
 	if err != nil {
-		log.Println("js error:", err)
+		log.Println("js-error:", err)
 		val = fmt.Sprintf("error:%s", err)
 	}
 	return val
@@ -246,11 +250,15 @@ func updateBed(bed *irelate.Interval, sep [][]irelate.Relatable, files []anno, e
 	bed.Fields = append(bed.Fields, iv.Info.String())
 }
 
-func checkAnno(a anno) error {
+func checkAnno(a *anno) error {
 	if a.Fields == nil {
 		// Columns: BED/BAM
 		if a.Columns == nil {
-			return fmt.Errorf("must specify either 'fields' or 'columns' for %s", a.File)
+			if strings.HasSuffix(a.File, ".bam") {
+				a.Columns = make([]int, len(a.Ops))
+			} else {
+				return fmt.Errorf("must specify either 'fields' or 'columns' for %s", a.File)
+			}
 		}
 		if len(a.Ops) != len(a.Columns) && !strings.HasSuffix(a.File, ".bam") {
 			return fmt.Errorf("must specify same # of 'columns' as 'ops' for %s", a.File)
@@ -258,13 +266,32 @@ func checkAnno(a anno) error {
 		if len(a.Names) != len(a.Columns) && !strings.HasSuffix(a.File, ".bam") {
 			return fmt.Errorf("must specify same # of 'names' as 'ops' for %s", a.File)
 		}
+	} else {
+		// Fields: VCF
+		if a.Columns != nil {
+			if strings.HasSuffix(a.File, ".bam") {
+				a.Columns = make([]int, len(a.Ops))
+			} else {
+				return fmt.Errorf("bspecify only 'fields' or 'columns' not both %s", a.File)
+			}
+		}
+		if len(a.Ops) != len(a.Fields) {
+			return fmt.Errorf("must specify same # of 'fields' as 'ops' for %s", a.File)
+		}
 	}
-	// Fields: VCF
-	if a.Columns != nil {
-		return fmt.Errorf("specify only 'fields' or 'columns' not both %s", a.File)
-	}
-	if len(a.Ops) != len(a.Fields) {
-		return fmt.Errorf("must specify same # of 'fields' as 'ops' for %s", a.File)
+	return checkOps(a.Ops)
+}
+
+func checkOps(ops []string) error {
+	for _, o := range ops {
+		if strings.HasPrefix(o, "js:") {
+			js := o[3:]
+			script, err := vm.Compile("", js)
+			if err != nil {
+				return err
+			}
+			vm_compiled[o] = script
+		}
 	}
 	return nil
 }
@@ -290,7 +317,10 @@ func main() {
 		panic(err)
 	}
 	for _, a := range config.Annotation {
-		checkAnno(a)
+		err := checkAnno(&a)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	strict := !*notstrict
 	Anno(inFiles[1], config, os.Stdout, *ends, strict)

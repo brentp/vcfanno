@@ -17,8 +17,8 @@ names=["ex_bam_depth"]
 
 [[annotation]]
 file="example/fitcons.bed"
-names=["otto"]
-columns=[4]
+names=["otto_start", "otto_end", "otto_len", "otto_sum"]
+columns=[4, 4, 4, 4]
 # when a custom value is needed, specify arbitrary javascript after "js:"
 # the variable available will be:
 # + vals: the list of values from this annotation
@@ -26,4 +26,4 @@ columns=[4]
 # + start: the (0-based) start of the variant being annotated
 # + end: the end of the variant being annotated
 # the result of the expression can be anything. it will be converted to a string.
-ops=["js:vals.length"]
+ops=["js:start", "js:end", "js:vals.length", "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]}; vals"]
