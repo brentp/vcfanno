@@ -162,15 +162,15 @@ func (s *AnnoSuite) TestAnnoBed(c *C) {
 }
 
 func (s *AnnoSuite) TestCheck(c *C) {
-	e := checkAnno(cfgBad)
+	e := checkAnno(&cfgBad)
 	c.Assert(e, ErrorMatches, "must specify same # of 'columns' as 'ops' for bed file")
 
 	cfgBad.Fields = []string{"abc", "def"}
-	e = checkAnno(cfgBad)
+	e = checkAnno(&cfgBad)
 	c.Assert(e, ErrorMatches, "specify only 'fields' or 'columns' not both bed file")
 
 	cfgBad.Columns = nil
-	e = checkAnno(cfgBad)
+	e = checkAnno(&cfgBad)
 	c.Assert(e, ErrorMatches, "must specify same # of 'fields' as 'ops' for bed file")
 }
 

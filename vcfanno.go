@@ -214,14 +214,15 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, en
 }
 
 var vm = otto.New()
-var vm_compiled = make(map[string]*otto.Script)
 
 func otto_run(v *vcfgo.Variant, js string, vals []interface{}) interface{} {
 	vm.Set("vals", vals)
 	vm.Set("start", v.Start())
 	vm.Set("end", v.End())
 	vm.Set("chrom", v.Chrom())
-	value, err := vm.Run(vm_compiled[js])
+	//log.Println(js)
+	//log.Println(v.Chrom(), v.Start(), v.End(), vals)
+	value, err := vm.Run(js[3:])
 	if err != nil {
 		log.Println("js-error:", err)
 	}
@@ -272,7 +273,7 @@ func checkAnno(a *anno) error {
 			if strings.HasSuffix(a.File, ".bam") {
 				a.Columns = make([]int, len(a.Ops))
 			} else {
-				return fmt.Errorf("bspecify only 'fields' or 'columns' not both %s", a.File)
+				return fmt.Errorf("specify only 'fields' or 'columns' not both %s", a.File)
 			}
 		}
 		if len(a.Ops) != len(a.Fields) {
@@ -286,11 +287,10 @@ func checkOps(ops []string) error {
 	for _, o := range ops {
 		if strings.HasPrefix(o, "js:") {
 			js := o[3:]
-			script, err := vm.Compile("", js)
+			_, err := vm.Compile("", js)
 			if err != nil {
 				return err
 			}
-			vm_compiled[o] = script
 		}
 	}
 	return nil
