@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/brentp/irelate"
@@ -49,8 +50,12 @@ func (a *Annotator) partition(r irelate.Relatable) [][]irelate.Relatable {
 
 func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict bool) []interface{} {
 	coll := make([]interface{}, 0)
+	// TODO: rels are all from same source, so we cold move the type checks outside the loop.
 	for _, other := range v.Related() {
 		if o, ok := other.(*irelate.Variant); ok {
+			if !((strict && v.Is(o.Variant)) || (!strict && overlap(v, o))) {
+				continue
+			}
 
 			val := o.Info[src.Field]
 			if arr, ok := val.([]interface{}); ok {
@@ -61,6 +66,9 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 				coll = append(coll, val)
 			}
 		} else if o, ok := other.(*irelate.Interval); ok {
+			if !overlap(v, o) {
+				continue
+			}
 			val := o.Fields[src.Column-1]
 			if src.IsNumber() {
 				v, e := strconv.ParseFloat(val, 32)
@@ -71,7 +79,17 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 			} else {
 				coll = append(coll, val)
 			}
-		} // TODO: bam
+		} else if bam, ok := other.(*irelate.Bam); ok {
+			if !overlap(v, bam) {
+				continue
+			}
+			if bam.MapQ() < 1 || bam.Flags&(0x4) != 0 {
+				continue
+			}
+			coll = append(coll, bam)
+		} else {
+			panic(fmt.Sprintf("not supported for: %v", other))
+		}
 	}
 	return coll
 }

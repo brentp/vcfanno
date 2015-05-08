@@ -135,9 +135,12 @@ func Collect(iv *irelate.Variant, rels []irelate.Relatable, cfg anno, strict boo
 				}
 			}
 			// BED
-		} else if iv, ok := b.(*irelate.Interval); ok {
+		} else if bed, ok := b.(*irelate.Interval); ok {
+			if !overlap(iv, bed) {
+				continue
+			}
 			for i := range cfg.Names {
-				val := iv.Fields[cfg.Columns[i]-1]
+				val := bed.Fields[cfg.Columns[i]-1]
 				if cfg.isNumber(i) {
 					v, e := strconv.ParseFloat(val, 32)
 					if e != nil {
@@ -151,6 +154,9 @@ func Collect(iv *irelate.Variant, rels []irelate.Relatable, cfg anno, strict boo
 			// BAM
 		} else if bam, ok := b.(*irelate.Bam); ok {
 			//if bam.MapQ() < 0 || bam.Flags&(0x4|0x8|0x100|0x200|0x400|0x800) != 0 {
+			if !overlap(bam, iv) {
+				continue
+			}
 			if bam.MapQ() < 1 || bam.Flags&(0x4) != 0 {
 				continue
 			}
