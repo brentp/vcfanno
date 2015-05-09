@@ -82,7 +82,9 @@ func (a *Annotator) partition(r irelate.Relatable) [][]irelate.Relatable {
 
 func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict bool) []interface{} {
 	coll := make([]interface{}, 0)
+	var val interface{}
 	for _, other := range rels {
+		// need this check for the ends stuff.
 		if !overlap(v, other) {
 			continue
 		}
@@ -90,8 +92,15 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 			if strict && !v.Is(o.Variant) {
 				continue
 			}
-
-			val := o.Info[src.Field]
+			// special case pulling the rsid
+			if src.Field == "ID" {
+				if o.Id == "." {
+					continue
+				}
+				val = o.Id
+			} else {
+				val = o.Info[src.Field]
+			}
 			if arr, ok := val.([]interface{}); ok {
 				coll = append(coll, arr...)
 			} else if val == nil {
@@ -100,15 +109,15 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 				coll = append(coll, val)
 			}
 		} else if o, ok := other.(*irelate.Interval); ok {
-			val := o.Fields[src.Column-1]
+			sval := o.Fields[src.Column-1]
 			if src.IsNumber() {
-				v, e := strconv.ParseFloat(val, 32)
+				v, e := strconv.ParseFloat(sval, 32)
 				if e != nil {
 					panic(e)
 				}
 				coll = append(coll, v)
 			} else {
-				coll = append(coll, val)
+				coll = append(coll, sval)
 			}
 		} else if bam, ok := other.(*irelate.Bam); ok {
 			if bam.MapQ() < 1 || bam.Flags&(0x4) != 0 {
@@ -151,16 +160,13 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable) {
 
 	for _, src := range a.Sources {
 		related := parted[src.Index]
-		for _, r := range related {
-			if int(r.Source()) != src.Index+1 {
-				fmt.Println(r.Source(), src.Index)
-				os.Exit(2)
-			}
-		}
 		if len(related) == 0 {
 			continue
 		}
 		vals := collect(v, related, &src, a.Strict)
+		if len(vals) == 0 {
+			continue
+		}
 		if src.IsJs {
 			v.Info.Add(src.Name, a.JsOp(v.Variant, src.Op, vals))
 		} else {

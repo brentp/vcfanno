@@ -1,17 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/brentp/irelate"
-	"github.com/brentp/vcfgo"
 )
 
 // annotation holds information about the annotation files parsed from the toml config.
@@ -22,14 +18,6 @@ type annotation struct {
 	Columns []int
 	// the names in the output.
 	Names []string
-}
-
-func (a annotation) String() {
-	fmt.Sprintf("{File: %s, Ops: %s, Fields: %s, Columns: %s, Names: %s}", a.File, a.Ops, a.Fields, a.Columns, a.Names)
-}
-
-func (a *annotation) isNumber(idx int) bool {
-	return a.Ops[idx] == "mean" || a.Ops[idx] == "max" || a.Ops[idx] == "min" || a.Ops[idx] == "count"
 }
 
 // turn an annotation into a slice of Sources. Pass in the index of the file.
@@ -59,6 +47,7 @@ type Config struct {
 	Js         string // custom js funcs to pre-populate otto.
 }
 
+/*
 // updateHeader adds a new info item to the header for each new annotation
 func updateHeader(files []annotation, j int, query *vcfgo.Reader, ends bool) {
 	cfg := files[j]
@@ -84,71 +73,6 @@ func updateHeader(files []annotation, j int, query *vcfgo.Reader, ends bool) {
 			}
 		}
 
-	}
-}
-
-// Anno takes a query vcf and a set of annotations, and writes to outw.
-// If ends is specified, then the query is annotated for start, end and the interval itself.
-// if strict is true a variant is only annotated with another variant if they share the same
-// position, the same ref allele, and at least 1 alt allele.
-func Anno(queryFile string, configs Config, outw io.Writer, ends bool, strict bool) {
-
-	files := configs.Annotation
-
-	/*_, err := vm.Run(configs.Js)
-	if err != nil {
-		log.Fatalf("error parsing custom js:%s", err)
-	}*/
-
-	isBed := false
-	streams := make([]irelate.RelatableChannel, 0)
-	var query *vcfgo.Reader
-	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
-		isBed = true
-		streams = append(streams, irelate.Streamer(queryFile))
-	} else {
-		query = irelate.Vopen(queryFile)
-		streams = append(streams, irelate.StreamVCF(query))
-	}
-
-	for j, cfg := range files {
-		if cfg.Names == nil {
-			if cfg.Fields == nil {
-				log.Fatal("must specify either fields or names")
-			}
-			cfg.Names = cfg.Fields
-			files[j].Names = cfg.Fields
-		}
-		if !isBed {
-			updateHeader(files, j, query, ends)
-		}
-		streams = append(streams, irelate.Streamer(cfg.File))
-	}
-	var out io.Writer
-	var err error
-	if !isBed {
-		out, err = vcfgo.NewWriter(outw, query.Header)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		out = bufio.NewWriter(outw)
-	}
-
-	annotateEnds := INTERVAL
-	if ends {
-		annotateEnds = BOTH
-	}
-	// the *Prefix functions let 'chr1' == '1'
-	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
-		if variant, ok := interval.(*irelate.Variant); ok {
-			if len(variant.Related()) > 0 {
-				sep := Partition(variant, len(streams)-1)
-				updateInfo(variant, sep, files, annotateEnds, strict)
-
-			}
-			fmt.Fprintln(out, variant)
-		}
 	}
 }
 
@@ -205,6 +129,7 @@ func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []annotati
 		}
 	}
 }
+*/
 
 func checkAnno(a *annotation) error {
 	if strings.HasSuffix(a.File, ".bam") {
