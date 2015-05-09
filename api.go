@@ -13,6 +13,8 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
+// Source holds the information for a single annotation to be added to a query.
+// Many sources can come from the same file, but each must have their own Source.
 type Source struct {
 	File string
 	Op   string
@@ -26,10 +28,12 @@ type Source struct {
 	IsJs  bool
 }
 
+// IsNumber indicates that we expect the Source to return a number given the op
 func (s *Source) IsNumber() bool {
 	return s.Op == "mean" || s.Op == "max" || s.Op == "min" || s.Op == "count" || s.Op == "median"
 }
 
+// Annotator holds the information to annotate a file.
 type Annotator struct {
 	vm      *otto.Otto
 	Sources []Source
@@ -37,6 +41,8 @@ type Annotator struct {
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
 }
 
+// JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
+// It makes the chrom, start, end, and values available to the js interpreter.
 func (a *Annotator) JsOp(v *vcfgo.Variant, js string, vals []interface{}) interface{} {
 	a.vm.Set("chrom", v.Chrom())
 	a.vm.Set("start", v.Start())
@@ -54,6 +60,10 @@ func (a *Annotator) JsOp(v *vcfgo.Variant, js string, vals []interface{}) interf
 	return val
 }
 
+// NewAnnotator returns an Annotator with the sources, seeded with some javascript.
+// If ends is true, it will annotate the 1 base ends of the interval as well as the
+// interval itself. If strict is true, when overlapping variants, they must share
+// the ref allele and at least 1 alt allele.
 func NewAnnotator(sources []Source, js string, ends bool, strict bool) *Annotator {
 	a := Annotator{
 		vm:      otto.New(),
@@ -70,6 +80,7 @@ func NewAnnotator(sources []Source, js string, ends bool, strict bool) *Annotato
 	return &a
 }
 
+// partition separates the relateds for a relatable so it reduces running over the data multiple times for each file.
 func (a *Annotator) partition(r irelate.Relatable) [][]irelate.Relatable {
 	parted := make([][]irelate.Relatable, 0)
 	for _, o := range r.Related() {
@@ -82,6 +93,7 @@ func (a *Annotator) partition(r irelate.Relatable) [][]irelate.Relatable {
 	return parted
 }
 
+// collect applies the reduction (op) specified in src on the rels.
 func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict bool) []interface{} {
 	coll := make([]interface{}, 0)
 	var val interface{}
@@ -136,7 +148,7 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 	return coll
 }
 
-// make a variant from an interval. this helps avoid code duplication.
+// vFromB makes a variant from an interval. this helps avoid code duplication.
 func vFromB(b *irelate.Interval) *irelate.Variant {
 	m := make(vcfgo.InfoMap)
 	m["__order"] = []string{}
@@ -147,6 +159,9 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 	return v
 }
 
+// AnnotatedEnds makes a new 1-base interval for the left and one for the right end
+// so that it can use the same machinery to annotate the ends and the entire interval.
+// Output into the info field is prefixed with "left_" or "right_".
 func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) {
 	if ends == BOTH {
 		a.AnnotateOne(r)
@@ -174,9 +189,10 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) {
 	}
 }
 
-// Annotate a relatable with the Sources in an Annotator.
+// AnnotateOne annotates a relatable with the Sources in an Annotator.
+// In most cases, no need to specify end (it should always be a single
+// arugment indicting LEFT, RIGHT, or INTERVAL, used from AnnotateEnds
 func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) {
-	// TODO: could pass isBed to here to avoid cast check.
 	if len(r.Related()) == 0 {
 		return
 	}
@@ -224,6 +240,7 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) {
 	}
 }
 
+// UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
 func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 	for _, src := range a.Sources {
 		ntype := "Character"
@@ -287,6 +304,7 @@ func (a *Annotator) setupStreams(queryFile string, out io.Writer) ([]irelate.Rel
 	return streams, isBed, out
 }
 
+// Annotate annotates a file with the sources in the Annotator.
 func (a *Annotator) Annotate(queryFile string, out io.Writer) {
 
 	streams, isBed, out := a.setupStreams(queryFile, out)
