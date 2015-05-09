@@ -110,7 +110,7 @@ func overlap(a, b irelate.Relatable) bool {
 }
 
 // Collect the fields associated with a variant into a single slice.
-func Collect(iv *irelate.Variant, rels []irelate.Relatable, cfg anno, strict bool) [][]interface{} {
+func Collect(iv *irelate.Variant, rels []irelate.Relatable, cfg annotation, strict bool) [][]interface{} {
 	annos := make([][]interface{}, len(cfg.Names))
 	v := iv.Variant
 	for _, b := range rels {

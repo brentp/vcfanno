@@ -9,7 +9,7 @@ import (
 )
 
 func BenchmarkAnno(b *testing.B) {
-	var configs Annotations
+	var configs Config
 	if _, err := toml.DecodeFile("example/conf.toml", &configs); err != nil {
 		panic(err)
 	}

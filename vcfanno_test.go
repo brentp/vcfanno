@@ -73,7 +73,7 @@ func (s *AnnoSuite) TestPartition(c *C) {
 
 }
 
-var cfg = anno{
+var cfg = annotation{
 	File:   "fake file",
 	Ops:    []string{"mean", "min", "max", "concat", "uniq", "first", "count"},
 	Fields: []string{"DP", "DP", "DP", "DP", "DP", "DP", "DP", "DP"},
@@ -82,7 +82,7 @@ var cfg = anno{
 
 func (s *AnnoSuite) TestAnno(c *C) {
 
-	cfgBed := anno{
+	cfgBed := annotation{
 		File:    "bed file",
 		Ops:     []string{"mean", "max", "flag"},
 		Columns: []int{4, 5, 1},
@@ -90,7 +90,7 @@ func (s *AnnoSuite) TestAnno(c *C) {
 	}
 
 	sep := Partition(s.v1, 2)
-	updateInfo(s.v1, sep, []anno{cfg, cfgBed}, "", true)
+	updateInfo(s.v1, sep, []annotation{cfg, cfgBed}, "", true)
 
 	c.Assert(s.v1.Info["dp_mean"], Equals, float32(66.0))
 	c.Assert(s.v1.Info["dp_min"], Equals, float32(44.0))
@@ -110,13 +110,13 @@ func (s *AnnoSuite) TestAnno(c *C) {
 
 func (s *AnnoSuite) TestAnnoEnds(c *C) {
 
-	cfg := anno{
+	cfg := annotation{
 		File:   "fake file",
 		Ops:    []string{"mean", "min", "max", "concat", "uniq", "first", "count"},
 		Fields: []string{"DP", "DP", "DP", "DP", "DP", "DP", "DP", "DP"},
 		Names:  []string{"dp_mean", "dp_min", "dp_max", "dp_concat", "dp_uniq", "dp_first", "dp_count"},
 	}
-	cfgBed := anno{
+	cfgBed := annotation{
 		File:    "bed file",
 		Ops:     []string{"mean", "max", "flag"},
 		Columns: []int{4, 5, 1},
@@ -126,19 +126,19 @@ func (s *AnnoSuite) TestAnnoEnds(c *C) {
 	sep := Partition(s.v1, 2)
 	sav := s.v1.Ref
 	s.v1.Ref = "ATT"
-	updateInfo(s.v1, sep, []anno{cfg, cfgBed}, BOTH, true)
+	updateInfo(s.v1, sep, []annotation{cfg, cfgBed}, BOTH, true)
 	s.v1.Ref = sav
 
 	c.Assert(fmt.Sprintf("%s", s.v1.Info), Equals, "DP=35;dp_mean=66;dp_min=44;dp_max=88;dp_concat=44,88;dp_uniq=44,88;dp_first=44;dp_count=2;bed_mean=111;bed_max=222;bedFlag;left_dp_mean=66;left_dp_min=44;left_dp_max=88;left_dp_concat=44,88;left_dp_uniq=44,88;left_dp_first=44;left_dp_count=2;left_bed_mean=111;left_bed_max=222;left_bedFlag;right_bed_mean=111;right_bed_max=222;right_bedFlag")
 }
 
-var cfgBad = anno{
+var cfgBad = annotation{
 	File:    "bed file",
 	Ops:     []string{"mean", "max", "flag"},
 	Columns: []int{4, 5},
 	Names:   []string{"bed_mean", "bed_max", "bedFlag"},
 }
-var cfgBed = anno{
+var cfgBed = annotation{
 	File:    "bed file",
 	Ops:     []string{"mean", "max", "flag"},
 	Columns: []int{4, 5, 5},
@@ -156,7 +156,7 @@ func (s *AnnoSuite) TestAnnoBed(c *C) {
 
 	sep := Partition(s.v1, 3)
 	bed := interval.(*irelate.Interval)
-	updateBed(bed, sep, []anno{cfg, cfgBed}, BOTH)
+	updateBed(bed, sep, []annotation{cfg, cfgBed}, BOTH)
 
 	c.Assert(fmt.Sprintf("%s", bed.Fields[3]), Equals, "dp_mean=66;dp_min=44;dp_max=88;dp_concat=44,88;dp_uniq=44,88;dp_first=44;dp_count=2;bed_mean=111;bed_max=222;bedFlag;left_bed_mean=111;left_bed_max=222;left_bedFlag;right_bed_mean=111;right_bed_max=222;right_bedFlag")
 }
@@ -186,7 +186,7 @@ func (s *AnnoSuite) TestOverlap(c *C) {
 
 func (s *AnnoSuite) TestUpdateHeader(c *C) {
 	vcf := irelate.Vopen("example/query.vcf")
-	updateHeader([]anno{cfgBed}, 0, vcf, false)
+	updateHeader([]annotation{cfgBed}, 0, vcf, false)
 
 	for _, k := range cfgBed.Names {
 		_, ok := vcf.Header.Infos[k]
@@ -201,7 +201,7 @@ func (s *AnnoSuite) TestUpdateHeader(c *C) {
 
 func (s *AnnoSuite) TestUpdateHeaderEnds(c *C) {
 	vcf := irelate.Vopen("example/query.vcf")
-	updateHeader([]anno{cfgBed}, 0, vcf, true)
+	updateHeader([]annotation{cfgBed}, 0, vcf, true)
 
 	for _, k := range cfgBed.Names {
 		_, ok := vcf.Header.Infos[k]
@@ -215,7 +215,7 @@ func (s *AnnoSuite) TestUpdateHeaderEnds(c *C) {
 }
 
 func (s *AnnoSuite) TestAnnoMain(c *C) {
-	var configs Annotations
+	var configs Config
 
 	if _, err := toml.DecodeFile("example/conf.toml", &configs); err != nil {
 		panic(err)
@@ -230,7 +230,7 @@ func (s *AnnoSuite) TestAnnoMain(c *C) {
 }
 
 func (s *AnnoSuite) TestAnnoMainBed(c *C) {
-	var configs Annotations
+	var configs Config
 
 	if _, err := toml.DecodeFile("example/conf.toml", &configs); err != nil {
 		panic(err)
