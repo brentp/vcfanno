@@ -142,9 +142,39 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 	return v
 }
 
+func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) {
+	if ends == BOTH {
+		a.AnnotateOne(r)
+		a.AnnotateEnds(r, LEFT)
+		a.AnnotateEnds(r, RIGHT)
+		return
+	}
+	if ends == INTERVAL {
+		a.AnnotateOne(r)
+		return
+	}
+	v := r.(*irelate.Variant)
+	// hack:
+	// modify the variant in-place to create a 1-base variant at the end of
+	// the interval. annotate that end and then change the position back to what it was.
+	if ends == LEFT || ends == RIGHT {
+		pos, ref, alt := v.Pos, v.Ref, v.Alt
+		// the end is determined by the alt, so we have to make sure it has length 1.
+		v.Ref, v.Alt = "A", []string{"T"}
+		if ends == RIGHT {
+			v.Pos = uint64(v.End())
+		}
+		a.AnnotateOne(v)
+		v.Pos, v.Ref, v.Alt = pos, ref, alt
+	}
+}
+
 // Annotate a relatable with the Sources in an Annotator.
 func (a *Annotator) AnnotateOne(r irelate.Relatable) {
 	// TODO: could pass isBed to here to avoid cast check.
+	if len(r.Related()) == 0 {
+		return
+	}
 
 	parted := a.partition(r)
 	var b *irelate.Interval
@@ -179,6 +209,31 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable) {
 	}
 }
 
+func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
+	for _, src := range a.Sources {
+		ntype := "Character"
+		var desc string
+		if strings.HasSuffix(src.File, ".bam") || src.IsNumber() {
+			ntype = "Float"
+		}
+		if strings.HasSuffix(src.File, ".bam") {
+			desc = fmt.Sprintf("calculated by coverage from %s", src.File)
+		} else if src.Field != "" {
+			desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", src.Op, src.Field, src.File)
+		} else {
+			desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", src.Op, src.Column, src.File)
+		}
+		h.Infos[src.Name] = &vcfgo.Info{Id: src.Name, Number: "1", Type: ntype, Description: desc}
+		if a.Ends {
+			for _, end := range []string{LEFT, RIGHT} {
+				h.Infos[end+src.Name] = &vcfgo.Info{Id: end + src.Name, Number: "1", Type: ntype,
+					Description: fmt.Sprintf("%s at end %s", desc, strings.TrimSuffix(end, "_"))}
+			}
+		}
+	}
+
+}
+
 // a horrible function to set up everything for starting annotation.
 func (a *Annotator) setupStreams(queryFile string) ([]irelate.RelatableChannel, bool, io.Writer) {
 
@@ -207,6 +262,7 @@ func (a *Annotator) setupStreams(queryFile string) ([]irelate.RelatableChannel, 
 	var out io.Writer
 	var err error
 	if !isBed {
+		a.UpdateHeader(query.Header)
 		out, err = vcfgo.NewWriter(os.Stdout, query.Header)
 		if err != nil {
 			log.Fatal(err)
@@ -221,10 +277,13 @@ func (a *Annotator) Annotate(queryFile string) {
 
 	streams, isBed, out := a.setupStreams(queryFile)
 	_ = isBed
-	_ = out
+	ends := INTERVAL
+	if a.Ends {
+		ends = BOTH
+	}
 
 	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
-		a.AnnotateOne(interval)
+		a.AnnotateEnds(interval, ends)
 		fmt.Fprintln(out, interval)
 	}
 }

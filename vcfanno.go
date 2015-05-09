@@ -47,89 +47,10 @@ type Config struct {
 	Js         string // custom js funcs to pre-populate otto.
 }
 
-/*
-// updateHeader adds a new info item to the header for each new annotation
-func updateHeader(files []annotation, j int, query *vcfgo.Reader, ends bool) {
-	cfg := files[j]
-	for i, name := range cfg.Names {
-		ntype := "Character"
-		if strings.HasSuffix(cfg.File, ".bam") || cfg.isNumber(i) {
-			ntype = "Float"
-		}
-		var desc string
-		// write the VCF header.
-		if strings.HasSuffix(cfg.File, ".bam") {
-			desc = fmt.Sprintf("calculated by coverage from %s", cfg.File)
-		} else if cfg.Fields != nil {
-			desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", cfg.Ops[i], cfg.Fields[i], cfg.File)
-		} else {
-			desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", cfg.Ops[i], cfg.Columns[i], cfg.File)
-		}
-		query.Header.Infos[name] = &vcfgo.Info{Id: name, Number: "1", Type: ntype, Description: desc}
-		if ends {
-			for _, end := range []string{LEFT, RIGHT} {
-				query.Header.Infos[end+name] = &vcfgo.Info{Id: end + name, Number: "1", Type: ntype,
-					Description: fmt.Sprintf("%s at %s end", desc, strings.TrimSuffix(end, "_"))}
-			}
-		}
-
-	}
-}
-
 const LEFT = "left_"
 const RIGHT = "right_"
 const BOTH = "both_"
 const INTERVAL = ""
-
-func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []annotation, ends string, strict bool) {
-	for i, cfg := range files {
-
-		v := iv.Variant
-		var valsByFld [][]interface{}
-		if ends == BOTH {
-			// we want to annotate ends of the interval independently.
-			// note that we automatically set strict to false.
-			updateInfo(iv, sep, files, INTERVAL, false)
-			// only do this if the variant is longer than 1 base.
-			if iv.End()-iv.Start() > 1 {
-				updateInfo(iv, sep, files, LEFT, false)
-				updateInfo(iv, sep, files, RIGHT, false)
-			}
-			return
-		} else if ends == INTERVAL {
-			valsByFld = Collect(iv, sep[i], cfg, strict)
-		} else if ends == LEFT {
-			// hack. We know end() is calculated as length of ref. so we set it to have len 1 temporarily.
-			// and we use the variant itself so the info is updated in-place.
-			ref := v.Ref
-			alt := v.Alt
-			v.Ref = "A"
-			v.Alt = []string{"T"}
-			//log.Println("left:", v.Start(), v.End())
-			valsByFld = Collect(iv, sep[i], cfg, strict)
-			v.Ref, v.Alt = ref, alt
-		} else if ends == RIGHT {
-			// artificially set end to be the right end of the interval.
-			pos, ref, alt := v.Pos, v.Ref, v.Alt
-			v.Pos = uint64(v.End())
-			v.Ref, v.Alt = "A", []string{"T"}
-			//log.Println("right:", v.Start(), v.End())
-			valsByFld = Collect(iv, sep[i], cfg, strict)
-			v.Pos, v.Ref, v.Alt = pos, ref, alt
-
-		}
-
-		for i, vals := range valsByFld {
-			// currently we don't do anything without overlaps.
-			if len(vals) == 0 {
-				continue
-			}
-			// removed js
-			v.Info.Add(ends+cfg.Names[i], Reducers[cfg.Ops[i]](vals))
-		}
-	}
-}
-*/
 
 func checkAnno(a *annotation) error {
 	if strings.HasSuffix(a.File, ".bam") {
@@ -201,5 +122,4 @@ func main() {
 	strict := !*notstrict
 	var a = NewAnnotator(sources, config.Js, *ends, strict)
 	a.Annotate(inFiles[1])
-	//Anno(inFiles[1], config, os.Stdout, *ends, strict)
 }
