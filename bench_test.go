@@ -15,8 +15,9 @@ func BenchmarkAnno(b *testing.B) {
 	}
 
 	out := bufio.NewWriter(ioutil.Discard)
+	a := NewAnnotator(configs.Sources(), configs.Js, false, true)
 	for n := 0; n < b.N; n++ {
-		Anno("example/query.vcf", configs, out, false, true)
+		a.Annotate("example/query.vcf", ioutil.Discard)
 		out.Flush()
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 
@@ -15,13 +14,16 @@ import (
 )
 
 type Source struct {
-	File   string
-	Op     string
-	Name   string
+	File string
+	Op   string
+	Name string
+	// column number in bed file or ...
 	Column int
-	Field  string
-	Index  int
-	IsJs   bool
+	// info name in VCF. (can also be ID).
+	Field string
+	// 0-based index of the file order this source is from.
+	Index int
+	IsJs  bool
 }
 
 func (s *Source) IsNumber() bool {
@@ -85,6 +87,9 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 	var val interface{}
 	for _, other := range rels {
 		// need this check for the ends stuff.
+		if int(other.Source())-1 != src.Index {
+			log.Fatalf("got source %d with related %d", src.Index, other.Source())
+		}
 		if !overlap(v, other) {
 			continue
 		}
@@ -164,16 +169,23 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) {
 		if ends == RIGHT {
 			v.Pos = uint64(v.End())
 		}
-		a.AnnotateOne(v)
+		a.AnnotateOne(v, ends)
 		v.Pos, v.Ref, v.Alt = pos, ref, alt
 	}
 }
 
 // Annotate a relatable with the Sources in an Annotator.
-func (a *Annotator) AnnotateOne(r irelate.Relatable) {
+func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) {
 	// TODO: could pass isBed to here to avoid cast check.
 	if len(r.Related()) == 0 {
 		return
+	}
+	prefix := ""
+	if len(end) > 0 {
+		prefix = end[0]
+		if len(end) > 1 {
+			log.Fatalf("too many ends in AnnotateOne")
+		}
 	}
 
 	parted := a.partition(r)
@@ -189,6 +201,9 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable) {
 	}
 
 	for _, src := range a.Sources {
+		if len(parted) <= src.Index {
+			continue
+		}
 		related := parted[src.Index]
 		if len(related) == 0 {
 			continue
@@ -198,9 +213,9 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable) {
 			continue
 		}
 		if src.IsJs {
-			v.Info.Add(src.Name, a.JsOp(v.Variant, src.Op, vals))
+			v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Op, vals))
 		} else {
-			v.Info.Add(src.Name, Reducers[src.Op](vals))
+			v.Info.Add(prefix+src.Name, Reducers[src.Op](vals))
 		}
 	}
 	if isBed {
@@ -235,7 +250,7 @@ func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 }
 
 // a horrible function to set up everything for starting annotation.
-func (a *Annotator) setupStreams(queryFile string) ([]irelate.RelatableChannel, bool, io.Writer) {
+func (a *Annotator) setupStreams(queryFile string, out io.Writer) ([]irelate.RelatableChannel, bool, io.Writer) {
 
 	streams := make([]irelate.RelatableChannel, 1)
 	var isBed bool
@@ -259,23 +274,22 @@ func (a *Annotator) setupStreams(queryFile string) ([]irelate.RelatableChannel, 
 		seen[src.Index] = true
 		streams = append(streams, irelate.Streamer(src.File))
 	}
-	var out io.Writer
 	var err error
 	if !isBed {
 		a.UpdateHeader(query.Header)
-		out, err = vcfgo.NewWriter(os.Stdout, query.Header)
+		out, err = vcfgo.NewWriter(out, query.Header)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		out = bufio.NewWriter(os.Stdout)
+		out = bufio.NewWriter(out)
 	}
 	return streams, isBed, out
 }
 
-func (a *Annotator) Annotate(queryFile string) {
+func (a *Annotator) Annotate(queryFile string, out io.Writer) {
 
-	streams, isBed, out := a.setupStreams(queryFile)
+	streams, isBed, out := a.setupStreams(queryFile, out)
 	_ = isBed
 	ends := INTERVAL
 	if a.Ends {

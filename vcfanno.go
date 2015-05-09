@@ -32,9 +32,13 @@ func (a *annotation) flatten(index int) []Source {
 		if isjs {
 			op = op[3:]
 		}
+		if len(a.Names) == 0 {
+			a.Names = a.Fields
+		}
 		sources[i] = Source{File: a.File, Op: op, Name: a.Names[i], Index: index, IsJs: isjs}
 		if nil != a.Fields {
 			sources[i].Field = a.Fields[i]
+			sources[i].Column = -1
 		} else {
 			sources[i].Column = a.Columns[i]
 		}
@@ -45,6 +49,14 @@ func (a *annotation) flatten(index int) []Source {
 type Config struct {
 	Annotation []annotation
 	Js         string // custom js funcs to pre-populate otto.
+}
+
+func (c Config) Sources() []Source {
+	s := make([]Source, 0)
+	for i, a := range c.Annotation {
+		s = append(s, a.flatten(i)...)
+	}
+	return s
 }
 
 const LEFT = "left_"
@@ -111,15 +123,15 @@ func main() {
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
 		panic(err)
 	}
-	sources := make([]Source, 0, len(config.Annotation))
-	for i, a := range config.Annotation {
+	for _, a := range config.Annotation {
 		err := checkAnno(&a)
 		if err != nil {
 			log.Fatal("checkAnno err:", err)
 		}
-		sources = append(sources, a.flatten(i)...)
 	}
+	sources := config.Sources()
 	strict := !*notstrict
 	var a = NewAnnotator(sources, config.Js, *ends, strict)
-	a.Annotate(inFiles[1])
+	out := os.Stdout
+	a.Annotate(inFiles[1], out)
 }

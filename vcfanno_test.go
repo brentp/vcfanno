@@ -1,14 +1,10 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"io/ioutil"
 	"testing"
 
-	"github.com/BurntSushi/toml"
 	"github.com/brentp/irelate"
-	"github.com/brentp/vcfgo"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -22,20 +18,6 @@ type AnnoSuite struct {
 }
 
 var _ = Suite(&AnnoSuite{})
-
-var v1 = &vcfgo.Variant{
-	Chromosome: "chr1",
-	Pos:        uint64(234),
-	Id:         "id",
-	Ref:        "A",
-	Alt:        []string{"T", "G"},
-	Quality:    float32(555.5),
-	Filter:     "PASS",
-	Info: map[string]interface{}{
-		"DP":      uint32(35),
-		"__order": []string{"DP"},
-	},
-}
 
 func (s *AnnoSuite) SetUpTest(c *C) {
 	s.v1 = &irelate.Variant{Variant: v1}
@@ -65,14 +47,6 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 
 }
 
-func (s *AnnoSuite) TestPartition(c *C) {
-
-	sep := Partition(s.v1, 2)
-	c.Assert(sep[0], DeepEquals, []irelate.Relatable{s.v2, s.v3})
-	c.Assert(sep[1], DeepEquals, []irelate.Relatable{s.b})
-
-}
-
 var cfg = annotation{
 	File:   "fake file",
 	Ops:    []string{"mean", "min", "max", "concat", "uniq", "first", "count"},
@@ -80,7 +54,7 @@ var cfg = annotation{
 	Names:  []string{"dp_mean", "dp_min", "dp_max", "dp_concat", "dp_uniq", "dp_first", "dp_count"},
 }
 
-func (s *AnnoSuite) TestAnno(c *C) {
+func (s *AnnoSuite) TestFlatten(c *C) {
 
 	cfgBed := annotation{
 		File:    "bed file",
@@ -89,6 +63,10 @@ func (s *AnnoSuite) TestAnno(c *C) {
 		Names:   []string{"bed_mean", "bed_max", "bedFlag"},
 	}
 
+	c.Assert(len(cfgBed.flatten(0)), Equals, 3)
+}
+
+/*
 	sep := Partition(s.v1, 2)
 	updateInfo(s.v1, sep, []annotation{cfg, cfgBed}, "", true)
 
@@ -241,14 +219,4 @@ func (s *AnnoSuite) TestAnnoMainBed(c *C) {
 	out.Flush()
 
 }
-
-func (s *AnnoSuite) TestOps(c *C) {
-
-	ops := []string{"js:=asdf"}
-	err := checkOps(ops)
-	c.Assert(err, ErrorMatches, "javascript syntax error .*")
-
-	ops = []string{"js:vals[0]"}
-	err = checkOps(ops)
-	c.Assert(err, IsNil)
-}
+*/
