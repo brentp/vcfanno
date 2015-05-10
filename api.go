@@ -175,24 +175,30 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 // Output into the info field is prefixed with "left_" or "right_".
 func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 	// TODO: fix this. need to convert to variant here and keep sending the same variant to AnnotateOne
-	if ends == BOTH {
-		if e := a.AnnotateOne(r); e != nil {
-			return e
-		}
-		if e := a.AnnotateEnds(r, LEFT); e != nil {
-			return e
-		}
-		if e := a.AnnotateEnds(r, RIGHT); e != nil {
-			return e
-		}
-	}
-	if ends == INTERVAL {
-		return a.AnnotateOne(r)
-	}
 	var v *irelate.Variant
 	var ok bool
 	if v, ok = r.(*irelate.Variant); !ok {
 		v = vFromB(r.(*irelate.Interval))
+	}
+	if ends == BOTH {
+		if e := a.AnnotateOne(v, false); e != nil {
+			return e
+		}
+		if e := a.AnnotateEnds(v, LEFT); e != nil {
+			return e
+		}
+		if e := a.AnnotateEnds(v, RIGHT); e != nil {
+			return e
+		}
+		// it was a Bed, we add the info to its fields
+		if !ok {
+			b := r.(*irelate.Interval)
+			b.Fields = append(b.Fields, v.Info.String())
+		}
+		return nil
+	}
+	if ends == INTERVAL {
+		return a.AnnotateOne(r, a.Strict)
 	}
 	// hack:
 	// modify the variant in-place to create a 1-base variant at the end of
@@ -208,7 +214,7 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 			v.Pos = uint64(end)
 		}
 
-		a.AnnotateOne(v, ends)
+		a.AnnotateOne(v, false, ends)
 		v.Pos, v.Ref, v.Alt = pos, ref, alt
 		if has_svlen {
 			v.Info["SVLEN"] = svlen
@@ -222,7 +228,7 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 // AnnotateOne annotates a relatable with the Sources in an Annotator.
 // In most cases, no need to specify end (it should always be a single
 // arugment indicting LEFT, RIGHT, or INTERVAL, used from AnnotateEnds
-func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) error {
+func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string) error {
 	if len(r.Related()) == 0 {
 		return nil
 	}
@@ -255,11 +261,10 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) error {
 		if len(related) == 0 {
 			continue
 		}
-		vals := collect(v, related, &src, a.Strict)
+		vals := collect(v, related, &src, strict)
 		if len(vals) == 0 {
 			continue
 		}
-		log.Println(prefix, end, r.Start(), r.End(), r.Related()[0])
 		if src.IsJs {
 			v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Op, vals))
 		} else {

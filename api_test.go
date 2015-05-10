@@ -145,7 +145,7 @@ func (s *APISuite) TestCollect(c *C) {
 }
 
 func (s *APISuite) TestAnnotateOne(c *C) {
-	s.annotator.AnnotateOne(s.v1)
+	s.annotator.AnnotateOne(s.v1, s.annotator.Strict)
 	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111")
 }
 
@@ -252,8 +252,54 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 		IsJs:   false,
 	}
 	b1.AddRelated(b2)
+	b2.AddRelated(b1)
 
 	a := NewAnnotator([]Source{bsrc}, "", true, false)
 	a.AnnotateEnds(b1, BOTH)
 	c.Assert(b1.Fields[4], Equals, "some_mean=9.11;left_some_mean=9.11")
+
+	b1.SetSource(1)
+	b2.SetSource(0)
+	a.AnnotateEnds(b2, BOTH)
+	c.Assert(b2.Fields[4], Equals, "some_mean=99.44;right_some_mean=99.44")
+
+	b3 := makeBed("chr1", 50, 66, 99.44)
+	b3.SetSource(0)
+	b1.SetSource(1)
+	b2.SetSource(1)
+	b3.AddRelated(b1)
+
+	a.AnnotateEnds(b3, INTERVAL)
+	c.Assert(b3.Fields[4], Equals, "some_mean=99.44")
+}
+
+func (s *APISuite) TestIdAnno(c *C) {
+	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", make(map[string]interface{}))
+	vsrc := Source{
+		File:   "some.vcf",
+		Op:     "first",
+		Column: -1,
+		Name:   "o_id",
+		Field:  "ID",
+		Index:  0,
+		IsJs:   false,
+	}
+	v.AddRelated(v)
+	v.SetSource(1)
+
+	a := NewAnnotator([]Source{vsrc}, "", true, true)
+
+	a.AnnotateOne(v, a.Strict)
+	c.Assert(v.Info.String(), Equals, "o_id=rs")
+
+	b := makeBed("chr1", 50, 66, 99.44)
+	b.AddRelated(v)
+	a.AnnotateOne(b, false)
+	c.Assert(b.Fields[4], Equals, "o_id=rs")
+
+	b2 := makeBed("chr1", 50, 66, 99.44)
+	b2.AddRelated(v)
+	a.AnnotateEnds(b2, BOTH)
+	// variant only overlaps in middle.
+	c.Assert(b2.Fields[4], Equals, "o_id=rs")
 }
