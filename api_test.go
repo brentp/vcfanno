@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/brentp/irelate"
 	"github.com/brentp/vcfgo"
 	. "gopkg.in/check.v1"
@@ -185,3 +187,73 @@ makeBed(chrom string, start int, end int, val float32) *irelate.Interval
 makeVariant(chrom string, ref string, alt []string, name string, info map[string]interface{})
 
 */
+
+func makeBed(chrom string, start int, end int, val float32) *irelate.Interval {
+	i := irelate.IntervalFromBedLine(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val)).(*irelate.Interval)
+	return i
+}
+
+func makeVariant(chrom string, pos int, ref string, alt []string, name string, info map[string]interface{}) *irelate.Variant {
+
+	if _, ok := info["__order"]; !ok {
+		info["__order"] = make([]string, 0)
+	}
+	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Ref: ref, Alt: alt,
+		Id: name, Info: info}
+	return irelate.NewVariant(&v, 0, make([]irelate.Relatable, 0))
+}
+
+func (s *APISuite) TestEndsDiff(c *C) {
+
+	b1 := makeBed("chr1", 60, 66, 99.44)
+	b1.SetSource(1)
+	b2 := makeBed("chr1", 45, 59, 9.11)
+	b2.SetSource(1)
+
+	bsrc := Source{
+		File:   "some.bed",
+		Op:     "mean",
+		Column: 4,
+		Name:   "some_mean",
+		Field:  "",
+		Index:  0,
+		IsJs:   false,
+	}
+
+	a := NewAnnotator([]Source{bsrc}, "", true, true)
+
+	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", make(map[string]interface{}))
+	v.SetSource(0)
+
+	v.AddRelated(b1)
+	v.AddRelated(b2)
+
+	a.AnnotateEnds(v, BOTH)
+
+	// the 2 b intervals only overlap in the middle, so we see their respective values for the left
+	// and right and their mean for the middle.
+	c.Assert(v.Info.String(), Equals, "some_mean=54.275;left_some_mean=9.11;right_some_mean=99.44")
+}
+
+func (s *APISuite) TestEndsBedQuery(c *C) {
+
+	b1 := makeBed("chr1", 50, 66, 99.44)
+	b1.SetSource(0)
+	b2 := makeBed("chr1", 45, 59, 9.11)
+	b2.SetSource(1)
+
+	bsrc := Source{
+		File:   "some.bed",
+		Op:     "mean",
+		Column: 4,
+		Name:   "some_mean",
+		Field:  "",
+		Index:  0,
+		IsJs:   false,
+	}
+	b1.AddRelated(b2)
+
+	a := NewAnnotator([]Source{bsrc}, "", true, false)
+	a.AnnotateEnds(b1, BOTH)
+	c.Assert(b1.Fields[4], Equals, "some_mean=9.11;left_some_mean=9.11")
+}

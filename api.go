@@ -65,6 +65,11 @@ func (a *Annotator) JsOp(v *vcfgo.Variant, js string, vals []interface{}) interf
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.
 func NewAnnotator(sources []Source, js string, ends bool, strict bool) *Annotator {
+	for _, s := range sources {
+		if e := checkSource(s); e != nil {
+			log.Fatal(e)
+		}
+	}
 	a := Annotator{
 		vm:      otto.New(),
 		Sources: sources,
@@ -78,6 +83,13 @@ func NewAnnotator(sources []Source, js string, ends bool, strict bool) *Annotato
 		}
 	}
 	return &a
+}
+
+func checkSource(s Source) error {
+	if s.Name == "" {
+		return fmt.Errorf("no name specified for %v", s)
+	}
+	return nil
 }
 
 // partition separates the relateds for a relatable so it reduces running over the data multiple times for each file.
@@ -153,48 +165,66 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 	m := make(vcfgo.InfoMap)
 	m["__order"] = []string{}
 	m["SVLEN"] = int(b.End()-b.Start()) - 1
-	var rels []irelate.Relatable
 	v := irelate.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
-		Ref: "A", Alt: []string{"<DEL>"}, Info: m}, 0, rels)
+		Ref: "A", Alt: []string{"<DEL>"}, Info: m}, 0, b.Related())
 	return v
 }
 
 // AnnotatedEnds makes a new 1-base interval for the left and one for the right end
 // so that it can use the same machinery to annotate the ends and the entire interval.
 // Output into the info field is prefixed with "left_" or "right_".
-func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) {
+func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
+	// TODO: fix this. need to convert to variant here and keep sending the same variant to AnnotateOne
 	if ends == BOTH {
-		a.AnnotateOne(r)
-		a.AnnotateEnds(r, LEFT)
-		a.AnnotateEnds(r, RIGHT)
-		return
+		if e := a.AnnotateOne(r); e != nil {
+			return e
+		}
+		if e := a.AnnotateEnds(r, LEFT); e != nil {
+			return e
+		}
+		if e := a.AnnotateEnds(r, RIGHT); e != nil {
+			return e
+		}
 	}
 	if ends == INTERVAL {
-		a.AnnotateOne(r)
-		return
+		return a.AnnotateOne(r)
 	}
-	v := r.(*irelate.Variant)
+	var v *irelate.Variant
+	var ok bool
+	if v, ok = r.(*irelate.Variant); !ok {
+		v = vFromB(r.(*irelate.Interval))
+	}
 	// hack:
 	// modify the variant in-place to create a 1-base variant at the end of
 	// the interval. annotate that end and then change the position back to what it was.
 	if ends == LEFT || ends == RIGHT {
-		pos, ref, alt := v.Pos, v.Ref, v.Alt
+		// save end here to get the right end.
+		pos, ref, alt, end := v.Pos, v.Ref, v.Alt, v.End()
+		svlen, has_svlen := v.Info["SVLEN"]
+		v.Info["SVLEN"] = 1
 		// the end is determined by the alt, so we have to make sure it has length 1.
 		v.Ref, v.Alt = "A", []string{"T"}
 		if ends == RIGHT {
-			v.Pos = uint64(v.End())
+			v.Pos = uint64(end)
 		}
+
 		a.AnnotateOne(v, ends)
 		v.Pos, v.Ref, v.Alt = pos, ref, alt
+		if has_svlen {
+			v.Info["SVLEN"] = svlen
+		} else {
+			delete(v.Info, "SVLEN")
+		}
 	}
+	return nil
 }
 
 // AnnotateOne annotates a relatable with the Sources in an Annotator.
 // In most cases, no need to specify end (it should always be a single
 // arugment indicting LEFT, RIGHT, or INTERVAL, used from AnnotateEnds
-func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) {
+func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) error {
 	if len(r.Related()) == 0 {
-		return
+		return nil
 	}
 	prefix := ""
 	if len(end) > 0 {
@@ -220,6 +250,7 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) {
 		if len(parted) <= src.Index {
 			continue
 		}
+
 		related := parted[src.Index]
 		if len(related) == 0 {
 			continue
@@ -228,6 +259,7 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) {
 		if len(vals) == 0 {
 			continue
 		}
+		log.Println(prefix, end, r.Start(), r.End(), r.Related()[0])
 		if src.IsJs {
 			v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Op, vals))
 		} else {
@@ -238,6 +270,7 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, end ...string) {
 		delete(v.Info, "SVLEN")
 		b.Fields = append(b.Fields, v.Info.String())
 	}
+	return nil
 }
 
 // UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
