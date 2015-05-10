@@ -174,12 +174,12 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 // so that it can use the same machinery to annotate the ends and the entire interval.
 // Output into the info field is prefixed with "left_" or "right_".
 func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
-	// TODO: fix this. need to convert to variant here and keep sending the same variant to AnnotateOne
 	var v *irelate.Variant
 	var ok bool
 	if v, ok = r.(*irelate.Variant); !ok {
 		v = vFromB(r.(*irelate.Interval))
 	}
+	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
 		if e := a.AnnotateOne(v, false); e != nil {
 			return e

@@ -179,14 +179,7 @@ func (s *APISuite) TestVFromB(c *C) {
 	c.Assert(len(v.Related()), Equals, 0)
 }
 
-// TODO: do test with ends and long interval to make sure everythign looks ok.
-// TOOD: make functions
-/*
-
-makeBed(chrom string, start int, end int, val float32) *irelate.Interval
-makeVariant(chrom string, ref string, alt []string, name string, info map[string]interface{})
-
-*/
+// utility functions.
 
 func makeBed(chrom string, start int, end int, val float32) *irelate.Interval {
 	i := irelate.IntervalFromBedLine(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val)).(*irelate.Interval)
