@@ -1,12 +1,15 @@
-package main
+package api
 
 import (
 	"fmt"
+	"testing"
 
 	"github.com/brentp/irelate"
 	"github.com/brentp/vcfgo"
 	. "gopkg.in/check.v1"
 )
+
+func Test(t *testing.T) { TestingT(t) }
 
 type APISuite struct {
 	v1 *irelate.Variant

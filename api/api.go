@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"bufio"
@@ -12,6 +12,11 @@ import (
 	"github.com/brentp/vcfgo"
 	"github.com/robertkrimen/otto"
 )
+
+const LEFT = "left_"
+const RIGHT = "right_"
+const BOTH = "both_"
+const INTERVAL = ""
 
 // Source holds the information for a single annotation to be added to a query.
 // Many sources can come from the same file, but each must have their own Source.
@@ -342,8 +347,8 @@ func (a *Annotator) setupStreams(queryFile string, out io.Writer) ([]irelate.Rel
 	return streams, isBed, out
 }
 
-// Annotate annotates a file with the sources in the Annotator.
-func (a *Annotator) Annotate(queryFile string, out io.Writer) {
+// Annotate annotates a file with the sources in the Annotator. Returns the number of annotated variants.
+func (a *Annotator) Annotate(queryFile string, out io.Writer) int {
 
 	streams, isBed, out := a.setupStreams(queryFile, out)
 	_ = isBed
@@ -353,8 +358,11 @@ func (a *Annotator) Annotate(queryFile string, out io.Writer) {
 	}
 	//log.Printf("annotating from %d streams\n", len(streams)-1)
 
+	j := 0
 	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
 		a.AnnotateEnds(interval, ends)
 		fmt.Fprintln(out, interval)
+		j++
 	}
+	return j
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/brentp/irelate"
+	"github.com/brentp/vcfgo"
 
 	. "gopkg.in/check.v1"
 )
@@ -15,6 +16,20 @@ type AnnoSuite struct {
 	v2 *irelate.Variant
 	v3 *irelate.Variant
 	b  *irelate.Interval
+}
+
+var v1 = &vcfgo.Variant{
+	Chromosome: "chr1",
+	Pos:        uint64(234),
+	Id:         "id",
+	Ref:        "A",
+	Alt:        []string{"T", "G"},
+	Quality:    float32(555.5),
+	Filter:     "PASS",
+	Info: map[string]interface{}{
+		"DP":      uint32(35),
+		"__order": []string{"DP"},
+	},
 }
 
 var _ = Suite(&AnnoSuite{})

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
+	"github.com/brentp/vcfanno/api"
 	"github.com/brentp/xopen"
 )
 
@@ -20,7 +21,7 @@ func BenchmarkAnno(b *testing.B) {
 	jbytes, _ := ioutil.ReadAll(Js)
 	js_string := string(jbytes)
 
-	a := NewAnnotator(configs.Sources(), js_string, false, true)
+	a := api.NewAnnotator(configs.Sources(), js_string, false, true)
 	for n := 0; n < b.N; n++ {
 		a.Annotate("example/query.vcf", ioutil.Discard)
 		out.Flush()

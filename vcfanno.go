@@ -1,3 +1,4 @@
+// vcfanno is a command-line application and an api for annotating intervals (bed or vcf).
 package main
 
 import (
@@ -7,8 +8,10 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
+	. "github.com/brentp/vcfanno/api"
 	"github.com/brentp/xopen"
 )
 
@@ -22,7 +25,7 @@ type annotation struct {
 	Names []string
 }
 
-// turn an annotation into a slice of Sources. Pass in the index of the file.
+// flatten turns an annotation into a slice of Sources. Pass in the index of the file.
 // having it as a Source makes the code cleaner, but it's simpler for the user to
 // specify multiple ops per file in the toml config.
 func (a *annotation) flatten(index int) []Source {
@@ -82,11 +85,6 @@ func (c Config) Sources() []Source {
 	}
 	return s
 }
-
-const LEFT = "left_"
-const RIGHT = "right_"
-const BOTH = "both_"
-const INTERVAL = ""
 
 func checkAnno(a *annotation) error {
 	if strings.HasSuffix(a.File, ".bam") {
@@ -173,5 +171,12 @@ func main() {
 	}
 	var a = NewAnnotator(sources, js_string, *ends, strict)
 	out := os.Stdout
-	a.Annotate(inFiles[1], out)
+	start := time.Now()
+	n := a.Annotate(inFiles[1], out)
+	dur := time.Since(start)
+	duri, duru := dur.Seconds(), "second"
+	if duri > float64(600) {
+		duri, duru = dur.Minutes(), "minute"
+	}
+	log.Printf("annotated %d variants in %.2f %ss (%.1f / %s)", n, duri, duru, float64(n)/duri, duru)
 }
