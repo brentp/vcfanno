@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
+	"github.com/brentp/xopen"
 )
 
 func BenchmarkAnno(b *testing.B) {
@@ -15,7 +16,11 @@ func BenchmarkAnno(b *testing.B) {
 	}
 
 	out := bufio.NewWriter(ioutil.Discard)
-	a := NewAnnotator(configs.Sources(), configs.Js, false, true)
+	Js, _ := xopen.Ropen("example/custom.js")
+	jbytes, _ := ioutil.ReadAll(Js)
+	js_string := string(jbytes)
+
+	a := NewAnnotator(configs.Sources(), js_string, false, true)
 	for n := 0; n < b.N; n++ {
 		a.Annotate("example/query.vcf", ioutil.Discard)
 		out.Flush()

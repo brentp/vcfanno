@@ -3,11 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/brentp/xopen"
 )
 
 // annotation holds information about the annotation files parsed from the toml config.
@@ -24,6 +26,29 @@ type annotation struct {
 // having it as a Source makes the code cleaner, but it's simpler for the user to
 // specify multiple ops per file in the toml config.
 func (a *annotation) flatten(index int) []Source {
+	if len(a.Ops) == 0 {
+		if !strings.HasSuffix(a.File, ".bam") {
+			log.Fatalf("no ops specified for %s\n", a.File)
+		}
+		// auto-fill bam to count.
+		a.Ops = make([]string, len(a.Names))
+		for i := range a.Names {
+			a.Ops[i] = "count"
+		}
+	}
+	if len(a.Columns) == 0 && len(a.Fields) == 0 {
+		if !strings.HasSuffix(a.File, ".bam") {
+			log.Fatalf("no columns or fields specified for %s\n", a.File)
+		}
+		// auto-fill bam to count.
+		if len(a.Fields) == 0 {
+			a.Columns = make([]int, len(a.Names))
+			for i := range a.Names {
+				a.Columns[i] = 1
+			}
+		}
+	}
+
 	n := len(a.Ops)
 	sources := make([]Source, n)
 	for i := 0; i < n; i++ {
@@ -48,7 +73,6 @@ func (a *annotation) flatten(index int) []Source {
 
 type Config struct {
 	Annotation []annotation
-	Js         string // custom js funcs to pre-populate otto.
 }
 
 func (c Config) Sources() []Source {
@@ -108,6 +132,7 @@ func main() {
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
 	notstrict := flag.Bool("permissive-overlap", false, "allow variants to be annotated by another even if the don't"+
 		"share the same ref and alt alleles. Default is to require exact match between variants.")
+	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
 	flag.Parse()
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
@@ -130,8 +155,23 @@ func main() {
 		}
 	}
 	sources := config.Sources()
+	log.Printf("found %d sources from %d files\n", len(sources), len(config.Annotation))
 	strict := !*notstrict
-	var a = NewAnnotator(sources, config.Js, *ends, strict)
+	var js_string string
+	if *js != "" {
+		js_reader, err := xopen.Ropen(*js)
+		if err != nil {
+			log.Fatal(err)
+		}
+		js_bytes, err := ioutil.ReadAll(js_reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		js_string = string(js_bytes)
+	} else {
+		js_string = ""
+	}
+	var a = NewAnnotator(sources, js_string, *ends, strict)
 	out := os.Stdout
 	a.Annotate(inFiles[1], out)
 }

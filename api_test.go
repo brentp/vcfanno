@@ -296,3 +296,5 @@ func (s *APISuite) TestIdAnno(c *C) {
 	// variant only overlaps in middle.
 	c.Assert(b2.Fields[4], Equals, "o_id=rs")
 }
+
+// TODO: test with bam.
