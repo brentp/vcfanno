@@ -351,7 +351,7 @@ func (a *Annotator) Annotate(queryFile string, out io.Writer) {
 	if a.Ends {
 		ends = BOTH
 	}
-	log.Printf("annotating from %d streams\n", len(streams)-1)
+	//log.Printf("annotating from %d streams\n", len(streams)-1)
 
 	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
 		a.AnnotateEnds(interval, ends)

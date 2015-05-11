@@ -197,4 +197,5 @@ for more examples.
 
 <!--
  goxc -include example/,README.md -d /tmp/vcfanno/ -pv=0.0.1 -bc='linux,darwin,windows,!arm'
+ go test -cpu=1,2,3,4 -bench . -run NOTHING -benchtime 3s -cpuprofile cpu.prof
 -->
