@@ -19,7 +19,7 @@ We are actively developing `vcfanno` and appreciate feedback and bug reports.
 Usage
 =====
 
-After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.2) (see section below) usage looks like:
+After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.3) (see section below) usage looks like:
 
 ```Shell
   ./vcfanno -js example/custom.js example/conf.toml example/query.vcf
@@ -57,7 +57,7 @@ Example
 -------
 
 the example directory contains the data and conf for a full example. To run, either download
-the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.2) for your system build with:
+the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.3) for your system build with:
 
 ```Shell
 go get
@@ -68,7 +68,7 @@ from this directory.
 Then, you can annotate with:
 
 ```Shell
-GOMAXPROCS=4 ./vcfanno example/conf.toml example/query.vcf > annotated.vcf
+GOMAXPROCS=4 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf > annotated.vcf
 ```
 
 An example INFO field row before annotation (pos 98683):
@@ -105,7 +105,7 @@ Please open an issue, or use the javascript if your desired operation is not sup
 Binaries
 ========
 
-binary executables are available [here](https://github.com/brentp/vcfanno/releases/tag/v0.0.2)
+binary executables are available [here](https://github.com/brentp/vcfanno/releases/tag/v0.0.3)
 for *linux*, *mac* (darwin), and *windows* for *32* and *64* bit platforms.
 
 Preprocessing
