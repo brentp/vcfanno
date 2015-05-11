@@ -2,18 +2,14 @@ vcfanno
 =======
 
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
-[![Coverage Status](https://coveralls.io/repos/brentp/vcfanno/badge.svg)](https://coveralls.io/r/brentp/vcfanno)
-
-
 
 vcfanno annotates a VCF with any number of *sorted* input BED, BAM, and VCF files.
 It does this by finding overlaps as it streams over the data and applying
-user-defined operations on the overlapping fields.
+user-defined operations on the overlapping annotations.
 
 For VCF, values are pulled by name from the INFO field.
 For BED, values are pulled from (1-based) column number.
 For BAM, only depth (`count`) is currently supported.
-
 
 `vcfanno` is written in [go](http://golang.org)
 It can annotate ~ 5,000 variants per second with 5 annotations from 3 files on a modest laptop.
@@ -26,10 +22,10 @@ Usage
 After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.2) (see section below) usage looks like:
 
 ```Shell
-  ./vcfanno example/conf.toml example/query.vcf
+  ./vcfanno -js example/custom.js example/conf.toml example/query.vcf
 ```
 
-Where config.toml looks like:
+Where conf.toml looks like:
 
 ```
 [[annotation]]
@@ -93,7 +89,7 @@ in the query VCF. However, it is possible that there will be multiple annotation
 from a single annotation file--in this case, the op determines how the many values
 are `reduced`. Valid operations are:
 
- + js:$javascript // see below for more details
+ + js:$javascript // see section below for more details
  + mean
  + max
  + min
@@ -105,35 +101,6 @@ are `reduced`. Valid operations are:
 
 Please open an issue, or use the javascript if your desired operation is not supported.
 
-custom ops (javascript)
------------------------
-
-we embed the javascript engine [otto](https://github.com/robertkrimen/otto) so that it's 
-possible to create a custom op if it is not provided. For example if the users wants to
-output the sum of the values, then the op would be:
-
-    "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]};sum"
-
-where the last value (in this case sum) is returned as the annotation value. It is encouraged
-to instead define javascript functions in a `js` tag in the config file, e.g. the above sum
-would be:
-
-	js="""
-	function sum(vals) {
-		isum=0
-		for(i=0;i<vals.length;i++){
-			isum += vals[i]
-		}
-		return isum
-	}
-	"""
-
-(note the triple quotes). Then it would be used in an op as:
-
-	"js:sum(vals)"
-
-See [examples/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
-for more examples.
 
 Binaries
 ========
@@ -159,9 +126,10 @@ This, and the associated go libraries ([vcfgo](https://github.com/brentp/vcfgo),
 [irelate](https://github.com/brentp/irelate), [xopen](https://github.com/brentp/xopen)) are
 under active development. The following are on our radar:
 
+- [ ] allow annotating with bam fields, e.g. QUAL
 - [ ] decompose, normalize, and get allelic primitives for variants on the fly
       (we have code to do this, it just needs to be integrated)
-- [x] improve test coverage for vcfanno
+- [x] improve test coverage for vcfanno (still need more tests for bam)
 - [x] embed otto js engine to allow custom ops.
 - [x] support for annotating BED files.
 
@@ -191,10 +159,43 @@ the same position, the same reference allele and at least one alternate allele (
 variants, not for BED/BAM annotations). If this flag is specified, only overlap testing is used and shared
 REF/ALT are not required.
 
-```Shell
-vcfanno -permissive-overlap example/conf.toml example/query.vcf
+-js
+---
+
+custom in ops (javascript). For use when the built-in `ops` don't supply the needed reduction.
+
+we embed the javascript engine [otto](https://github.com/robertkrimen/otto) so that it's 
+possible to create a custom op if it is not provided. For example if the users wants to
+
+    "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]};sum"
+
+where the last value (in this case sum) is returned as the annotation value. It is encouraged
+to instead define javascript functions in separate `.js` file and point to it when calling
+`vcfanno` using the `-js` flag. So, in an external file, "some.js", instead put:
+
+```javascript
+function sum(vals) {
+ 	s = 0;
+	for(i=0; i<vals.length; i++){
+		s+=vals[i]
+	}
+	return s
+}
 ```
+
+And then the above custom op would be: "js:sum(vals)". (note that there's a sum op provided
+by `vcfanno` which will be faster).
+
+The variables `vals`, `chrom`, `start`, `end` from the current variant will all be available
+in the javascript code.
+
+
+See [example/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
+and [example/custom.js](https://github.com/brentp/vcfanno/blob/master/example/custom.js)
+for more examples.
+
 
 <!--
  goxc -include example/,README.md -d /tmp/vcfanno/ -pv=0.0.1 -bc='linux,darwin,windows,!arm'
+ go test -cpu=1,2,3,4 -bench . -run NOTHING -benchtime 3s -cpuprofile cpu.prof
 -->

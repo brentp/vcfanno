@@ -1,22 +1,22 @@
+// vcfanno is a command-line application and an api for annotating intervals (bed or vcf).
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/brentp/irelate"
-	"github.com/brentp/vcfgo"
-	"github.com/robertkrimen/otto"
+	. "github.com/brentp/vcfanno/api"
+	"github.com/brentp/xopen"
 )
 
-// anno holds information about the annotation files parsed from the toml config.
-type anno struct {
+// annotation holds information about the annotation files parsed from the toml config.
+type annotation struct {
 	File    string
 	Ops     []string
 	Fields  []string
@@ -25,246 +25,80 @@ type anno struct {
 	Names []string
 }
 
-func (a *anno) isNumber(idx int) bool {
-	return a.Ops[idx] == "mean" || a.Ops[idx] == "max" || a.Ops[idx] == "min" || a.Ops[idx] == "count"
+// flatten turns an annotation into a slice of Sources. Pass in the index of the file.
+// having it as a Source makes the code cleaner, but it's simpler for the user to
+// specify multiple ops per file in the toml config.
+func (a *annotation) flatten(index int) []Source {
+	if len(a.Ops) == 0 {
+		if !strings.HasSuffix(a.File, ".bam") {
+			log.Fatalf("no ops specified for %s\n", a.File)
+		}
+		// auto-fill bam to count.
+		a.Ops = make([]string, len(a.Names))
+		for i := range a.Names {
+			a.Ops[i] = "count"
+		}
+	}
+	if len(a.Columns) == 0 && len(a.Fields) == 0 {
+		if !strings.HasSuffix(a.File, ".bam") {
+			log.Fatalf("no columns or fields specified for %s\n", a.File)
+		}
+		// auto-fill bam to count.
+		if len(a.Fields) == 0 {
+			a.Columns = make([]int, len(a.Names))
+			for i := range a.Names {
+				a.Columns[i] = 1
+			}
+		}
+	}
+
+	n := len(a.Ops)
+	sources := make([]Source, n)
+	for i := 0; i < n; i++ {
+		isjs := strings.HasPrefix(a.Ops[i], "js:")
+		op := a.Ops[i]
+		if isjs {
+			op = op[3:]
+		}
+		if len(a.Names) == 0 {
+			a.Names = a.Fields
+		}
+		sources[i] = Source{File: a.File, Op: op, Name: a.Names[i], Index: index, IsJs: isjs}
+		if nil != a.Fields {
+			sources[i].Field = a.Fields[i]
+			sources[i].Column = -1
+		} else {
+			sources[i].Column = a.Columns[i]
+		}
+	}
+	return sources
 }
 
-type Annotations struct {
-	Annotation []anno
-	Js         string // custom js funcs to pre-populate otto.
+type Config struct {
+	Annotation []annotation
 }
 
-// can get a bam without an op. default it to 'count'
-func fixBam(as []anno, j int) anno {
-	a := as[j]
+func (c Config) Sources() []Source {
+	s := make([]Source, 0)
+	for i, a := range c.Annotation {
+		s = append(s, a.flatten(i)...)
+	}
+	return s
+}
+
+func checkAnno(a *annotation) error {
 	if strings.HasSuffix(a.File, ".bam") {
-		as[j].Columns = []int{0}
-		as[j].Ops = []string{"count"}
-	}
-	return as[j]
-}
-
-// updateHeader adds a new info item to the header for each new annotation
-func updateHeader(files []anno, j int, query *vcfgo.Reader, ends bool) {
-	cfg := files[j]
-	for i, name := range cfg.Names {
-		ntype := "Character"
-		if strings.HasSuffix(cfg.File, ".bam") || cfg.isNumber(i) {
-			ntype = "Float"
+		if nil == a.Columns {
+			a.Columns = []int{1}
 		}
-		var desc string
-		// write the VCF header.
-		if strings.HasSuffix(cfg.File, ".bam") {
-			cfg = fixBam(files, j)
-			desc = fmt.Sprintf("calculated by coverage from %s", cfg.File)
-		} else if cfg.Fields != nil {
-			desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", cfg.Ops[i], cfg.Fields[i], cfg.File)
-		} else {
-			desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", cfg.Ops[i], cfg.Columns[i], cfg.File)
-		}
-		query.Header.Infos[name] = &vcfgo.Info{Id: name, Number: "1", Type: ntype, Description: desc}
-		if ends {
-			for _, end := range []string{LEFT, RIGHT} {
-				query.Header.Infos[end+name] = &vcfgo.Info{Id: end + name, Number: "1", Type: ntype,
-					Description: fmt.Sprintf("%s at %s end", desc, strings.TrimSuffix(end, "_"))}
-			}
-		}
-
-	}
-}
-
-// if the annotation file is a bam, they aren't require to specify op or field, so we artificially
-// set it here. this is only called if query is a bed file.
-func fixBams(files []anno, j int) {
-	cfg := files[j]
-	if strings.HasSuffix(cfg.File, ".bam") {
-		cfg = fixBam(files, j)
-	}
-}
-
-// Anno takes a query vcf and a set of annotations, and writes to outw.
-// If ends is specified, then the query is annotated for start, end and the interval itself.
-// if strict is true a variant is only annotated with another variant if they share the same
-// position, the same ref allele, and at least 1 alt allele.
-func Anno(queryFile string, configs Annotations, outw io.Writer, ends bool, strict bool) {
-
-	files := configs.Annotation
-
-	_, err := vm.Run(configs.Js)
-	if err != nil {
-		log.Fatalf("error parsing custom js:%s", err)
-	}
-
-	isBed := false
-	streams := make([]irelate.RelatableChannel, 0)
-	var query *vcfgo.Reader
-	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
-		isBed = true
-		streams = append(streams, irelate.Streamer(queryFile))
-	} else {
-		query = irelate.Vopen(queryFile)
-		streams = append(streams, irelate.StreamVCF(query))
-	}
-
-	for j, cfg := range files {
-		if cfg.Names == nil {
-			if cfg.Fields == nil {
-				log.Fatal("must specify either fields or names")
-			}
-			cfg.Names = cfg.Fields
-			files[j].Names = cfg.Fields
-		}
-		if !isBed {
-			updateHeader(files, j, query, ends)
-		} else {
-			fixBams(files, j)
-		}
-		streams = append(streams, irelate.Streamer(cfg.File))
-	}
-	var out io.Writer
-	if !isBed {
-		out, err = vcfgo.NewWriter(outw, query.Header)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		out = bufio.NewWriter(outw)
-	}
-
-	annotateEnds := INTERVAL
-	if ends {
-		annotateEnds = BOTH
-	}
-	// the *Prefix functions let 'chr1' == '1'
-	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
-		if variant, ok := interval.(*irelate.Variant); ok {
-			if len(variant.Related()) > 0 {
-				sep := Partition(variant, len(streams)-1)
-				updateInfo(variant, sep, files, annotateEnds, strict)
-
-			}
-			fmt.Fprintln(out, variant)
-		} else {
-			bed, ok := interval.(*irelate.Interval)
-			if !ok {
-				log.Fatalf("not an interval or a variant: %v", interval)
-			}
-			if len(interval.Related()) > 0 {
-				sep := Partition(bed, len(streams)-1)
-				updateBed(bed, sep, files, annotateEnds)
-			}
-			fmt.Fprintln(out, bed)
-
+		if nil == a.Ops {
+			a.Ops = []string{"count"}
 		}
 	}
-}
-
-const LEFT = "left_"
-const RIGHT = "right_"
-const BOTH = "both_"
-const INTERVAL = ""
-
-func updateInfo(iv *irelate.Variant, sep [][]irelate.Relatable, files []anno, ends string, strict bool) {
-	for i, cfg := range files {
-
-		v := iv.Variant
-		var valsByFld [][]interface{}
-		if ends == BOTH {
-			// we want to annotate ends of the interval independently.
-			// note that we automatically set strict to false.
-			updateInfo(iv, sep, files, INTERVAL, false)
-			// only do this if the variant is longer than 1 base.
-			if iv.End()-iv.Start() > 1 {
-				updateInfo(iv, sep, files, LEFT, false)
-				updateInfo(iv, sep, files, RIGHT, false)
-			}
-			return
-		} else if ends == INTERVAL {
-			valsByFld = Collect(iv, sep[i], cfg, strict)
-		} else if ends == LEFT {
-			// hack. We know end() is calculated as length of ref. so we set it to have len 1 temporarily.
-			// and we use the variant itself so the info is updated in-place.
-			ref := v.Ref
-			alt := v.Alt
-			v.Ref = "A"
-			v.Alt = []string{"T"}
-			//log.Println("left:", v.Start(), v.End())
-			valsByFld = Collect(iv, sep[i], cfg, strict)
-			v.Ref, v.Alt = ref, alt
-		} else if ends == RIGHT {
-			// artificially set end to be the right end of the interval.
-			pos, ref, alt := v.Pos, v.Ref, v.Alt
-			v.Pos = uint64(v.End())
-			v.Ref, v.Alt = "A", []string{"T"}
-			//log.Println("right:", v.Start(), v.End())
-			valsByFld = Collect(iv, sep[i], cfg, strict)
-			v.Pos, v.Ref, v.Alt = pos, ref, alt
-
-		}
-
-		for i, vals := range valsByFld {
-			// currently we don't do anything without overlaps.
-			if len(vals) == 0 {
-				continue
-			}
-			if strings.HasPrefix(cfg.Ops[i], "js:") {
-				// TODO when we see js: in the input, we can just make a custom reducer.
-				js := cfg.Ops[i]
-				v.Info.Add(ends+cfg.Names[i], otto_run(v, js, vals))
-			} else {
-				v.Info.Add(ends+cfg.Names[i], Reducers[cfg.Ops[i]](vals))
-			}
-		}
-	}
-}
-
-var vm = otto.New()
-
-func otto_run(v *vcfgo.Variant, js string, vals []interface{}) interface{} {
-	vm.Set("vals", vals)
-	vm.Set("start", v.Start())
-	vm.Set("end", v.End())
-	vm.Set("chrom", v.Chrom())
-	//log.Println(js)
-	//log.Println(v.Chrom(), v.Start(), v.End(), vals)
-	value, err := vm.Run(js[3:])
-	if err != nil {
-		log.Println("js-error:", err)
-	}
-	val, err := value.ToString()
-	if err != nil {
-		log.Println("js-error:", err)
-		val = fmt.Sprintf("error:%s", err)
-	}
-	return val
-}
-
-func updateBed(bed *irelate.Interval, sep [][]irelate.Relatable, files []anno, ends string) {
-	// create irelate.Variant with start, end equal to bed
-	// then add INFO to fields in bed.
-	m := make(vcfgo.InfoMap)
-	m["__order"] = []string{}
-	m["SVLEN"] = int(bed.End()-bed.Start()) - 1
-	v := &vcfgo.Variant{Chromosome: bed.Chrom(), Pos: uint64(bed.Start() + 1), Ref: "A",
-		Alt: []string{"<DEL>"}, Info: m}
-	if v.End() != bed.End() {
-		log.Fatalf("ends: %d and %d should be the same", v.End(), bed.End())
-	}
-	iv := irelate.NewVariant(v, bed.Source(), bed.Related())
-	updateInfo(iv, sep, files, ends, false)
-	delete(m, "SVLEN")
-	bed.Fields = append(bed.Fields, iv.Info.String())
-}
-
-func checkAnno(a *anno) error {
 	if a.Fields == nil {
 		// Columns: BED/BAM
 		if a.Columns == nil {
-			if strings.HasSuffix(a.File, ".bam") {
-				a.Columns = make([]int, len(a.Ops))
-			} else {
-				return fmt.Errorf("must specify either 'fields' or 'columns' for %s", a.File)
-			}
+			return fmt.Errorf("must specify either 'fields' or 'columns' for %s", a.File)
 		}
 		if len(a.Ops) != len(a.Columns) && !strings.HasSuffix(a.File, ".bam") {
 			return fmt.Errorf("must specify same # of 'columns' as 'ops' for %s", a.File)
@@ -285,18 +119,8 @@ func checkAnno(a *anno) error {
 			return fmt.Errorf("must specify same # of 'fields' as 'ops' for %s", a.File)
 		}
 	}
-	return checkOps(a.Ops)
-}
-
-func checkOps(ops []string) error {
-	for _, o := range ops {
-		if strings.HasPrefix(o, "js:") {
-			js := o[3:]
-			_, err := vm.Compile("", js)
-			if err != nil {
-				return fmt.Errorf("javascript syntax error in %s: %s", js, err)
-			}
-		}
+	if len(a.Names) == 0 {
+		a.Names = a.Fields
 	}
 	return nil
 }
@@ -306,6 +130,7 @@ func main() {
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
 	notstrict := flag.Bool("permissive-overlap", false, "allow variants to be annotated by another even if the don't"+
 		"share the same ref and alt alleles. Default is to require exact match between variants.")
+	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
 	flag.Parse()
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
@@ -317,7 +142,7 @@ func main() {
 		return
 	}
 
-	var config Annotations
+	var config Config
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
 		panic(err)
 	}
@@ -327,6 +152,31 @@ func main() {
 			log.Fatal("checkAnno err:", err)
 		}
 	}
+	sources := config.Sources()
+	log.Printf("found %d sources from %d files\n", len(sources), len(config.Annotation))
 	strict := !*notstrict
-	Anno(inFiles[1], config, os.Stdout, *ends, strict)
+	var js_string string
+	if *js != "" {
+		js_reader, err := xopen.Ropen(*js)
+		if err != nil {
+			log.Fatal(err)
+		}
+		js_bytes, err := ioutil.ReadAll(js_reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		js_string = string(js_bytes)
+	} else {
+		js_string = ""
+	}
+	var a = NewAnnotator(sources, js_string, *ends, strict)
+	out := os.Stdout
+	start := time.Now()
+	n := a.Annotate(inFiles[1], out)
+	dur := time.Since(start)
+	duri, duru := dur.Seconds(), "second"
+	if duri > float64(600) {
+		duri, duru = dur.Minutes(), "minute"
+	}
+	log.Printf("annotated %d variants in %.2f %ss (%.1f / %s)", n, duri, duru, float64(n)/duri, duru)
 }

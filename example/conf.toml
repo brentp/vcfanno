@@ -1,32 +1,8 @@
-# it is also possible to define some javascript functions that will be
-# available so, for example, the last op above could just be js:mean(sum)
-#
-js="""
-function mean(vals) {
-    sum=0
-    for(i=0;i<vals.length;i++){
-        sum += vals[i]
-    }
-    return sum / vals.length
-}
-
-function loc(chrom, start, end){
-    return chrom + ":" + start + "-" + end
-}
-
-"""
-
 [[annotation]]
 file="example/exac.vcf"
 # the special name 'ID' pulls out the rs id from the VCF
 fields = ["AC_AFR", "AC_AMR", "AC_EAS", "ID"]
 ops=["first", "first", "first", "first"]
-
-[[annotation]]
-file="example/fitcons.bed"
-columns = [4]
-names=["fitcons_mean"]
-ops=["mean"]
 
 [[annotation]]
 #count is currently the only valid option for a bam
@@ -45,7 +21,10 @@ columns=[4, 4, 4, 4, 4, 4]
 # + start: the (0-based) start of the variant being annotated
 # + end: the end of the variant being annotated
 # the result of the expression can be anything. it will be converted to a string.
+# loc() and mean() are defined in examples/custom.js
 ops=["js:start", "js:end", "js:vals.length", "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]};vals", "js:mean(vals)", "js:loc(chrom, start, end)"]
 # note the last 2 use functions declared in js above.
 
-
+# it is also possible to define some javascript functions that will be
+# available. This is specified as a .js file to the vcfanno executable as
+# ./vcfanno -js some.js ... see example/custom.js for an example.
