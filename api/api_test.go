@@ -78,7 +78,6 @@ func (s *APISuite) SetUpTest(c *C) {
 		Column: 4,
 		Field:  "",
 		Index:  1,
-		IsJs:   false,
 	}
 
 	s.src0 = Source{
@@ -88,10 +87,9 @@ func (s *APISuite) SetUpTest(c *C) {
 		Field:  "AC_AFR",
 		Name:   "AC_AFR",
 		Index:  0,
-		IsJs:   false,
 	}
 
-	s.annotator = NewAnnotator([]Source{s.src0, s.src}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true)
+	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true)
 
 }
 
@@ -136,7 +134,9 @@ var jstest = []struct {
 
 func (s *APISuite) TestJsOp(c *C) {
 	for _, jst := range jstest {
-		v := s.annotator.JsOp(s.v1.Variant, jst.js, []interface{}{})
+		script, err := s.annotator.vm.Compile("", jst.js)
+		c.Assert(err, IsNil)
+		v := s.annotator.JsOp(s.v1.Variant, script, []interface{}{})
 		c.Assert(v, Equals, jst.result)
 	}
 }
@@ -213,10 +213,9 @@ func (s *APISuite) TestEndsDiff(c *C) {
 		Name:   "some_mean",
 		Field:  "",
 		Index:  0,
-		IsJs:   false,
 	}
 
-	a := NewAnnotator([]Source{bsrc}, "", true, true)
+	a := NewAnnotator([]*Source{&bsrc}, "", true, true)
 
 	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", make(map[string]interface{}))
 	v.SetSource(0)
@@ -245,12 +244,11 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 		Name:   "some_mean",
 		Field:  "",
 		Index:  0,
-		IsJs:   false,
 	}
 	b1.AddRelated(b2)
 	b2.AddRelated(b1)
 
-	a := NewAnnotator([]Source{bsrc}, "", true, false)
+	a := NewAnnotator([]*Source{&bsrc}, "", true, false)
 	a.AnnotateEnds(b1, BOTH)
 	c.Assert(b1.Fields[4], Equals, "some_mean=9.11;left_some_mean=9.11")
 
@@ -278,12 +276,11 @@ func (s *APISuite) TestIdAnno(c *C) {
 		Name:   "o_id",
 		Field:  "ID",
 		Index:  0,
-		IsJs:   false,
 	}
 	v.AddRelated(v)
 	v.SetSource(1)
 
-	a := NewAnnotator([]Source{vsrc}, "", true, true)
+	a := NewAnnotator([]*Source{&vsrc}, "", true, true)
 
 	a.AnnotateOne(v, a.Strict)
 	c.Assert(v.Info.String(), Equals, "o_id=rs")

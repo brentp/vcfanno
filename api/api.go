@@ -30,7 +30,7 @@ type Source struct {
 	Field string
 	// 0-based index of the file order this source is from.
 	Index int
-	IsJs  bool
+	Js    *otto.Script
 }
 
 // IsNumber indicates that we expect the Source to return a number given the op
@@ -41,14 +41,14 @@ func (s *Source) IsNumber() bool {
 // Annotator holds the information to annotate a file.
 type Annotator struct {
 	vm      *otto.Otto
-	Sources []Source
+	Sources []*Source
 	Strict  bool // require a variant to have same ref and share at least 1 alt
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
 }
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
-func (a *Annotator) JsOp(v *vcfgo.Variant, js string, vals []interface{}) interface{} {
+func (a *Annotator) JsOp(v *vcfgo.Variant, js *otto.Script, vals []interface{}) interface{} {
 	a.vm.Set("chrom", v.Chrom())
 	a.vm.Set("start", v.Start())
 	a.vm.Set("end", v.End())
@@ -69,7 +69,7 @@ func (a *Annotator) JsOp(v *vcfgo.Variant, js string, vals []interface{}) interf
 // If ends is true, it will annotate the 1 base ends of the interval as well as the
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.
-func NewAnnotator(sources []Source, js string, ends bool, strict bool) *Annotator {
+func NewAnnotator(sources []*Source, js string, ends bool, strict bool) *Annotator {
 	for _, s := range sources {
 		if e := checkSource(s); e != nil {
 			log.Fatal(e)
@@ -87,10 +87,19 @@ func NewAnnotator(sources []Source, js string, ends bool, strict bool) *Annotato
 			log.Fatalf("error parsing customjs:%s", err)
 		}
 	}
+	for _, src := range a.Sources {
+		if strings.HasPrefix(src.Op, "js:") {
+			var err error
+			src.Js, err = a.vm.Compile(src.Op, src.Op[3:])
+			if err != nil {
+				log.Fatalf("error parsing op: %s for file %s", src.Op, src.File)
+			}
+		}
+	}
 	return &a
 }
 
-func checkSource(s Source) error {
+func checkSource(s *Source) error {
 	if s.Name == "" {
 		return fmt.Errorf("no name specified for %v", s)
 	}
@@ -266,12 +275,12 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string)
 		if len(related) == 0 {
 			continue
 		}
-		vals := collect(v, related, &src, strict)
+		vals := collect(v, related, src, strict)
 		if len(vals) == 0 {
 			continue
 		}
-		if src.IsJs {
-			v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Op, vals))
+		if src.Js != nil {
+			v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Js, vals))
 		} else {
 			v.Info.Add(prefix+src.Name, Reducers[src.Op](vals))
 		}

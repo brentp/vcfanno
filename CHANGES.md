@@ -1,3 +1,7 @@
+v0.0.4
+------
++ performance improvements for Javascript ops with pre-compilation.
+
 v0.0.3
 ------
 + custom ops with javascript.

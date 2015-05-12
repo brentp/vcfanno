@@ -57,7 +57,8 @@ Example
 -------
 
 the example directory contains the data and conf for a full example. To run, either download
-the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.3) for your system build with:
+the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.3) for your system
+or build with:
 
 ```Shell
 go get
@@ -98,9 +99,6 @@ are `reduced`. Valid operations are:
  + uniq
  + first 
  + flag   // presense/absence via vcf flag
-
-Please open an issue, or use the javascript if your desired operation is not supported.
-
 
 Binaries
 ========

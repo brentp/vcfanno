@@ -28,7 +28,7 @@ type annotation struct {
 // flatten turns an annotation into a slice of Sources. Pass in the index of the file.
 // having it as a Source makes the code cleaner, but it's simpler for the user to
 // specify multiple ops per file in the toml config.
-func (a *annotation) flatten(index int) []Source {
+func (a *annotation) flatten(index int) []*Source {
 	if len(a.Ops) == 0 {
 		if !strings.HasSuffix(a.File, ".bam") {
 			log.Fatalf("no ops specified for %s\n", a.File)
@@ -53,17 +53,19 @@ func (a *annotation) flatten(index int) []Source {
 	}
 
 	n := len(a.Ops)
-	sources := make([]Source, n)
+	sources := make([]*Source, n)
 	for i := 0; i < n; i++ {
 		isjs := strings.HasPrefix(a.Ops[i], "js:")
-		op := a.Ops[i]
-		if isjs {
-			op = op[3:]
+		if !isjs {
+			if _, ok := Reducers[a.Ops[i]]; !ok {
+				log.Fatalf("requested op not found: %s for %s\n", a.Ops[i], a.File)
+			}
 		}
+		op := a.Ops[i]
 		if len(a.Names) == 0 {
 			a.Names = a.Fields
 		}
-		sources[i] = Source{File: a.File, Op: op, Name: a.Names[i], Index: index, IsJs: isjs}
+		sources[i] = &Source{File: a.File, Op: op, Name: a.Names[i], Index: index}
 		if nil != a.Fields {
 			sources[i].Field = a.Fields[i]
 			sources[i].Column = -1
@@ -78,8 +80,8 @@ type Config struct {
 	Annotation []annotation
 }
 
-func (c Config) Sources() []Source {
-	s := make([]Source, 0)
+func (c Config) Sources() []*Source {
+	s := make([]*Source, 0)
 	for i, a := range c.Annotation {
 		s = append(s, a.flatten(i)...)
 	}
