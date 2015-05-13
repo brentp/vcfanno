@@ -9,7 +9,7 @@ user-defined operations on the overlapping annotations.
 
 For VCF, values are pulled by name from the INFO field.
 For BED, values are pulled from (1-based) column number.
-For BAM, only depth (`count`) is currently supported.
+For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 
 `vcfanno` is written in [go](http://golang.org)
 It can annotate ~ 5,000 variants per second with 5 annotations from 3 files on a modest laptop.
@@ -43,8 +43,8 @@ ops=["mean", "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]}; vals"]
 [[annotation]]
 file="example/ex.bam"
 names=["ex_bam_depth"]
-#count is currently the only valid option for a bam
-
+fields=["depth", "mapq", "seq"]
+ops=["count", "mean", "concat"]
 ```
 
 So from `ExAC.vcf` we will pull the fields from the info field and apply the corresponding
