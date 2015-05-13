@@ -8,7 +8,10 @@ ops=["first", "first", "first", "first"]
 #count is currently the only valid option for a bam
 #current method is to count alignments that are mapped (-F4) with mapq > 0
 file="example/ex.bam"
-names=["ex_bam_depth"]
+names=["map", "seq", "coverage"]
+fields=["mapq", "seq", "coverage"]
+ops=["mean", "concat", "count"]
+
 
 [[annotation]]
 file="example/fitcons.bed"

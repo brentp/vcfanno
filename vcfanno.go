@@ -90,7 +90,7 @@ func (c Config) Sources() []*Source {
 
 func checkAnno(a *annotation) error {
 	if strings.HasSuffix(a.File, ".bam") {
-		if nil == a.Columns {
+		if nil == a.Columns && nil == a.Fields {
 			a.Columns = []int{1}
 		}
 		if nil == a.Ops {

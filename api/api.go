@@ -166,7 +166,21 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 			if bam.MapQ() < 1 || bam.Flags&(0x4) != 0 {
 				continue
 			}
-			coll = append(coll, 1)
+			if src.Field == "" {
+				coll = append(coll, 1)
+			} else {
+				switch src.Field {
+				case "mapq":
+					coll = append(coll, bam.MapQ())
+				case "seq":
+					coll = append(coll, string(bam.Seq.Expand()))
+				default:
+					if src.Op != "count" {
+						log.Fatal("unknown field %s specifed for bam: %s\n", src.Field, src.File)
+					}
+					coll = append(coll, 1)
+				}
+			}
 		} else {
 			panic(fmt.Sprintf("not supported for: %v", other))
 		}
@@ -297,10 +311,13 @@ func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 	for _, src := range a.Sources {
 		ntype := "Character"
 		var desc string
-		if strings.HasSuffix(src.File, ".bam") || src.IsNumber() {
+		if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
 			ntype = "Float"
+		} else if src.Js != nil {
+			ntype = "."
 		}
-		if strings.HasSuffix(src.File, ".bam") {
+
+		if strings.HasSuffix(src.File, ".bam") && src.Field == "" {
 			desc = fmt.Sprintf("calculated by coverage from %s", src.File)
 		} else if src.Field != "" {
 			desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", src.Op, src.Field, src.File)

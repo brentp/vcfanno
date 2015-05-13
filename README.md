@@ -122,9 +122,9 @@ Development
 
 This, and the associated go libraries ([vcfgo](https://github.com/brentp/vcfgo),
 [irelate](https://github.com/brentp/irelate), [xopen](https://github.com/brentp/xopen)) are
-under active development. The following are on our radar:
+under active development. The following are on our radar (most have been completed):
 
-- [ ] allow annotating with bam fields, e.g. QUAL
+- [x] allow annotating with bam fields, e.g. QUAL and SEQ.
 - [ ] decompose, normalize, and get allelic primitives for variants on the fly
       (we have code to do this, it just needs to be integrated)
 - [x] improve test coverage for vcfanno (still need more tests for bam)
