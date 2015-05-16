@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/biogo/hts/sam"
 	"github.com/brentp/irelate"
 	"github.com/brentp/vcfgo"
 	"github.com/robertkrimen/otto"
@@ -163,7 +164,7 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 				coll = append(coll, sval)
 			}
 		} else if bam, ok := other.(*irelate.Bam); ok {
-			if bam.MapQ() < 1 || bam.Flags&(0x4) != 0 {
+			if bam.MapQ() < 1 || (bam.Flags&sam.Unmapped != 0) {
 				continue
 			}
 			if src.Field == "" {

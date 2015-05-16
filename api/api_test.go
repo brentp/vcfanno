@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/biogo/hts/sam"
 	"github.com/brentp/irelate"
 	"github.com/brentp/vcfgo"
 	. "gopkg.in/check.v1"
@@ -17,14 +18,26 @@ type APISuite struct {
 	v3 *irelate.Variant
 
 	bed *irelate.Interval
+	bam *irelate.Bam
 
-	src  Source
-	src0 Source
+	src    Source
+	src0   Source
+	srcBam Source
 
 	annotator *Annotator
 }
 
 var _ = Suite(&APISuite{})
+
+var bam_rec = &sam.Record{Name: "read1",
+	Flags:   sam.Paired | sam.ProperPair,
+	Pos:     232,
+	MatePos: -1,
+	MapQ:    30,
+	Cigar:   sam.Cigar{sam.NewCigarOp(sam.CigarMatch, 14)},
+	Seq:     sam.NewSeq([]byte("AAAAGATAAGGATA")),
+	Qual:    []uint8{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+}
 
 var v1 = &vcfgo.Variant{
 	Chromosome: "chr1",
@@ -71,6 +84,10 @@ func (s *APISuite) SetUpTest(c *C) {
 	s.bed.SetSource(2)
 	s.v1.AddRelated(s.bed)
 
+	s.bam = &irelate.Bam{Record: bam_rec, Chromosome: "chr1"}
+	s.bam.SetSource(3)
+	s.v1.AddRelated(s.bam)
+
 	s.src = Source{
 		File:   "example/fitcons.bed",
 		Op:     "mean",
@@ -89,17 +106,27 @@ func (s *APISuite) SetUpTest(c *C) {
 		Index:  0,
 	}
 
-	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true)
+	s.srcBam = Source{
+		File:   "example/some.bam",
+		Op:     "mean",
+		Column: -1,
+		Field:  "mapq",
+		Name:   "bam_qual",
+		Index:  2,
+	}
+
+	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src, &s.srcBam}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true)
 
 }
 
 func (s *APISuite) TestPartition(c *C) {
 
 	parted := s.annotator.partition(s.v1)
+	c.Assert(len(parted), Equals, 3)
 
 	c.Assert(parted[0], DeepEquals, []irelate.Relatable{s.v2, s.v3})
 	c.Assert(parted[1], DeepEquals, []irelate.Relatable{s.bed})
-	c.Assert(len(parted), Equals, 2)
+	c.Assert(parted[2], DeepEquals, []irelate.Relatable{s.bam})
 }
 
 func (s *APISuite) TestSource(c *C) {
@@ -147,29 +174,35 @@ func (s *APISuite) TestCollect(c *C) {
 	c.Assert(r, DeepEquals, []interface{}{33})
 }
 
+func (s *APISuite) TestCollectBam(c *C) {
+	parted := s.annotator.partition(s.v1)
+	r := collect(s.v1, parted[2], &s.srcBam, false)
+	c.Assert(r, DeepEquals, []interface{}{30})
+}
+
 func (s *APISuite) TestAnnotateOne(c *C) {
 	s.annotator.AnnotateOne(s.v1, s.annotator.Strict)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111")
+	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsLeft(c *C) {
 	s.annotator.AnnotateEnds(s.v1, LEFT)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;left_AC_AFR=33;left_fitcons_mean=111")
+	c.Assert(s.v1.Info.String(), Equals, "DP=35;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsRight(c *C) {
 	s.annotator.AnnotateEnds(s.v1, RIGHT)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;right_AC_AFR=33;right_fitcons_mean=111")
+	c.Assert(s.v1.Info.String(), Equals, "DP=35;right_AC_AFR=33;right_fitcons_mean=111;right_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsBoth(c *C) {
 	s.annotator.AnnotateEnds(s.v1, BOTH)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;left_AC_AFR=33;left_fitcons_mean=111;right_AC_AFR=33;right_fitcons_mean=111")
+	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30;right_AC_AFR=33;right_fitcons_mean=111;right_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsInterval(c *C) {
 	s.annotator.AnnotateEnds(s.v1, INTERVAL)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111")
+	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
 }
 
 func (s *APISuite) TestVFromB(c *C) {
