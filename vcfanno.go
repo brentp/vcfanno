@@ -130,6 +130,24 @@ func checkAnno(a *annotation) error {
 	return nil
 }
 
+func readJs(js string) string {
+	var jsString string
+	if js != "" {
+		jsReader, err := xopen.Ropen(js)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jsBytes, err := ioutil.ReadAll(jsReader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jsString = string(jsBytes)
+	} else {
+		jsString = ""
+	}
+	return jsString
+}
+
 func main() {
 
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
@@ -146,6 +164,7 @@ func main() {
 		flag.PrintDefaults()
 		return
 	}
+	queryFile := inFiles[1]
 
 	var config Config
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
@@ -159,40 +178,37 @@ func main() {
 	}
 	sources := config.Sources()
 	log.Printf("found %d sources from %d files\n", len(sources), len(config.Annotation))
-	strict := !*notstrict
-	var js_string string
-	if *js != "" {
-		js_reader, err := xopen.Ropen(*js)
-		if err != nil {
-			log.Fatal(err)
-		}
-		js_bytes, err := ioutil.ReadAll(js_reader)
-		if err != nil {
-			log.Fatal(err)
-		}
-		js_string = string(js_bytes)
-	} else {
-		js_string = ""
-	}
-	var a = NewAnnotator(sources, js_string, *ends, strict)
-	var out io.Writer
-	out = os.Stdout
-	start := time.Now()
-	dur := time.Since(start)
-	n := 0
-	ch, hdr := a.Annotate(inFiles[1])
-	if hdr != nil { // vcf
-		var err error
-		_, err = vcfgo.NewWriter(out, hdr)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-	out = bufio.NewWriter(out)
 
-	for interval := range ch {
-		fmt.Fprintf(out, "%s\n", interval)
+	jsString := readJs(*js)
+	strict := !*notstrict
+	var a = NewAnnotator(sources, jsString, *ends, strict)
+
+	var out io.Writer = os.Stdout
+
+	streams, hdr := a.SetupStreams(queryFile)
+	if nil != hdr { // it was vcf, print the header
+		var err error
+		out, err = vcfgo.NewWriter(out, hdr)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	} else {
+		out = bufio.NewWriter(out)
 	}
+	start := time.Now()
+	n := 0
+
+	for interval := range a.Annotate(streams...) {
+		fmt.Fprintf(out, "%s\n", interval)
+		n++
+	}
+	printTime(start, n)
+
+}
+
+func printTime(start time.Time, n int) {
+	dur := time.Since(start)
 	duri, duru := dur.Seconds(), "second"
 	if duri > float64(600) {
 		duri, duru = dur.Minutes(), "minute"

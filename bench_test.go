@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io/ioutil"
 	"testing"
 
@@ -23,7 +24,10 @@ func BenchmarkAnno(b *testing.B) {
 
 	a := api.NewAnnotator(configs.Sources(), js_string, false, true)
 	for n := 0; n < b.N; n++ {
-		a.Annotate("example/query.vcf", ioutil.Discard)
+		streams, _ := a.SetupStreams("example/query.vcf")
+		for interval := range a.Annotate(streams...) {
+			fmt.Fprintf(out, "%s\n", interval)
+		}
 		out.Flush()
 	}
 }
