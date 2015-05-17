@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -337,8 +336,9 @@ func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 }
 
 // a horrible function to set up everything for starting annotation.
-func (a *Annotator) setupStreams(queryFile string, out io.Writer) ([]irelate.RelatableChannel, bool, io.Writer) {
+func (a *Annotator) setupStreams(queryFile string) ([]irelate.RelatableChannel, bool, *vcfgo.Header) {
 
+	// TODO: don't need isBed. Just check if header is nil.
 	streams := make([]irelate.RelatableChannel, 1)
 	var isBed bool
 
@@ -361,35 +361,40 @@ func (a *Annotator) setupStreams(queryFile string, out io.Writer) ([]irelate.Rel
 		seen[src.Index] = true
 		streams = append(streams, irelate.Streamer(src.File))
 	}
-	var err error
 	if !isBed {
 		a.UpdateHeader(query.Header)
-		out, err = vcfgo.NewWriter(out, query.Header)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		out = bufio.NewWriter(out)
+		return streams, isBed, query.Header
 	}
-	return streams, isBed, out
+	return streams, isBed, nil
 }
 
 // Annotate annotates a file with the sources in the Annotator. Returns the number of annotated variants.
-func (a *Annotator) Annotate(queryFile string, out io.Writer) int {
+// out is only written to if there is a VCF header.
+func (a *Annotator) Annotate(queryFile string, out *io.Writer) irelate.RelatableChannel {
+	// TODO: instead of taking queryFile, just take the channel and allow use of setupstreams as helper.
 
-	streams, isBed, out := a.setupStreams(queryFile, out)
-	_ = isBed
+	streams, isBed, hdr := a.setupStreams(queryFile)
+	if !isBed {
+		var err error
+		*out, err = vcfgo.NewWriter(*out, hdr)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	}
 	ends := INTERVAL
 	if a.Ends {
 		ends = BOTH
 	}
-	//log.Printf("annotating from %d streams\n", len(streams)-1)
 
-	j := 0
-	for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
-		a.AnnotateEnds(interval, ends)
-		fmt.Fprintln(out, interval)
-		j++
-	}
-	return j
+	ch := make(irelate.RelatableChannel, 48)
+
+	go func(irelate.RelatableChannel, *Annotator, string) {
+		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
+			a.AnnotateEnds(interval, ends)
+			ch <- interval
+		}
+		close(ch)
+	}(ch, a, ends)
+	return ch
 }

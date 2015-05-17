@@ -2,8 +2,10 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	. "github.com/brentp/vcfanno/api"
+	"github.com/brentp/vcfgo"
 	"github.com/brentp/xopen"
 )
 
@@ -172,10 +175,24 @@ func main() {
 		js_string = ""
 	}
 	var a = NewAnnotator(sources, js_string, *ends, strict)
-	out := os.Stdout
+	var out io.Writer
+	out = os.Stdout
 	start := time.Now()
-	n := a.Annotate(inFiles[1], out)
 	dur := time.Since(start)
+	n := 0
+	ch, hdr := a.Annotate(inFiles[1])
+	if hdr != nil { // vcf
+		var err error
+		_, err = vcfgo.NewWriter(out, hdr)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	out = bufio.NewWriter(out)
+
+	for interval := range ch {
+		fmt.Fprintf(out, "%s\n", interval)
+	}
 	duri, duru := dur.Seconds(), "second"
 	if duri > float64(600) {
 		duri, duru = dur.Minutes(), "minute"
