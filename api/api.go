@@ -175,7 +175,7 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 					coll = append(coll, string(bam.Seq.Expand()))
 				default:
 					if src.Op != "count" {
-						log.Fatal("unknown field %s specifed for bam: %s\n", src.Field, src.File)
+						log.Fatalf("unknown field %s specifed for bam: %s\n", src.Field, src.File)
 					}
 					coll = append(coll, 1)
 				}
