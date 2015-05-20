@@ -334,7 +334,8 @@ func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 
 }
 
-// a horrible function to set up everything for starting annotation.
+// SetupStreams takes the query file and sets everything up for annotation. If the input was
+// a vcf, it returns the header with the new annotation fields added.
 func (a *Annotator) SetupStreams(queryFile string) ([]irelate.RelatableChannel, *vcfgo.Header) {
 
 	streams := make([]irelate.RelatableChannel, 1)
@@ -365,11 +366,10 @@ func (a *Annotator) SetupStreams(queryFile string) ([]irelate.RelatableChannel, 
 	return streams, nil
 }
 
-// Annotate annotates a file with the sources in the Annotator. Returns the number of annotated variants.
-// out is only written to if there is a VCF header.
+// Annotate annotates a file with the sources in the Annotator.
+// It accepts RelatableChannels, and returns a RelatableChannel on which it will send
+// annotated variants.
 func (a *Annotator) Annotate(streams ...irelate.RelatableChannel) irelate.RelatableChannel {
-	// TODO: instead of taking queryFile, just take the channel and allow use of setupstreams as helper.
-
 	ch := make(irelate.RelatableChannel, 48)
 	ends := INTERVAL
 	if a.Ends {
