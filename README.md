@@ -127,6 +127,7 @@ under active development. The following are on our radar (most have been complet
 - [x] allow annotating with bam fields, e.g. QUAL and SEQ.
 - [ ] decompose, normalize, and get allelic primitives for variants on the fly
       (we have code to do this, it just needs to be integrated)
+- [ ] allow custom golang ops when using api.
 - [x] improve test coverage for vcfanno (still need more tests for bam)
 - [x] embed otto js engine to allow custom ops.
 - [x] support for annotating BED files.

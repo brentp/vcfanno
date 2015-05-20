@@ -63,10 +63,6 @@ func concat(vals []interface{}) interface{} {
 		}
 		if str, ok := v.(string); ok {
 			s = append(s, str)
-		} else if f, ok := v.(float64); ok {
-			s = append(s, fmt.Sprintf("%f", f))
-		} else if anint, ok := v.(int); ok {
-			s = append(s, fmt.Sprintf("%d", anint))
 		} else {
 			s = append(s, fmt.Sprintf("%v", v))
 		}

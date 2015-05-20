@@ -27,7 +27,7 @@ func (s *ReducerSuite) SetUpTest(c *C) {
 	s.floats = []interface{}{1.3, 2.3, 3.3, 4.4, 5.5, 6.6, 7.7}
 	s.one_float = []interface{}{33.33}
 
-	s.strings = []interface{}{"aa", "bb", "cc", "ee", "ff", "gg", "hh"}
+	s.strings = []interface{}{"aa", "bb", "cc", "dd", "ee", "ff", "gg", "hh"}
 	s.one_string = []interface{}{"justme"}
 
 }
@@ -50,6 +50,9 @@ func (s *ReducerSuite) TestFloats(c *C) {
 	m = max(s.floats)
 	c.Assert(m, Equals, float32(7.7))
 
+	cc := concat(s.floats)
+	c.Assert(cc, Equals, "1.3,2.3,3.3,4.4,5.5,6.6,7.7")
+
 }
 
 func (s *ReducerSuite) TestFloat(c *C) {
@@ -68,4 +71,24 @@ func (s *ReducerSuite) TestFloat(c *C) {
 
 	m = max(s.one_float)
 	//c.Assert(float64(m.(float32)), Equals, s.one_float[0].(float64))
+}
+
+func (s *ReducerSuite) TestInts(c *C) {
+	u := uniq(s.ints)
+	c.Assert(u, Equals, "1,2,3,4,5,6,7")
+
+	cnt := count(s.ints)
+	c.Assert(cnt, Equals, 7)
+
+}
+
+func (s *ReducerSuite) TestStrings(c *C) {
+	cc := concat(s.strings)
+	c.Assert(cc, Equals, "aa,bb,cc,dd,ee,ff,gg,hh")
+
+	f := vflag(s.strings)
+	c.Assert(f, Equals, true)
+
+	n := vflag([]interface{}{})
+	c.Assert(n, Equals, false)
 }
