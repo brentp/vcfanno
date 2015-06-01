@@ -151,8 +151,8 @@ func readJs(js string) string {
 func main() {
 
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
-	notstrict := flag.Bool("permissive-overlap", false, "allow variants to be annotated by another even if the don't"+
-		"share the same ref and alt alleles. Default is to require exact match between variants.")
+	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
+		" share the same ref and alt alleles. Default is to require exact match between variants.")
 	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
 	flag.Parse()
 	inFiles := flag.Args()
