@@ -1,9 +1,10 @@
-v0.0.4 (master)
+v0.0.4
 ------
 + performance improvements for Javascript ops with pre-compilation.
 + bam: annotate with `mapq` and `seq` for mapping-quality and sequence respectively.
 + api now returns a channel on which to recieve annotated Relatables
-+ fix printing of INFO fields with multiple values (thanks to Liron for reporting).
++ vcfgo: fix printing of INFO fields with multiple values (thanks to Liron for reporting).
++ vcfgo: fix writing of ##SAMPLE and ##PEDIGREE headers. (thanks to Liron)
 
 v0.0.3
 ------
