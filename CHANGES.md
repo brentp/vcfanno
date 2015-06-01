@@ -1,8 +1,9 @@
-v0.0.4
+v0.0.4 (master)
 ------
 + performance improvements for Javascript ops with pre-compilation.
 + bam: annotate with `mapq` and `seq` for mapping-quality and sequence respectively.
 + api now returns a channel on which to recieve annotated Relatables
++ fix printing of INFO fields with multiple values (thanks to Liron for reporting).
 
 v0.0.3
 ------
