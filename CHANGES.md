@@ -1,3 +1,8 @@
+v0.0.5 (dev)
+------------
++ vcfgo: handle lines longer than 65KB
++ vcfgo: fix error reporting
+
 v0.0.4
 ------
 + performance improvements for Javascript ops with pre-compilation.
