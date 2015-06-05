@@ -185,10 +185,10 @@ func main() {
 
 	var out io.Writer = os.Stdout
 
-	streams, hdr := a.SetupStreams(queryFile)
-	if nil != hdr { // it was vcf, print the header
+	streams, rdr := a.SetupStreams(queryFile)
+	if nil != rdr { // it was vcf, print the header
 		var err error
-		out, err = vcfgo.NewWriter(out, hdr)
+		out, err = vcfgo.NewWriter(out, rdr.Header)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -204,6 +204,10 @@ func main() {
 		n++
 	}
 	printTime(start, n)
+	e := rdr.Error()
+	if e != nil {
+		log.Println(e)
+	}
 
 }
 
