@@ -19,7 +19,7 @@ We are actively developing `vcfanno` and appreciate feedback and bug reports.
 Usage
 =====
 
-After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.4) (see section below) usage looks like:
+After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/tag/v0.0.5) (see section below) usage looks like:
 
 ```Shell
   ./vcfanno -js example/custom.js example/conf.toml example/query.vcf
@@ -57,7 +57,7 @@ Example
 -------
 
 the example directory contains the data and conf for a full example. To run, either download
-the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.4) for your system
+the [appropriate binary](https://github.com/brentp/vcfanno/releases/tag/v0.0.5) for your system
 or build with:
 
 ```Shell
@@ -103,7 +103,7 @@ are `reduced`. Valid operations are:
 Binaries
 ========
 
-binary executables are available [here](https://github.com/brentp/vcfanno/releases/tag/v0.0.4)
+binary executables are available [here](https://github.com/brentp/vcfanno/releases/tag/v0.0.5)
 for *linux*, *mac* (darwin), and *windows* for *32* and *64* bit platforms.
 
 Preprocessing
