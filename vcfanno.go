@@ -154,6 +154,8 @@ func main() {
 	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
 		" share the same ref and alt alleles. Default is to require exact match between variants.")
 	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
+	natsort := flag.Bool("natural-sort", false, "expect chromosomes in order of 1, 2, ..., 9, 10, 11..."+
+		" default is 1, 10, 11, ..., 19, 2, 20...")
 	flag.Parse()
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
@@ -181,7 +183,7 @@ func main() {
 
 	jsString := readJs(*js)
 	strict := !*notstrict
-	var a = NewAnnotator(sources, jsString, *ends, strict)
+	var a = NewAnnotator(sources, jsString, *ends, strict, *natsort)
 
 	var out io.Writer = os.Stdout
 

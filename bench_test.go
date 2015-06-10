@@ -11,7 +11,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-func BenchmarkAnno(b *testing.B) {
+func benchmarkAnno(b *testing.B, natural bool) {
 	var configs Config
 	if _, err := toml.DecodeFile("example/conf.toml", &configs); err != nil {
 		panic(err)
@@ -22,7 +22,7 @@ func BenchmarkAnno(b *testing.B) {
 	jbytes, _ := ioutil.ReadAll(Js)
 	js_string := string(jbytes)
 
-	a := api.NewAnnotator(configs.Sources(), js_string, false, true)
+	a := api.NewAnnotator(configs.Sources(), js_string, false, true, natural)
 	for n := 0; n < b.N; n++ {
 		streams, _ := a.SetupStreams("example/query.vcf")
 		for interval := range a.Annotate(streams...) {
@@ -31,3 +31,6 @@ func BenchmarkAnno(b *testing.B) {
 		out.Flush()
 	}
 }
+
+func BenchmarkNormal(b *testing.B)  { benchmarkAnno(b, false) }
+func BenchmarkNatural(b *testing.B) { benchmarkAnno(b, true) }

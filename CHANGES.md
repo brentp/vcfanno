@@ -1,7 +1,9 @@
-v0.0.5 (dev)
-------------
-+ vcfgo: handle lines longer than 65KB
+v0.0.5
+------
++ allow natural sort (1, 2, ... 9, 10, 11 instead of 1, 10, 11 ..., 19, 2, 20) via flag
++ vcfgo: handle lines longer than 65KB **major**
 + vcfgo: fix error reporting
++ irelate: report warning when chroms out of order
 
 v0.0.4
 ------

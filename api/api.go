@@ -43,6 +43,7 @@ type Annotator struct {
 	Sources []*Source
 	Strict  bool // require a variant to have same ref and share at least 1 alt
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
+	Less    func(a, b irelate.Relatable) bool
 }
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
@@ -68,17 +69,24 @@ func (a *Annotator) JsOp(v *vcfgo.Variant, js *otto.Script, vals []interface{}) 
 // If ends is true, it will annotate the 1 base ends of the interval as well as the
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.
-func NewAnnotator(sources []*Source, js string, ends bool, strict bool) *Annotator {
+func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort bool) *Annotator {
 	for _, s := range sources {
 		if e := checkSource(s); e != nil {
 			log.Fatal(e)
 		}
+	}
+	var less func(a, b irelate.Relatable) bool
+	if natsort {
+		less = irelate.NaturalLessPrefix
+	} else {
+		less = irelate.LessPrefix
 	}
 	a := Annotator{
 		vm:      otto.New(),
 		Sources: sources,
 		Strict:  strict,
 		Ends:    ends,
+		Less:    less,
 	}
 	if js != "" {
 		_, err := a.vm.Run(js)
@@ -377,7 +385,7 @@ func (a *Annotator) Annotate(streams ...irelate.RelatableChannel) irelate.Relata
 	}
 
 	go func(irelate.RelatableChannel, *Annotator, string) {
-		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, irelate.LessPrefix, streams...) {
+		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
 			a.AnnotateEnds(interval, ends)
 			ch <- interval
 		}
