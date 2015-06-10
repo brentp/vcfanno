@@ -136,6 +136,13 @@ under active development. The following are on our radar (most have been complet
 Additional Usage
 ================
 
+-natural-sort
+-------------
+
+If your chromosomes are ordered as 1, 2, ... 9, 10, 11 instead of 1, 10, 11, ... 19, 2, 20 ...
+specify this flag.
+
+
 -ends
 -----
 
