@@ -28,6 +28,7 @@ type APISuite struct {
 }
 
 var _ = Suite(&APISuite{})
+var h = vcfgo.NewHeader()
 
 var bam_rec = &sam.Record{Name: "read1",
 	Flags:   sam.Paired | sam.ProperPair,
@@ -47,33 +48,38 @@ var v1 = &vcfgo.Variant{
 	Alt:        []string{"T", "G"},
 	Quality:    float32(555.5),
 	Filter:     "PASS",
-	Info: map[string]interface{}{
-		"DP":      uint32(35),
-		"__order": []string{"DP"},
-	},
+	Info:       vcfgo.NewInfoByte("DP=35", h),
 }
 
 func (s *APISuite) SetUpTest(c *C) {
+
+	h.Infos["DP"] = &vcfgo.Info{Id: "DP", Description: "depth", Number: "1", Type: "Integer"}
+
 	s.v1 = &irelate.Variant{Variant: v1}
-	s.v1.Info = map[string]interface{}{
-		"DP":      uint32(35),
-		"__order": []string{"DP"},
-	}
+	s.v1.Info = vcfgo.NewInfoByte("DP=35", h)
 	s.v1.SetSource(0)
 	v2 := *v1
-	v2.Info = map[string]interface{}{"DP": uint32(44), "__order": []string{"DP"}}
+	v2.Info = vcfgo.NewInfoByte("DP=44", h)
 	s.v2 = &irelate.Variant{Variant: &v2}
 	s.v2.Info.Add("AC_AFR", 33)
 	s.v2.SetSource(1)
 
 	v3 := *v1
-	v3.Info = map[string]interface{}{"DP": uint32(88)}
+	v3.Info = vcfgo.NewInfoByte("DP=88", h)
 	s.v3 = &irelate.Variant{Variant: &v3}
 	s.v3.SetSource(1)
 
-	c.Assert(s.v1.Info["DP"], Equals, uint32(35))
-	c.Assert(s.v2.Info["DP"], Equals, uint32(44))
-	c.Assert(s.v3.Info["DP"], Equals, uint32(88))
+	v, e := s.v1.Info.Get("DP")
+	c.Assert(e, IsNil)
+	c.Assert(v, Equals, 35)
+
+	v, e = s.v2.Info.Get("DP")
+	c.Assert(e, IsNil)
+	c.Assert(v, Equals, 44)
+
+	v, e = s.v3.Info.Get("DP")
+	c.Assert(e, IsNil)
+	c.Assert(v, Equals, 88)
 
 	s.v1.AddRelated(s.v2)
 	s.v1.AddRelated(s.v3)
@@ -222,13 +228,11 @@ func makeBed(chrom string, start int, end int, val float32) *irelate.Interval {
 	return i
 }
 
-func makeVariant(chrom string, pos int, ref string, alt []string, name string, info map[string]interface{}) *irelate.Variant {
+func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string) *irelate.Variant {
 
-	if _, ok := info["__order"]; !ok {
-		info["__order"] = make([]string, 0)
-	}
+	binfo := vcfgo.NewInfoByte(info, h)
 	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Ref: ref, Alt: alt,
-		Id: name, Info: info}
+		Id: name, Info: binfo}
 	return irelate.NewVariant(&v, 0, make([]irelate.Relatable, 0))
 }
 
@@ -250,7 +254,7 @@ func (s *APISuite) TestEndsDiff(c *C) {
 
 	a := NewAnnotator([]*Source{&bsrc}, "", true, true, false)
 
-	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", make(map[string]interface{}))
+	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "")
 	v.SetSource(0)
 
 	v.AddRelated(b1)
@@ -301,7 +305,7 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 }
 
 func (s *APISuite) TestIdAnno(c *C) {
-	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", make(map[string]interface{}))
+	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "")
 	vsrc := Source{
 		File:   "some.vcf",
 		Op:     "first",

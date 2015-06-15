@@ -18,6 +18,8 @@ type AnnoSuite struct {
 	b  *irelate.Interval
 }
 
+var h = vcfgo.NewHeader()
+
 var v1 = &vcfgo.Variant{
 	Chromosome: "chr1",
 	Pos:        uint64(234),
@@ -26,30 +28,38 @@ var v1 = &vcfgo.Variant{
 	Alt:        []string{"T", "G"},
 	Quality:    float32(555.5),
 	Filter:     "PASS",
-	Info: map[string]interface{}{
-		"DP":      uint32(35),
-		"__order": []string{"DP"},
-	},
+	Info:       vcfgo.NewInfoByte("DP=35", h),
 }
 
 var _ = Suite(&AnnoSuite{})
 
 func (s *AnnoSuite) SetUpTest(c *C) {
+
+	h.Infos["DP"] = &vcfgo.Info{Id: "DP", Description: "depth", Number: "1", Type: "Integer"}
+
 	s.v1 = &irelate.Variant{Variant: v1}
 	s.v1.SetSource(0)
 	v2 := *v1
-	v2.Info = map[string]interface{}{"DP": uint32(44)}
+	v2.Info = vcfgo.NewInfoByte("DP=44", h)
 	s.v2 = &irelate.Variant{Variant: &v2}
 	s.v2.SetSource(1)
 
 	v3 := *v1
-	v3.Info = map[string]interface{}{"DP": uint32(88)}
+	v3.Info = vcfgo.NewInfoByte("DP=88", h)
 	s.v3 = &irelate.Variant{Variant: &v3}
 	s.v3.SetSource(1)
 
-	c.Assert(s.v1.Info["DP"], Equals, uint32(35))
-	c.Assert(s.v2.Info["DP"], Equals, uint32(44))
-	c.Assert(s.v3.Info["DP"], Equals, uint32(88))
+	v, e := s.v1.Info.Get("DP")
+	c.Assert(v, Equals, 35)
+	c.Assert(e, IsNil)
+
+	v, e = s.v2.Info.Get("DP")
+	c.Assert(v, Equals, 44)
+	c.Assert(e, IsNil)
+
+	v, e = s.v3.Info.Get("DP")
+	c.Assert(v, Equals, 88)
+	c.Assert(e, IsNil)
 
 	s.v1.AddRelated(s.v2)
 	s.v1.AddRelated(s.v3)

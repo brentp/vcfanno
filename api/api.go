@@ -149,7 +149,11 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 				}
 				val = o.Id
 			} else {
-				val = o.Info[src.Field]
+				var err error
+				val, err = o.Info.Get(src.Field)
+				if err != nil {
+					log.Println(err)
+				}
 			}
 			if arr, ok := val.([]interface{}); ok {
 				coll = append(coll, arr...)
@@ -197,9 +201,9 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 
 // vFromB makes a variant from an interval. this helps avoid code duplication.
 func vFromB(b *irelate.Interval) *irelate.Variant {
-	m := make(vcfgo.InfoMap)
-	m["__order"] = []string{}
-	m["SVLEN"] = int(b.End()-b.Start()) - 1
+	h := vcfgo.NewHeader()
+	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Type: "Integer", Description: "", Number: "1"}
+	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", int(b.End()-b.Start())-1), h)
 	v := irelate.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
 		Ref: "A", Alt: []string{"<DEL>"}, Info: m}, 0, b.Related())
 	return v
@@ -228,6 +232,7 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 		// it was a Bed, we add the info to its fields
 		if !ok {
 			b := r.(*irelate.Interval)
+			v.Info.Delete("SVLEN")
 			b.Fields = append(b.Fields, v.Info.String())
 		}
 		return nil
@@ -241,8 +246,8 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 	if ends == LEFT || ends == RIGHT {
 		// save end here to get the right end.
 		pos, ref, alt, end := v.Pos, v.Ref, v.Alt, v.End()
-		svlen, has_svlen := v.Info["SVLEN"]
-		v.Info["SVLEN"] = 1
+		svlen, err := v.Info.Get("SVLEN")
+		v.Info.Set("SVLEN", 1)
 		// the end is determined by the alt, so we have to make sure it has length 1.
 		v.Ref, v.Alt = "A", []string{"T"}
 		if ends == RIGHT {
@@ -251,10 +256,10 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 
 		a.AnnotateOne(v, false, ends)
 		v.Pos, v.Ref, v.Alt = pos, ref, alt
-		if has_svlen {
-			v.Info["SVLEN"] = svlen
+		if err == nil && ok {
+			v.Info.Set("SVLEN", svlen)
 		} else {
-			delete(v.Info, "SVLEN")
+			v.Info.Delete("SVLEN")
 		}
 	}
 	return nil
@@ -307,7 +312,7 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string)
 		}
 	}
 	if isBed {
-		delete(v.Info, "SVLEN")
+		v.Info.Delete("SVLEN")
 		b.Fields = append(b.Fields, v.Info.String())
 	}
 	return nil
