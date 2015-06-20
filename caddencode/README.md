@@ -8,8 +8,12 @@ to use to annotate a VCF.
 
 `caddencode` encodes the CADD phred scores into an 11GB binary file with O(1)
 access (and provides a means to annotate a VCF). It does this by encoding the
-reference base using 2 bits (0: A, 1:C, 2:G, 3:T) a each of the 3 alternate alleles
-using 10 bits (2^10 == 1024) for a total of **32 bits per site**.
+reference base using 2 bits (0: A, 1:C, 2:G, 3:T) and the CADD phred score of a
+change to each of the 3 alternate alleles using 10 bits each (2^10 == 1024) for
+a total of **32 bits per site**.
+
+We use a memory-mapped view of the binary file to provide very fast access. This
+takes advantage of the OS cache especially when querying variants in genome order.
 
 Since the max phred score is 99 and we can store up to 1024 for each base, **the
 loss of precision is bound to under 0.05** (because we multiply phred * 10.23 on input
