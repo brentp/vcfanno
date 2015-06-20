@@ -30,3 +30,6 @@ ops=["js:start", "js:end", "js:vals.length", "js:sum=0;for(i=0;i<vals.length;i++
 # it is also possible to define some javascript functions that will be
 # available. This is specified as a .js file to the vcfanno executable as
 # ./vcfanno -js some.js ... see example/custom.js for an example.
+
+[caddidx]
+file="example/cadd.sub.idx"

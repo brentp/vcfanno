@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	caddencode "github.com/brentp/caddencode/go"
+	"github.com/brentp/irelate"
 	. "github.com/brentp/vcfanno/api"
 	"github.com/brentp/vcfgo"
 	"github.com/brentp/xopen"
@@ -79,8 +81,13 @@ func (a *annotation) flatten(index int) []*Source {
 	return sources
 }
 
+type Caddidx struct {
+	File string
+}
+
 type Config struct {
 	Annotation []annotation
+	Caddidx    Caddidx
 }
 
 func (c Config) Sources() []*Source {
@@ -89,6 +96,14 @@ func (c Config) Sources() []*Source {
 		s = append(s, a.flatten(i)...)
 	}
 	return s
+}
+
+func (c Config) Cadd() *caddencode.Index {
+	if &c.Caddidx == nil || c.Caddidx.File == "" {
+		return nil
+	}
+	idx := caddencode.Reader(c.Caddidx.File)
+	return &idx
 }
 
 func checkAnno(a *annotation) error {
@@ -201,7 +216,19 @@ func main() {
 	start := time.Now()
 	n := 0
 
+	cadd := config.Cadd()
+
 	for interval := range a.Annotate(streams...) {
+		if cadd != nil {
+			v := interval.(*irelate.Variant)
+			score, err := cadd.At(interval.Chrom(), int(interval.Start())+1, v.Alt[0])
+			log.Println(err)
+			if err == nil {
+				v.Info.Add("cadd_score", score)
+				log.Println(score)
+			}
+
+		}
 		fmt.Fprintf(out, "%s\n", interval)
 		n++
 	}
