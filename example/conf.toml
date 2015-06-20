@@ -7,9 +7,9 @@ ops=["first", "first", "first", "first"]
 [[annotation]]
 # count is for alignments that are mapped (-F4) with mapq > 0
 file="example/ex.bam"
-names=["map", "seq", "coverage"]
-fields=["mapq", "seq", "coverage"]
-ops=["mean", "concat", "count"]
+names=["map", "coverage"] # map, coverage, and seq are special values for bam annotations
+fields=["mapq", "coverage"]
+ops=["mean", "count"]
 
 
 [[annotation]]
@@ -31,5 +31,8 @@ ops=["js:start", "js:end", "js:vals.length", "js:sum=0;for(i=0;i<vals.length;i++
 # available. This is specified as a .js file to the vcfanno executable as
 # ./vcfanno -js some.js ... see example/custom.js for an example.
 
+
+# To annotated with cadd phred scores, include this section, but instead use the full-genome compressed
+# available from (TODO).
 [caddidx]
 file="example/cadd.sub.idx"

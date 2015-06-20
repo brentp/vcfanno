@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	caddencode "github.com/brentp/caddencode/go"
 	"github.com/brentp/irelate"
 	. "github.com/brentp/vcfanno/api"
+	caddencode "github.com/brentp/vcfanno/caddencode"
 	"github.com/brentp/vcfgo"
 	"github.com/brentp/xopen"
 )
@@ -219,16 +219,7 @@ func main() {
 	cadd := config.Cadd()
 
 	for interval := range a.Annotate(streams...) {
-		if cadd != nil {
-			v := interval.(*irelate.Variant)
-			score, err := cadd.At(interval.Chrom(), int(interval.Start())+1, v.Alt[0])
-			log.Println(err)
-			if err == nil {
-				v.Info.Add("cadd_score", score)
-				log.Println(score)
-			}
-
-		}
+		caddAnno(cadd, interval)
 		fmt.Fprintf(out, "%s\n", interval)
 		n++
 	}
@@ -238,6 +229,19 @@ func main() {
 		log.Println(e)
 	}
 
+}
+
+// if the cadd index was requested, annotate the variant.
+func caddAnno(cadd *caddencode.Index, interval irelate.Relatable) {
+	if cadd != nil {
+		v := interval.(*irelate.Variant)
+		score, err := cadd.At(interval.Chrom(), int(interval.Start())+1, v.Alt[0])
+		if err != nil {
+			log.Println("cadd errro:", err)
+		} else {
+			v.Info.Add("cadd_score", score)
+		}
+	}
 }
 
 func printTime(start time.Time, n int) {
