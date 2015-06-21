@@ -99,11 +99,16 @@ func (i Index) At(chrom string, pos int, alt string) (float64, error) {
 }
 
 func Reader(f string) Index {
+	binPath := f[:len(f)-4] + ".bin"
+
+	if !(xopen.Exists(f) && xopen.Exists(binPath)) {
+		log.Fatalf("Error finding CADD files. both .bin and .idx files are required\n")
+	}
+
 	rdr, err := xopen.Ropen(f)
 	check(err)
 
-	mpath := f[:len(f)-4] + ".bin"
-	mrdr, err := os.Open(mpath)
+	mrdr, err := os.Open(binPath)
 	check(err)
 	mmap, err := mmap.Map(mrdr, mmap.RDONLY, 0)
 	check(err)
