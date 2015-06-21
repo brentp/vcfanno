@@ -81,13 +81,16 @@ func (a *annotation) flatten(index int) []*Source {
 	return sources
 }
 
-type Caddidx struct {
-	File string
+type CaddIdx struct {
+	File  string
+	Ops   []string
+	Names []string
+	idx   caddencode.Index
 }
 
 type Config struct {
 	Annotation []annotation
-	Caddidx    Caddidx
+	Caddidx    CaddIdx
 }
 
 func (c Config) Sources() []*Source {
@@ -98,12 +101,13 @@ func (c Config) Sources() []*Source {
 	return s
 }
 
-func (c Config) Cadd() *caddencode.Index {
+func (c Config) Cadd() *CaddIdx {
 	if &c.Caddidx == nil || c.Caddidx.File == "" {
 		return nil
 	}
-	idx := caddencode.Reader(c.Caddidx.File)
-	return &idx
+	log.Println(c.Caddidx.Ops, c.Caddidx.Names)
+	c.Caddidx.idx = caddencode.Reader(c.Caddidx.File)
+	return &c.Caddidx
 }
 
 func checkAnno(a *annotation) error {
@@ -232,14 +236,17 @@ func main() {
 }
 
 // if the cadd index was requested, annotate the variant.
-func caddAnno(cadd *caddencode.Index, interval irelate.Relatable) {
+func caddAnno(cadd *CaddIdx, interval irelate.Relatable) {
 	if cadd != nil {
+		// TODO: tie this in with api machinery
+		// or at least loop over and apply op.
+		// TODO: update header.
 		v := interval.(*irelate.Variant)
-		score, err := cadd.At(interval.Chrom(), int(interval.Start())+1, v.Alt[0])
+		score, err := cadd.idx.At(interval.Chrom(), int(interval.Start())+1, v.Alt[0])
 		if err != nil {
 			log.Println("cadd errro:", err)
 		} else {
-			v.Info.Add("cadd_score", score)
+			v.Info.Add(cadd.Names[0], score)
 		}
 	}
 }
