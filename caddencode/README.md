@@ -28,3 +28,8 @@ phred quartets (actually triplets), the maximum difference seen
 between the real an decoded(encoded(data)) was 0.0488758515995.
 This matches well with the theoretical maximum:
 1 / (2 * 10.23) == 0.04887585532746823
+
+There are 3 positions on chromosome 3 that use an ambiguous reference and so store
+4 base changes. In the file, we handle these by storing a change to C, T, G. In the
+code, we handle this by storing the values in the actual code so that the guarantee
+of a precision to within 0.05 is maintained.

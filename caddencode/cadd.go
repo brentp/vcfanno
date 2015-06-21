@@ -62,6 +62,18 @@ func (i Index) Get(chrom string, pos int) (uint32, error) {
 }
 
 func (i Index) At(chrom string, pos int, alt string) (float64, error) {
+	if (pos == 60830534 || pos == 60830763 || pos == 60830764) && chrom[0] == '3' {
+		// these have ambiguous bases in the cadd v1.2 file so we just hard code the actual values
+		// for all 4 bases.
+		if pos == 60830534 {
+			return 11.9, nil // all values are < 0.05 of this, so just use it.
+		}
+		if pos == 60830763 {
+			return map[string]float64{"A": 0.45, "C": 0.445, "G": 0.478, "T": 0.429}[alt], nil
+		}
+		// 60830764
+		return map[string]float64{"A": 2.71, "C": 2.69, "G": 2.81, "T": 2.624}[alt], nil
+	}
 	num, err := i.Get(chrom, pos)
 	if err != nil {
 		return float64(num), err
