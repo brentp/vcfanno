@@ -302,14 +302,7 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string)
 			continue
 		}
 		vals := collect(v, related, src, strict)
-		if len(vals) == 0 {
-			continue
-		}
-		if src.Js != nil {
-			v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Js, vals))
-		} else {
-			v.Info.Add(prefix+src.Name, Reducers[src.Op](vals))
-		}
+		AnnotateOne(v, src, vals, prefix, a)
 	}
 	if isBed {
 		v.Info.Delete("SVLEN")
@@ -318,33 +311,47 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string)
 	return nil
 }
 
+func AnnotateOne(v *irelate.Variant, src *Source, vals []interface{}, prefix string, a *Annotator) {
+	if len(vals) == 0 {
+		return
+	}
+	if src.Js != nil {
+		v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Js, vals))
+	} else {
+		v.Info.Add(prefix+src.Name, Reducers[src.Op](vals))
+	}
+}
+
 // UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
 func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 	for _, src := range a.Sources {
-		ntype := "Character"
-		var desc string
-		if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
-			ntype = "Float"
-		} else if src.Js != nil {
-			ntype = "."
-		}
+		UpdateHeader(h, src, a.Ends)
+	}
+}
 
-		if strings.HasSuffix(src.File, ".bam") && src.Field == "" {
-			desc = fmt.Sprintf("calculated by coverage from %s", src.File)
-		} else if src.Field != "" {
-			desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", src.Op, src.Field, src.File)
-		} else {
-			desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", src.Op, src.Column, src.File)
-		}
-		h.Infos[src.Name] = &vcfgo.Info{Id: src.Name, Number: "1", Type: ntype, Description: desc}
-		if a.Ends {
-			for _, end := range []string{LEFT, RIGHT} {
-				h.Infos[end+src.Name] = &vcfgo.Info{Id: end + src.Name, Number: "1", Type: ntype,
-					Description: fmt.Sprintf("%s at end %s", desc, strings.TrimSuffix(end, "_"))}
-			}
-		}
+func UpdateHeader(h *vcfgo.Header, src *Source, ends bool) {
+	ntype := "Character"
+	var desc string
+	if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
+		ntype = "Float"
+	} else if src.Js != nil {
+		ntype = "."
 	}
 
+	if strings.HasSuffix(src.File, ".bam") && src.Field == "" {
+		desc = fmt.Sprintf("calculated by coverage from %s", src.File)
+	} else if src.Field != "" {
+		desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", src.Op, src.Field, src.File)
+	} else {
+		desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", src.Op, src.Column, src.File)
+	}
+	h.Infos[src.Name] = &vcfgo.Info{Id: src.Name, Number: "1", Type: ntype, Description: desc}
+	if ends {
+		for _, end := range []string{LEFT, RIGHT} {
+			h.Infos[end+src.Name] = &vcfgo.Info{Id: end + src.Name, Number: "1", Type: ntype,
+				Description: fmt.Sprintf("%s at end %s", desc, strings.TrimSuffix(end, "_"))}
+		}
+	}
 }
 
 // SetupStreams takes the query file and sets everything up for annotation. If the input was

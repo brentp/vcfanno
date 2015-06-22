@@ -45,7 +45,8 @@ func (a *annotation) flatten(index int) []*Source {
 		}
 	}
 	if len(a.Columns) == 0 && len(a.Fields) == 0 {
-		if !strings.HasSuffix(a.File, ".bam") {
+		// index of -1 is cadd.
+		if !strings.HasSuffix(a.File, ".bam") && index != -1 {
 			log.Fatalf("no columns or fields specified for %s\n", a.File)
 		}
 		// auto-fill bam to count.
@@ -81,16 +82,16 @@ func (a *annotation) flatten(index int) []*Source {
 	return sources
 }
 
+// CaddIdx is same as annotation, but has extra fields due to custom nature of CADD score.
 type CaddIdx struct {
-	File  string
-	Ops   []string
-	Names []string
-	idx   caddencode.Index
+	annotation
+	idx     caddencode.Index
+	Sources []*Source
 }
 
 type Config struct {
 	Annotation []annotation
-	Caddidx    CaddIdx
+	CaddIdx    CaddIdx
 }
 
 func (c Config) Sources() []*Source {
@@ -101,13 +102,20 @@ func (c Config) Sources() []*Source {
 	return s
 }
 
-func (c Config) Cadd() *CaddIdx {
-	if &c.Caddidx == nil || c.Caddidx.File == "" {
+// Cadd parses the cadd fields and updates the vcf Header.
+func (c Config) Cadd(h *vcfgo.Header, ends bool) *CaddIdx {
+	if &c.CaddIdx == nil || c.CaddIdx.File == "" {
 		return nil
 	}
-	log.Println(c.Caddidx.Ops, c.Caddidx.Names)
-	c.Caddidx.idx = caddencode.Reader(c.Caddidx.File)
-	return &c.Caddidx
+	log.Println(c.CaddIdx.Ops, c.CaddIdx.Names)
+	c.CaddIdx.Sources = c.CaddIdx.annotation.flatten(-1)
+	log.Printf("%+v", c.CaddIdx.Sources[0])
+	c.CaddIdx.idx = caddencode.Reader(c.CaddIdx.File)
+	for _, src := range c.CaddIdx.Sources {
+		UpdateHeader(h, src, ends)
+		h.Infos[src.Name].Number = "A"
+	}
+	return &c.CaddIdx
 }
 
 func checkAnno(a *annotation) error {
@@ -207,6 +215,8 @@ func main() {
 	var out io.Writer = os.Stdout
 
 	streams, rdr := a.SetupStreams(queryFile)
+	cadd := config.Cadd(rdr.Header, a.Ends)
+
 	if nil != rdr { // it was vcf, print the header
 		var err error
 		out, err = vcfgo.NewWriter(out, rdr.Header)
@@ -220,10 +230,8 @@ func main() {
 	start := time.Now()
 	n := 0
 
-	cadd := config.Cadd()
-
 	for interval := range a.Annotate(streams...) {
-		caddAnno(cadd, interval)
+		caddAnno(cadd, interval, a)
 		fmt.Fprintf(out, "%s\n", interval)
 		n++
 	}
@@ -236,17 +244,24 @@ func main() {
 }
 
 // if the cadd index was requested, annotate the variant.
-func caddAnno(cadd *CaddIdx, interval irelate.Relatable) {
+func caddAnno(cadd *CaddIdx, interval irelate.Relatable, a *Annotator) {
 	if cadd != nil {
-		// TODO: tie this in with api machinery
-		// or at least loop over and apply op.
-		// TODO: update header.
-		v := interval.(*irelate.Variant)
-		score, err := cadd.idx.At(interval.Chrom(), int(interval.Start())+1, v.Alt[0])
-		if err != nil {
-			log.Println("cadd errro:", err)
-		} else {
-			v.Info.Add(cadd.Names[0], score)
+		if v, ok := interval.(*irelate.Variant); ok {
+			vals := make([]interface{}, 0)
+			j := 0
+			for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
+				// TODO: handle multiple alts.
+				score, err := cadd.idx.At(interval.Chrom(), pos, v.Alt[0])
+				if err != nil {
+					log.Println("cadd error:", err)
+				}
+				vals = append(vals, score)
+				j += 1
+			}
+			// TODO: handle ends (left, right end of SV?)
+			for _, src := range cadd.Sources {
+				AnnotateOne(v, src, vals, "", a)
+			}
 		}
 	}
 }
