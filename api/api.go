@@ -325,11 +325,11 @@ func AnnotateOne(v *irelate.Variant, src *Source, vals []interface{}, prefix str
 // UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
 func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 	for _, src := range a.Sources {
-		UpdateHeader(h, src, a.Ends)
+		src.UpdateHeader(h, a.Ends)
 	}
 }
 
-func UpdateHeader(h *vcfgo.Header, src *Source, ends bool) {
+func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 	ntype := "Character"
 	var desc string
 	if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {

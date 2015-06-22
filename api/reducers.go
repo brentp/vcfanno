@@ -67,7 +67,7 @@ func concat(vals []interface{}) interface{} {
 			s = append(s, fmt.Sprintf("%v", v))
 		}
 	}
-	return strings.Join(s, ",")
+	return strings.Join(s, "|")
 }
 
 func count(vals []interface{}) interface{} {

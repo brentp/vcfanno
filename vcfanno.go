@@ -107,12 +107,10 @@ func (c Config) Cadd(h *vcfgo.Header, ends bool) *CaddIdx {
 	if &c.CaddIdx == nil || c.CaddIdx.File == "" {
 		return nil
 	}
-	log.Println(c.CaddIdx.Ops, c.CaddIdx.Names)
 	c.CaddIdx.Sources = c.CaddIdx.annotation.flatten(-1)
-	log.Printf("%+v", c.CaddIdx.Sources[0])
 	c.CaddIdx.idx = caddencode.Reader(c.CaddIdx.File)
 	for _, src := range c.CaddIdx.Sources {
-		UpdateHeader(h, src, ends)
+		src.UpdateHeader(h, ends)
 		h.Infos[src.Name].Number = "A"
 	}
 	return &c.CaddIdx
@@ -247,20 +245,28 @@ func main() {
 func caddAnno(cadd *CaddIdx, interval irelate.Relatable, a *Annotator) {
 	if cadd != nil {
 		if v, ok := interval.(*irelate.Variant); ok {
-			vals := make([]interface{}, 0)
-			j := 0
-			for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
-				// TODO: handle multiple alts.
-				score, err := cadd.idx.At(interval.Chrom(), pos, v.Alt[0])
-				if err != nil {
-					log.Println("cadd error:", err)
-				}
-				vals = append(vals, score)
-				j += 1
-			}
-			// TODO: handle ends (left, right end of SV?)
 			for _, src := range cadd.Sources {
-				AnnotateOne(v, src, vals, "", a)
+				vals := make([][]interface{}, len(v.Alt))
+				vStr := make([]string, len(v.Alt))
+				// handle multiple alts.
+				for iAlt, alt := range v.Alt {
+					vals[iAlt] = make([]interface{}, 0)
+
+					j := 0
+					for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
+						score, err := cadd.idx.At(interval.Chrom(), pos, alt)
+						if err != nil {
+							log.Println("cadd error:", err)
+						}
+						vals[iAlt] = append(vals[iAlt], score)
+						j += 1
+					}
+					// TODO: handle ends (left, right end of SV?)
+					AnnotateOne(v, src, vals[iAlt], "", a)
+					vStr[iAlt] = string(v.Info.SGet(src.Name))
+					v.Info.Delete(src.Name)
+				}
+				v.Info.Set(src.Name, strings.Join(vStr, ","))
 			}
 		}
 	}
