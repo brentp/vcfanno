@@ -36,5 +36,5 @@ ops=["js:start", "js:end", "js:vals.length", "js:sum=0;for(i=0;i<vals.length;i++
 # available from (TODO).
 [caddidx]
 file="example/cadd.sub.idx"
-names=["cadd_phred_score"]
-ops=["mean"]
+names=["cadd_phred_score", "cadd_max"]
+ops=["mean", "max"]

@@ -213,7 +213,7 @@ func main() {
 	var out io.Writer = os.Stdout
 
 	streams, rdr := a.SetupStreams(queryFile)
-	cadd := config.Cadd(rdr.Header, a.Ends)
+	var cadd *CaddIdx
 
 	if nil != rdr { // it was vcf, print the header
 		var err error
@@ -221,6 +221,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		cadd = config.Cadd(rdr.Header, a.Ends)
 
 	} else {
 		out = bufio.NewWriter(out)
@@ -234,9 +235,10 @@ func main() {
 		n++
 	}
 	printTime(start, n)
-	e := rdr.Error()
-	if e != nil {
-		log.Println(e)
+	if rdr != nil {
+		if e := rdr.Error(); e != nil {
+			log.Println(e)
+		}
 	}
 
 }

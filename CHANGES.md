@@ -1,3 +1,8 @@
+v0.0.6
+------
++ concat defaults to | separator
++ support for CADD
+
 v0.0.5
 ------
 + allow natural sort (1, 2, ... 9, 10, 11 instead of 1, 10, 11 ..., 19, 2, 20) via flag
