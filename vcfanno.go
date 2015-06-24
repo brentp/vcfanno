@@ -211,6 +211,7 @@ func main() {
 	var a = NewAnnotator(sources, jsString, *ends, strict, *natsort)
 
 	var out io.Writer = os.Stdout
+	defer os.Stdout.Close()
 
 	streams, rdr := a.SetupStreams(queryFile)
 	var cadd *CaddIdx
@@ -224,7 +225,9 @@ func main() {
 		cadd = config.Cadd(rdr.Header, a.Ends)
 
 	} else {
-		out = bufio.NewWriter(out)
+		bw := bufio.NewWriter(out)
+		defer bw.Flush()
+		out = bw
 	}
 	start := time.Now()
 	n := 0
@@ -256,6 +259,10 @@ func caddAnno(cadd *CaddIdx, interval irelate.Relatable, a *Annotator) {
 
 					j := 0
 					for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
+						// can only get a change for the alt.
+						if j >= len(v.Alt) {
+							break
+						}
 						score, err := cadd.idx.At(interval.Chrom(), pos, alt)
 						if err != nil {
 							log.Println("cadd error:", err)
