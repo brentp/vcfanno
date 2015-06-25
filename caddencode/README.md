@@ -4,7 +4,8 @@ caddencode
 CADD is a useful annotation for genomic variants. It provides a score for every
 base-change in the genome (totalling 8.6 billion bases). The download from the
 [cadd website](http://cadd.gs.washington.edu/) is 79GB and moderately difficult
-to use to annotate a VCF.
+to use to annotate a VCF. It is free for **academic** use, please contact the
+CADD creators for commercial use.
 
 `caddencode` encodes the CADD phred scores into an 11GB binary file with O(1)
 access (and provides a means to annotate a VCF). It does this by encoding the
