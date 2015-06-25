@@ -218,11 +218,11 @@ func main() {
 
 	if nil != rdr { // it was vcf, print the header
 		var err error
+		cadd = config.Cadd(rdr.Header, a.Ends)
 		out, err = vcfgo.NewWriter(out, rdr.Header)
 		if err != nil {
 			log.Fatal(err)
 		}
-		cadd = config.Cadd(rdr.Header, a.Ends)
 
 	} else {
 		bw := bufio.NewWriter(out)

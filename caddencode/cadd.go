@@ -28,6 +28,7 @@ type Index struct {
 	mmap        mmap.MMap
 	offsets     map[string]int
 	map_lengths map[string]int
+	val         []byte
 }
 
 func (i Index) Offset(chrom string) (int, error) {
@@ -57,8 +58,10 @@ func (i Index) Get(chrom string, pos int) (uint32, error) {
 		log.Println(chrom, pos, i.map_lengths[chrom])
 		return 0, ErrorOutofRange
 	}
-	val := i.mmap[off : off+4]
-	return binary.LittleEndian.Uint32(val), nil
+	copy(i.val[0:4], i.mmap[off:off+4])
+
+	v := binary.LittleEndian.Uint32(i.val)
+	return v, nil
 }
 
 func (i Index) At(chrom string, pos int, alt string) (float64, error) {
@@ -113,7 +116,8 @@ func Reader(f string) Index {
 	mmap, err := mmap.Map(mrdr, mmap.RDONLY, 0)
 	check(err)
 
-	i := Index{make([]string, 0), make([]int, 0), mmap, make(map[string]int), make(map[string]int)}
+	i := Index{make([]string, 0), make([]int, 0), mmap, make(map[string]int), make(map[string]int),
+		make([]byte, 4)}
 	for {
 		line, err := rdr.ReadString('\n')
 		if err == io.EOF {
