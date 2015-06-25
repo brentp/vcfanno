@@ -146,10 +146,11 @@ func (s *APISuite) TestSource(c *C) {
 }
 
 func (s *APISuite) TestJsSetup(c *C) {
+	vm := s.annotator.Sources[0].Vm
 
 	vals := []interface{}{0, 1, 2}
-	s.annotator.vm.Set("vals", vals)
-	value, err := s.annotator.vm.Run("mean(vals)")
+	vm.Set("vals", vals)
+	value, err := vm.Run("mean(vals)")
 	c.Assert(err, IsNil)
 	val, err := value.ToString()
 	c.Assert(err, IsNil)
@@ -166,10 +167,11 @@ var jstest = []struct {
 }
 
 func (s *APISuite) TestJsOp(c *C) {
+	vm := s.annotator.Sources[0].Vm
 	for _, jst := range jstest {
-		script, err := s.annotator.vm.Compile("", jst.js)
+		script, err := vm.Compile("", jst.js)
 		c.Assert(err, IsNil)
-		v := s.annotator.JsOp(s.v1.Variant, script, []interface{}{})
+		v := s.annotator.Sources[0].JsOp(s.v1.Variant, script, []interface{}{})
 		c.Assert(v, Equals, jst.result)
 	}
 }

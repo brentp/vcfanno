@@ -21,6 +21,33 @@ loss of precision is bound to under 0.05** (because we multiply phred * 10.23 on
 and divide on output). So, if the real phred-score is 12.21, the recovered phred-score
 is guaranteed to be between 12.16 and 12.26.
 
+download
+--------
+
+The index and the binary file are here:
+
+ - https://s3.amazonaws.com/vcfanno/cadd_v1.2.idx
+ - https://s3.amazonaws.com/vcfanno/cadd_v1.2.bin
+
+The `vcfanno` conf file should point to the .idx file as in the [example](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
+
+annotation
+----------
+
+For each of these, the user can define a reduction function (mean, max, concat, etc) to
+apply to the resulting values...
+
+- For single-base changes, we report the single cadd score. 
+
+- For deletions where the alt is a single base, we report the list of changes from ref[i] to alt.
+  e.g.  ref=CCGCCGTTGCAAAGGCGCGCCG, alt=C, the first 2 changes will be C->C and will have score 0.
+  Each score will be calculated by it's position in the reference.
+
+- For insertions, and other MNP's that don't have an alt of length 1. We report the 2 scores of the
+  positions flanking the event.
+
+We are open to suggestions on how to better handle MNPs.
+
 testing
 -------
 
@@ -34,3 +61,40 @@ There are 3 positions on chromosome 3 that use an ambiguous reference and so sto
 4 base changes. In the file, we handle these by storing a change to C, T, G. In the
 code, we handle this by storing the values in the actual code so that the guarantee
 of a precision to within 0.05 is maintained.
+
+standalone use
+--------------
+
+It's possible to get the cadd scores for arbitrary positions in the genome independent from
+vcfanno. E.g:
+
+```Shell
+IDX=$CADD_PATH/cadd_v1.2.idx
+
+$ ./caddencode $IDX 1 10618 C
+1.075268817204301 <nil>
+
+$ ./caddencode $IDX 22 100020618 T
+2015/06/25 10:47:37 22 100020618 50944546
+0 requested position out of range
+
+
+#check:
+$ tabix -s 1 -b 2 whole_genome_SNVs.tsv.gz 21:9411195-9411195
+21	9411195	A	C	-0.006942	3.231
+21	9411195	A	G	-0.005108	3.257
+21	9411195	A	T	0.045036	3.997
+
+$ ./caddencode $IDX 21 9411195 C
+3.225806451612903 <nil>
+$ ./caddencode $IDX 21 9411195 G
+3.225806451612903 <nil>
+$ ./caddencode $IDX 21 9411195 T
+3.225806451612903 <nil>
+$ ./caddencode $IDX 21 9411195 A
+0.0 <nil>
+
+```
+Note that an error is return when a position is requested beyond the end of the chromosome.
+The \<nil\> indicates that the query was successful.
+A query for a change the the reference results in a score of 0.0 with no error.

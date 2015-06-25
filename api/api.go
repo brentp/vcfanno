@@ -30,6 +30,7 @@ type Source struct {
 	// 0-based index of the file order this source is from.
 	Index int
 	Js    *otto.Script
+	Vm    *otto.Otto
 }
 
 // IsNumber indicates that we expect the Source to return a number given the op
@@ -39,7 +40,6 @@ func (s *Source) IsNumber() bool {
 
 // Annotator holds the information to annotate a file.
 type Annotator struct {
-	vm      *otto.Otto
 	Sources []*Source
 	Strict  bool // require a variant to have same ref and share at least 1 alt
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
@@ -48,12 +48,12 @@ type Annotator struct {
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
-func (a *Annotator) JsOp(v *vcfgo.Variant, js *otto.Script, vals []interface{}) interface{} {
-	a.vm.Set("chrom", v.Chrom())
-	a.vm.Set("start", v.Start())
-	a.vm.Set("end", v.End())
-	a.vm.Set("vals", vals)
-	value, err := a.vm.Run(js)
+func (s *Source) JsOp(v *vcfgo.Variant, js *otto.Script, vals []interface{}) interface{} {
+	s.Vm.Set("chrom", v.Chrom())
+	s.Vm.Set("start", v.Start())
+	s.Vm.Set("end", v.End())
+	s.Vm.Set("vals", vals)
+	value, err := s.Vm.Run(js)
 	if err != nil {
 		return fmt.Sprintf("js-error: %s", err)
 	}
@@ -82,14 +82,17 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort 
 		less = irelate.LessPrefix
 	}
 	a := Annotator{
-		vm:      otto.New(),
 		Sources: sources,
 		Strict:  strict,
 		Ends:    ends,
 		Less:    less,
 	}
+	vm := otto.New()
+	for _, s := range a.Sources {
+		s.Vm = vm
+	}
 	if js != "" {
-		_, err := a.vm.Run(js)
+		_, err := vm.Run(js)
 		if err != nil {
 			log.Fatalf("error parsing customjs:%s", err)
 		}
@@ -97,7 +100,7 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort 
 	for _, src := range a.Sources {
 		if strings.HasPrefix(src.Op, "js:") {
 			var err error
-			src.Js, err = a.vm.Compile(src.Op, src.Op[3:])
+			src.Js, err = vm.Compile(src.Op, src.Op[3:])
 			if err != nil {
 				log.Fatalf("error parsing op: %s for file %s", src.Op, src.File)
 			}
@@ -302,7 +305,7 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string)
 			continue
 		}
 		vals := collect(v, related, src, strict)
-		AnnotateOne(v, src, vals, prefix, a)
+		src.AnnotateOne(v, vals, prefix)
 	}
 	if isBed {
 		v.Info.Delete("SVLEN")
@@ -311,12 +314,12 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string)
 	return nil
 }
 
-func AnnotateOne(v *irelate.Variant, src *Source, vals []interface{}, prefix string, a *Annotator) {
+func (src *Source) AnnotateOne(v *irelate.Variant, vals []interface{}, prefix string) {
 	if len(vals) == 0 {
 		return
 	}
 	if src.Js != nil {
-		v.Info.Add(prefix+src.Name, a.JsOp(v.Variant, src.Js, vals))
+		v.Info.Add(prefix+src.Name, src.JsOp(v.Variant, src.Js, vals))
 	} else {
 		v.Info.Add(prefix+src.Name, Reducers[src.Op](vals))
 	}

@@ -233,7 +233,7 @@ func main() {
 	n := 0
 
 	for interval := range a.Annotate(streams...) {
-		caddAnno(cadd, interval, a)
+		caddAnno(cadd, interval)
 		fmt.Fprintf(out, "%s\n", interval)
 		n++
 	}
@@ -247,7 +247,7 @@ func main() {
 }
 
 // if the cadd index was requested, annotate the variant.
-func caddAnno(cadd *CaddIdx, interval irelate.Relatable, a *Annotator) {
+func caddAnno(cadd *CaddIdx, interval irelate.Relatable) {
 	if cadd != nil {
 		if v, ok := interval.(*irelate.Variant); ok {
 			for _, src := range cadd.Sources {
@@ -256,22 +256,27 @@ func caddAnno(cadd *CaddIdx, interval irelate.Relatable, a *Annotator) {
 				// handle multiple alts.
 				for iAlt, alt := range v.Alt {
 					vals[iAlt] = make([]interface{}, 0)
-
-					j := 0
-					for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
-						// can only get a change for the alt.
-						if j >= len(v.Alt) {
-							break
+					// e.g ref is ACTGC, alt is C, report list of changes from ref[i] to C.
+					if len(alt) == 1 {
+						for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
+							score, err := cadd.idx.At(interval.Chrom(), pos, alt)
+							if err != nil {
+								log.Println("cadd error:", err)
+							}
+							vals[iAlt] = append(vals[iAlt], score)
 						}
-						score, err := cadd.idx.At(interval.Chrom(), pos, alt)
-						if err != nil {
-							log.Println("cadd error:", err)
+					} else {
+						// take the flanking positions.
+						for _, pos := range []int{int(interval.Start() + 1), int(interval.End())} {
+							score, err := cadd.idx.At(interval.Chrom(), pos, alt)
+							if err != nil {
+								log.Println("cadd error:", err)
+							}
+							vals[iAlt] = append(vals[iAlt], score)
 						}
-						vals[iAlt] = append(vals[iAlt], score)
-						j += 1
 					}
 					// TODO: handle ends (left, right end of SV?)
-					AnnotateOne(v, src, vals[iAlt], "", a)
+					src.AnnotateOne(v, vals[iAlt], "")
 					vStr[iAlt] = string(v.Info.SGet(src.Name))
 					v.Info.Delete(src.Name)
 				}
