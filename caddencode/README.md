@@ -90,14 +90,14 @@ $ ./caddencode $IDX 21 9411195 C
 $ ./caddencode $IDX 21 9411195 G
 3.225806451612903 <nil>
 $ ./caddencode $IDX 21 9411195 T
-3.225806451612903 <nil>
+4.007820136852395 <nil>
 $ ./caddencode $IDX 21 9411195 A
-0.0 <nil>
+0 <nil>
 
 ```
 Note that an error is return when a position is requested beyond the end of the chromosome.
 The \<nil\> indicates that the query was successful.
-A query for a change the the reference results in a score of 0.0 with no error.
+A query for a change the the reference results in a score of 0 with no error.
 
 
 This mode is very fast. When running:
