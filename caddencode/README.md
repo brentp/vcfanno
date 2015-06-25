@@ -98,3 +98,12 @@ $ ./caddencode $IDX 21 9411195 A
 Note that an error is return when a position is requested beyond the end of the chromosome.
 The \<nil\> indicates that the query was successful.
 A query for a change the the reference results in a score of 0.0 with no error.
+
+
+This mode is very fast. When running:
+
+```Shell
+./caddencode test $IDX > /dev/null
+```
+
+We see something like: `tested 5585322 sites (641787/second)`

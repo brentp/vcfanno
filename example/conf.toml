@@ -32,9 +32,12 @@ ops=["js:start", "js:end", "js:vals.length", "js:sum=0;for(i=0;i<vals.length;i++
 # ./vcfanno -js some.js ... see example/custom.js for an example.
 
 
-# To annotated with cadd phred scores, include this section, but instead use the full-genome compressed
-# available from (TODO).
+# To annotated with cadd phred scores, include this section, but instead use the full-genome encoded
+# cadd scores from 
+# https://s3.amazonaws.com/vcfanno/cadd_v1.2.idx
+# https://s3.amazonaws.com/vcfanno/cadd_v1.2.bin
+# See: https://github.com/brentp/vcfanno/blob/master/caddencode/README.md
 [caddidx]
 file="example/cadd.sub.idx"
 names=["cadd_phred_score", "cadd_max"]
-ops=["mean", "max"]
+ops=["concat", "max"]

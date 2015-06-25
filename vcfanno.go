@@ -267,8 +267,12 @@ func caddAnno(cadd *CaddIdx, interval irelate.Relatable) {
 						}
 					} else {
 						// take the flanking positions.
-						for _, pos := range []int{int(interval.Start() + 1), int(interval.End())} {
-							score, err := cadd.idx.At(interval.Chrom(), pos, alt)
+						for j, pos := range []int{int(interval.Start() + 1), int(interval.End())} {
+							k := 0
+							if j > 0 {
+								k = len(alt) - 1
+							}
+							score, err := cadd.idx.At(interval.Chrom(), pos, alt[k:k+1])
 							if err != nil {
 								log.Println("cadd error:", err)
 							}

@@ -135,7 +135,8 @@ func itime(idx string) int {
 	i := Reader(idx)
 	t := time.Now()
 	n := 0
-	for j := 0; j < 100; j++ {
+	for j := 0; j < 16; j++ {
+		log.Println(j)
 		ic := rand.Intn(len(i.chroms))
 		chrom := i.chroms[ic]
 		max_len := rand.Intn(i.lengths[ic])
