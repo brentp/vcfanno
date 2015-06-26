@@ -73,7 +73,7 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 }
 
 var cfg = annotation{
-	File:   "fake file",
+	File:   "example/query.vcf",
 	Ops:    []string{"mean", "min", "max", "concat", "uniq", "first", "count"},
 	Fields: []string{"DP", "DP", "DP", "DP", "DP", "DP", "DP", "DP"},
 	Names:  []string{"dp_mean", "dp_min", "dp_max", "dp_concat", "dp_uniq", "dp_first", "dp_count"},
@@ -82,7 +82,7 @@ var cfg = annotation{
 func (s *AnnoSuite) TestFlatten(c *C) {
 
 	cfgBed := annotation{
-		File:    "bed file",
+		File:    "example/fitcons.bed",
 		Ops:     []string{"mean", "max", "flag"},
 		Columns: []int{4, 5, 1},
 		Names:   []string{"bed_mean", "bed_max", "bedFlag"},
