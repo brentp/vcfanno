@@ -1,7 +1,8 @@
 v0.0.6
 ------
 + concat defaults to | separator
-+ support for CADD
++ [support for CADD](https://github.com/brentp/vcfanno/tree/master/caddcode)
++ speed improvements (vcfgo info field)
 
 v0.0.5
 ------
