@@ -15,7 +15,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/brentp/irelate"
 	. "github.com/brentp/vcfanno/api"
-	caddencode "github.com/brentp/vcfanno/caddencode"
+	"github.com/brentp/vcfanno/caddcode"
 	"github.com/brentp/vcfgo"
 	"github.com/brentp/xopen"
 )
@@ -85,7 +85,7 @@ func (a *annotation) flatten(index int) []*Source {
 // CaddIdx is same as annotation, but has extra fields due to custom nature of CADD score.
 type CaddIdx struct {
 	annotation
-	idx     caddencode.Index
+	idx     caddcode.Index
 	Sources []*Source
 }
 
@@ -108,7 +108,7 @@ func (c Config) Cadd(h *vcfgo.Header, ends bool) *CaddIdx {
 		return nil
 	}
 	c.CaddIdx.Sources = c.CaddIdx.annotation.flatten(-1)
-	c.CaddIdx.idx = caddencode.Reader(c.CaddIdx.File)
+	c.CaddIdx.idx = caddcode.Reader(c.CaddIdx.File)
 	for _, src := range c.CaddIdx.Sources {
 		src.UpdateHeader(h, ends)
 		h.Infos[src.Name].Number = "A"

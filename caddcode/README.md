@@ -66,15 +66,25 @@ standalone use
 --------------
 
 It's possible to get the cadd scores for arbitrary positions in the genome independent from
-vcfanno. E.g:
+vcfanno. 
+
+From this directory:
+
+```Shell
+$ go build main/cadd.go
+```
+
+
+Then use E.g:
+
 
 ```Shell
 IDX=$CADD_PATH/cadd_v1.2.idx
 
-$ ./caddencode $IDX 1 10618 C
+$ ./cadd $IDX 1 10618 C
 1.075268817204301 <nil>
 
-$ ./caddencode $IDX 22 100020618 T
+$ ./cadd $IDX 22 100020618 T
 2015/06/25 10:47:37 22 100020618 50944546
 0 requested position out of range
 
@@ -85,13 +95,13 @@ $ tabix -s 1 -b 2 whole_genome_SNVs.tsv.gz 21:9411195-9411195
 21	9411195	A	G	-0.005108	3.257
 21	9411195	A	T	0.045036	3.997
 
-$ ./caddencode $IDX 21 9411195 C
+$ ./cadd $IDX 21 9411195 C
 3.225806451612903 <nil>
-$ ./caddencode $IDX 21 9411195 G
+$ ./cadd $IDX 21 9411195 G
 3.225806451612903 <nil>
-$ ./caddencode $IDX 21 9411195 T
+$ ./cadd $IDX 21 9411195 T
 4.007820136852395 <nil>
-$ ./caddencode $IDX 21 9411195 A
+$ ./cadd $IDX 21 9411195 A
 0 <nil>
 
 ```
@@ -103,7 +113,7 @@ A query for a change the the reference results in a score of 0 with no error.
 This mode is very fast. When running:
 
 ```Shell
-./caddencode test $IDX > /dev/null
+./cadd test $IDX > /dev/null
 ```
 
 We see something like: `tested 5585322 sites (641787/second)`
