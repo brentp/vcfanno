@@ -42,7 +42,7 @@ ops=["concat"]
 annotation
 ----------
 
-For each of these, the user can define a reduction function (mean, max, concat, etc) to
+The user can define a reduction function (mean, max, concat, etc) to
 apply to the resulting values...
 
 - For single-base changes, we report the single cadd score. 
