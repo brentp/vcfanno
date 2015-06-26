@@ -20,6 +20,8 @@ import (
 	"github.com/brentp/xopen"
 )
 
+const VERSION = "0.0.6"
+
 // annotation holds information about the annotation files parsed from the toml config.
 type annotation struct {
 	File    string
@@ -56,6 +58,9 @@ func (a *annotation) flatten(index int) []*Source {
 				a.Columns[i] = 1
 			}
 		}
+	}
+	if !(xopen.Exists(a.File) || a.File == "-") {
+		log.Fatalf("unable to open file: %s\n", a.File)
 	}
 
 	n := len(a.Ops)
@@ -174,6 +179,11 @@ func readJs(js string) string {
 }
 
 func main() {
+	fmt.Fprintf(os.Stderr, `
+vcfanno version %s
+
+see: https://github.com/brentp/vcfanno
+`, VERSION)
 
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
 	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
@@ -192,6 +202,10 @@ func main() {
 		return
 	}
 	queryFile := inFiles[1]
+	if !(xopen.Exists(queryFile) || queryFile == "-") {
+		fmt.Fprintf(os.Stderr, "\nERROR: can't find query file: %s\n", queryFile)
+		os.Exit(2)
+	}
 
 	var config Config
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
