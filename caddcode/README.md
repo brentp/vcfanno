@@ -30,6 +30,14 @@ The index and the binary file are here:
  - https://s3.amazonaws.com/vcfanno/cadd_v1.2.bin
 
 The `vcfanno` conf file should point to the .idx file as in the [example](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
+The conf file should be updated as:
+
+```
+[caddidx]
+file="/path/to/cadd_v1.2.idx"
+names=["cadd_phred_score"]
+ops=["concat"]
+```
 
 annotation
 ----------

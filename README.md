@@ -16,6 +16,8 @@ It can annotate ~ 5,000 variants per second with 5 annotations from 3 files on a
 
 We are actively developing `vcfanno` and appreciate feedback and bug reports.
 
+`vcfanno` supports annotation with CADD phred scores. [See the docs](https://github.com/brentp/vcfanno/tree/master/caddcode#caddencode)
+
 Usage
 =====
 
