@@ -35,7 +35,7 @@ type annotation struct {
 // flatten turns an annotation into a slice of Sources. Pass in the index of the file.
 // having it as a Source makes the code cleaner, but it's simpler for the user to
 // specify multiple ops per file in the toml config.
-func (a *annotation) flatten(index int) []*Source {
+func (a *annotation) flatten(index int, basepath string) []*Source {
 	if len(a.Ops) == 0 {
 		if !strings.HasSuffix(a.File, ".bam") {
 			log.Fatalf("no ops specified for %s\n", a.File)
@@ -60,7 +60,12 @@ func (a *annotation) flatten(index int) []*Source {
 		}
 	}
 	if !(xopen.Exists(a.File) || a.File == "-") {
-		log.Fatalf("unable to open file: %s\n", a.File)
+		if basepath != "" {
+			a.File = basepath + "/" + a.File
+		}
+		if !(xopen.Exists(a.File) || a.File == "-") {
+			log.Fatalf("[flatten] unable to open file: %s in %s\n", a.File, basepath)
+		}
 	}
 
 	n := len(a.Ops)
@@ -97,12 +102,14 @@ type CaddIdx struct {
 type Config struct {
 	Annotation []annotation
 	CaddIdx    CaddIdx
+	// base path to prepend to all files.
+	Base string
 }
 
 func (c Config) Sources() []*Source {
 	s := make([]*Source, 0)
 	for i, a := range c.Annotation {
-		s = append(s, a.flatten(i)...)
+		s = append(s, a.flatten(i, c.Base)...)
 	}
 	return s
 }
@@ -112,7 +119,7 @@ func (c Config) Cadd(h *vcfgo.Header, ends bool) *CaddIdx {
 	if &c.CaddIdx == nil || c.CaddIdx.File == "" {
 		return nil
 	}
-	c.CaddIdx.Sources = c.CaddIdx.annotation.flatten(-1)
+	c.CaddIdx.Sources = c.CaddIdx.annotation.flatten(-1, c.Base)
 	c.CaddIdx.idx = caddcode.Reader(c.CaddIdx.File)
 	for _, src := range c.CaddIdx.Sources {
 		src.UpdateHeader(h, ends)
