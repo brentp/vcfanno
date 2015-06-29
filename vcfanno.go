@@ -196,8 +196,8 @@ see: https://github.com/brentp/vcfanno
 	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
 		" share the same ref and alt alleles. Default is to require exact match between variants.")
 	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
-	natsort := flag.Bool("natural-sort", false, "expect chromosomes in order of 1, 2, ..., 9, 10, 11..."+
-		" default is 1, 10, 11, ..., 19, 2, 20...")
+	lexsort := flag.Bool("lexicographical", false, "expect chromosomes in order of 1,10,11 ... 19, 2, 20... "+
+		" default is 1, 10, 11, ..., 19, 2, 20... . All files must be in the same order.")
 	flag.Parse()
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
@@ -229,7 +229,7 @@ see: https://github.com/brentp/vcfanno
 
 	jsString := readJs(*js)
 	strict := !*notstrict
-	var a = NewAnnotator(sources, jsString, *ends, strict, *natsort)
+	var a = NewAnnotator(sources, jsString, *ends, strict, !*lexsort)
 
 	var out io.Writer = os.Stdout
 	defer os.Stdout.Close()

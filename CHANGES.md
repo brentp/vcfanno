@@ -1,8 +1,9 @@
 v0.0.6
 ------
-+ concat defaults to | separator
 + [support for CADD](https://github.com/brentp/vcfanno/tree/master/caddcode)
++ concat defaults to | separator
 + speed improvements (vcfgo info field)
++ natural sort is default. use -lexographical to
 
 v0.0.5
 ------
