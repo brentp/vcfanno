@@ -48,11 +48,12 @@ type Annotator struct {
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
-func (s *Source) JsOp(v *vcfgo.Variant, js *otto.Script, vals []interface{}) interface{} {
+func (s *Source) JsOp(v *vcfgo.Variant, js *otto.Script, vals []interface{}) string {
 	s.Vm.Set("chrom", v.Chrom())
 	s.Vm.Set("start", v.Start())
 	s.Vm.Set("end", v.End())
 	s.Vm.Set("vals", vals)
+	s.Vm.Set("info", v.Info.String())
 	value, err := s.Vm.Run(js)
 	if err != nil {
 		return fmt.Sprintf("js-error: %s", err)
