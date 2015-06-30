@@ -33,12 +33,38 @@ CLINVAR_SIG = {'0': 'uncertain',
                '7': 'histocompatibility',
                '255': 'other'}
 
-function clinvar_pathogenic(vals){
+function clinvar_pathogenic_flag(vals){
 	for(i=0;i<vals.length;i++){
 		if(vals[i] == 5){
 			return true
 		}
 	}
-	console.log("checked")
+	return false
+}
+
+function clinvar_likely_pathogenic_flag(vals){
+	for(i=0;i<vals.length;i++){
+		if(vals[i] == 4){
+			return true
+		}
+	}
+	return false
+}
+
+function clinvar_histocompatibility_flag(vals){
+	for(i=0;i<vals.length;i++){
+		if(vals[i] == 7){
+			return true
+		}
+	}
+	return false
+}
+
+function clinvar_drug_response_flag(vals){
+	for(i=0;i<vals.length;i++){
+		if(vals[i] == 6){
+			return true
+		}
+	}
 	return false
 }

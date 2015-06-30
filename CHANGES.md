@@ -1,3 +1,7 @@
+v0.0.7 (development)
+--------------------
++ better support for flags. e.g. can specify a flag from js by ending the function name with \_flag
+
 v0.0.6
 ------
 + [support for CADD](https://github.com/brentp/vcfanno/tree/master/caddcode)

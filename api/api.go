@@ -320,7 +320,14 @@ func (src *Source) AnnotateOne(v *irelate.Variant, vals []interface{}, prefix st
 		return
 	}
 	if src.Js != nil {
-		v.Info.Add(prefix+src.Name, src.JsOp(v.Variant, src.Js, vals))
+		jsval := src.JsOp(v.Variant, src.Js, vals)
+		if jsval == "true" || jsval == "false" && strings.Contains(src.Op, "_flag(") {
+			if jsval == "true" {
+				v.Info.Add(prefix+src.Name, true)
+			}
+		} else {
+			v.Info.Add(prefix+src.Name, jsval)
+		}
 	} else {
 		v.Info.Add(prefix+src.Name, Reducers[src.Op](vals))
 	}
@@ -334,12 +341,19 @@ func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 }
 
 func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
-	ntype := "Character"
+	ntype, number := "Character", "1"
+	if src.Op == "flag" {
+		ntype, number = "Flag", "0"
+	}
 	var desc string
 	if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
 		ntype = "Float"
 	} else if src.Js != nil {
-		ntype = "."
+		if strings.Contains(src.Op, "_flag(") {
+			ntype, number = "Flag", "0"
+		} else {
+			ntype = "."
+		}
 	}
 
 	if strings.HasSuffix(src.File, ".bam") && src.Field == "" {
@@ -349,7 +363,7 @@ func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 	} else {
 		desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", src.Op, src.Column, src.File)
 	}
-	h.Infos[src.Name] = &vcfgo.Info{Id: src.Name, Number: "1", Type: ntype, Description: desc}
+	h.Infos[src.Name] = &vcfgo.Info{Id: src.Name, Number: number, Type: ntype, Description: desc}
 	if ends {
 		for _, end := range []string{LEFT, RIGHT} {
 			h.Infos[end+src.Name] = &vcfgo.Info{Id: end + src.Name, Number: "1", Type: ntype,
