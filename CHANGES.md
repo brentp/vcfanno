@@ -2,6 +2,7 @@ v0.0.7 (development)
 --------------------
 + better support for flags. e.g. can specify a flag from js by ending the function name with \_flag
 + [irelate] error if intervals are out of order within a file.
++ -base-path argument replaces basepath in .toml file
 
 v0.0.6
 ------

@@ -198,6 +198,7 @@ see: https://github.com/brentp/vcfanno
 	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
 	lexsort := flag.Bool("lexicographical", false, "expect chromosomes in order of 1,10,11 ... 19, 2, 20... "+
 		" default is 1, 10, 11, ..., 19, 2, 20... . All files must be in the same order.")
+	base := flag.String("base-path", "", "optional base-path to prepend to annotation files in the config")
 	flag.Parse()
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
@@ -218,6 +219,7 @@ see: https://github.com/brentp/vcfanno
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
 		panic(err)
 	}
+	config.Base = *base
 	for _, a := range config.Annotation {
 		err := checkAnno(&a)
 		if err != nil {
