@@ -171,7 +171,7 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 			if src.IsNumber() {
 				v, e := strconv.ParseFloat(sval, 32)
 				if e != nil {
-					panic(e)
+					log.Println(e)
 				}
 				coll = append(coll, v)
 			} else {
@@ -197,7 +197,9 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 				}
 			}
 		} else {
-			panic(fmt.Sprintf("not supported for: %v", other))
+			msg := fmt.Sprintf("not supported for: %v", other)
+			log.Println(msg)
+			coll = []interface{}{msg}
 		}
 	}
 	return coll
