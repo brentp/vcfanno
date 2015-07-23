@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bufio"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -26,18 +29,35 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := r.ParseMultipartForm(100)
+	log.Println(err)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	log.Println(r.MultipartForm.File)
 	handle := r.MultipartForm.File["vcf"][0]
-	vcf, err := handle.Open()
+	f, err := handle.Open()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer vcf.Close()
+	irdr := bufio.NewReader(f)
+	var vcf io.Reader
+	isgz, err := xopen.IsGzip(irdr)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if isgz {
+		vcf, err = gzip.NewReader(irdr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+	} else {
+		vcf = irdr
+	}
 
 	rdr, err := vcfgo.NewReader(vcf, true)
 	log.Println(err)
@@ -63,6 +83,7 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func main() {
 	var h AnnoHandler
 	cfg := os.Args[1]
+	basepath := os.Args[2]
 	if !xopen.Exists(cfg) {
 		fmt.Errorf("config not found %s", cfg)
 	}
@@ -71,6 +92,7 @@ func main() {
 	if _, err := toml.DecodeFile(cfg, &config); err != nil {
 		log.Fatal(err)
 	}
+	config.Base = basepath
 	for _, a := range config.Annotation {
 		err := shared.CheckAnno(&a)
 		if err != nil {
@@ -80,8 +102,8 @@ func main() {
 
 	h.config = config
 	var js string
-	if len(os.Args) > 2 {
-		js = os.Args[2]
+	if len(os.Args) > 3 {
+		js = os.Args[3]
 		h.jsString = shared.ReadJs(js)
 	}
 	http.Handle("/", h)

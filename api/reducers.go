@@ -2,6 +2,8 @@ package api
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 
 	"github.com/brentp/irelate"
@@ -40,7 +42,15 @@ func asfloat32(i interface{}) float32 {
 		return i.(float32)
 	case float64:
 		return float32(i.(float64))
+	case string:
+		f, err := strconv.ParseFloat(i.(string), 32)
+		if err != nil {
+			return float32(0)
+			log.Println(err)
+		}
+		return float32(f)
 	}
+
 	return i.(float32)
 }
 

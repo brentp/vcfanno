@@ -4,6 +4,7 @@ v0.0.7 (development)
 + [irelate] error if intervals are out of order within a file.
 + -base-path argument replaces basepath in .toml file
 + [vcfgo] report all headers in original file.
++ integrated server to host annotations
 
 v0.0.6
 ------
