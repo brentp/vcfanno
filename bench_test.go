@@ -9,11 +9,12 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/brentp/irelate"
 	"github.com/brentp/vcfanno/api"
+	"github.com/brentp/vcfanno/shared"
 	"github.com/brentp/xopen"
 )
 
 func benchmarkAnno(b *testing.B, natural bool) {
-	var configs Config
+	var configs shared.Config
 	if _, err := toml.DecodeFile("example/conf.toml", &configs); err != nil {
 		panic(err)
 	}

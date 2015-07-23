@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/brentp/irelate"
+	"github.com/brentp/vcfanno/shared"
 	"github.com/brentp/vcfgo"
 
 	. "gopkg.in/check.v1"
@@ -72,7 +73,7 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 
 }
 
-var cfg = annotation{
+var cfg = shared.Annotation{
 	File:   "example/query.vcf",
 	Ops:    []string{"mean", "min", "max", "concat", "uniq", "first", "count"},
 	Fields: []string{"DP", "DP", "DP", "DP", "DP", "DP", "DP", "DP"},
@@ -81,14 +82,14 @@ var cfg = annotation{
 
 func (s *AnnoSuite) TestFlatten(c *C) {
 
-	cfgBed := annotation{
+	cfgBed := shared.Annotation{
 		File:    "example/fitcons.bed",
 		Ops:     []string{"mean", "max", "flag"},
 		Columns: []int{4, 5, 1},
 		Names:   []string{"bed_mean", "bed_max", "bedFlag"},
 	}
 
-	c.Assert(len(cfgBed.flatten(0, "")), Equals, 3)
+	c.Assert(len(cfgBed.Flatten(0, "")), Equals, 3)
 }
 
 /*
