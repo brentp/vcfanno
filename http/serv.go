@@ -22,64 +22,98 @@ type AnnoHandler struct {
 	jsString string
 }
 
+func check(e error, w http.ResponseWriter) bool {
+	if e != nil {
+		log.Println(e)
+		http.Error(w, e.Error(), http.StatusInternalServerError)
+		return true
+	}
+	return false
+}
+
 func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" && r.Method != "PUT" {
 		w.Write([]byte("must POST or PUT a VCF"))
 		return
 	}
-	err := r.ParseMultipartForm(100)
-	log.Println(err)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+	mpr, err := r.MultipartReader()
+	if check(err, w) {
 		return
 	}
-	log.Println(r.MultipartForm.File)
-	handle := r.MultipartForm.File["vcf"][0]
-	f, err := handle.Open()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+	hj, ok := w.(http.Hijacker)
+	if !ok {
+		log.Println("hijacking not supported")
+		http.Error(w, "hijacking not supported", 500)
 		return
 	}
-	irdr := bufio.NewReader(f)
+	conn, wh, err := hj.Hijack()
+	if check(err, w) {
+		return
+	}
+	defer conn.Close()
+
 	var vcf io.Reader
-	isgz, err := xopen.IsGzip(irdr)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if isgz {
-		vcf, err = gzip.NewReader(irdr)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+	var wtr io.WriteCloser
+	vcf, wtr = io.Pipe()
+
+	// This and the hijacking are to support streaming the upload
+	// *while* streaming the download.
+	// Without this, it's not possible to read from r.Body once we've
+	// written to the writer.
+	go func() {
+		for {
+			part, err := mpr.NextPart()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				wh.WriteString(fmt.Sprintf("%s", err))
+				log.Println(err)
+				return
+			}
+			io.Copy(wtr, part)
+		}
+		wtr.Close()
+	}()
+
+	vcf = bufio.NewReader(vcf)
+	if is, err := xopen.IsGzip(vcf.(*bufio.Reader)); err == nil && is {
+		vcf, err = gzip.NewReader(vcf)
+		if check(err, w) {
 			return
 		}
-
-	} else {
-		vcf = irdr
 	}
 
-	rdr, err := vcfgo.NewReader(vcf, true)
-	log.Println(err)
+	var rdr *vcfgo.Reader
+	if rdr, err = vcfgo.NewReader(vcf, true); check(err, w) {
+		return
+	}
 	queryStream := irelate.StreamVCF(rdr)
 
 	annot := api.NewAnnotator(h.config.Sources(), h.jsString, true, true, true)
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if check(err, w) {
+		return
 	}
 
-	vcfWriter, err := vcfgo.NewWriter(w, rdr.Header)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	vcfWriter, err := vcfgo.NewWriter(wh, rdr.Header)
+	if check(err, w) {
+		return
 	}
 
 	streams, err := annot.SetupStreams(queryStream)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if check(err, w) {
+		return
 	}
+
 	for interval := range annot.Annotate(streams...) {
 		fmt.Fprintf(vcfWriter, "%s\n", interval)
+	}
+	if err := wh.Flush(); err != nil {
+		log.Println(err)
 	}
 }
 
