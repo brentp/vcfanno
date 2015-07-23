@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
+	"github.com/brentp/irelate"
 	"github.com/brentp/vcfanno/api"
 	"github.com/brentp/xopen"
 )
@@ -24,7 +25,9 @@ func benchmarkAnno(b *testing.B, natural bool) {
 
 	a := api.NewAnnotator(configs.Sources(), js_string, false, true, natural)
 	for n := 0; n < b.N; n++ {
-		streams, _ := a.SetupStreams("example/query.vcf")
+		q := irelate.Vopen("example/query.vcf")
+		stream := irelate.StreamVCF(q)
+		streams := a.SetupStreams(stream)
 		for interval := range a.Annotate(streams...) {
 			fmt.Fprintf(out, "%s\n", interval)
 		}

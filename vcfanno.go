@@ -20,7 +20,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-const VERSION = "0.0.6"
+const VERSION = "0.0.7"
 
 // annotation holds information about the annotation files parsed from the toml config.
 type annotation struct {
@@ -236,7 +236,16 @@ see: https://github.com/brentp/vcfanno
 	var out io.Writer = os.Stdout
 	defer os.Stdout.Close()
 
-	streams, rdr := a.SetupStreams(queryFile)
+	var rdr *vcfgo.Reader
+	var queryStream irelate.RelatableChannel
+	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
+		queryStream = irelate.Streamer(queryFile)
+	} else {
+		rdr = irelate.Vopen(queryFile)
+		queryStream = irelate.StreamVCF(rdr)
+	}
+
+	streams := a.SetupStreams(queryStream)
 	var cadd *CaddIdx
 
 	if nil != rdr { // it was vcf, print the header

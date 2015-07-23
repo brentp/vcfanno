@@ -372,20 +372,11 @@ func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 	}
 }
 
-// SetupStreams takes the query file and sets everything up for annotation. If the input was
-// a vcf, it returns the header with the new annotation fields added.
-func (a *Annotator) SetupStreams(queryFile string) ([]irelate.RelatableChannel, *vcfgo.Reader) {
+// SetupStreams takes the query stream and sets everything up for annotation.
+func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) []irelate.RelatableChannel {
 
 	streams := make([]irelate.RelatableChannel, 1)
-
-	var query *vcfgo.Reader // need this to print header
-
-	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
-		streams[0] = irelate.Streamer(queryFile)
-	} else {
-		query = irelate.Vopen(queryFile)
-		streams[0] = irelate.StreamVCF(query)
-	}
+	streams[0] = qStream
 
 	seen := make(map[int]bool)
 	for _, src := range a.Sources {
@@ -397,11 +388,7 @@ func (a *Annotator) SetupStreams(queryFile string) ([]irelate.RelatableChannel, 
 		seen[src.Index] = true
 		streams = append(streams, irelate.Streamer(src.File))
 	}
-	if nil != query {
-		a.UpdateHeader(query.Header)
-		return streams, query
-	}
-	return streams, nil
+	return streams
 }
 
 // Annotate annotates a file with the sources in the Annotator.
