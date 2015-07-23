@@ -67,7 +67,9 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 
 	c.Assert(2, Equals, len(s.v1.Related()))
 
-	s.b = irelate.IntervalFromBedLine("chr1\t224\t244\t111\t222").(*irelate.Interval)
+	sb, err := irelate.IntervalFromBedLine("chr1\t224\t244\t111\t222")
+	s.b = sb.(*irelate.Interval)
+	c.Assert(err, IsNil)
 	s.b.SetSource(2)
 	s.v1.AddRelated(s.b)
 

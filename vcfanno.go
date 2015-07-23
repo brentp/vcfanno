@@ -73,15 +73,22 @@ see: https://github.com/brentp/vcfanno
 	defer os.Stdout.Close()
 
 	var rdr *vcfgo.Reader
+	var err error
 	var queryStream irelate.RelatableChannel
 	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
-		queryStream = irelate.Streamer(queryFile)
+		queryStream, err = irelate.Streamer(queryFile)
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		rdr = irelate.Vopen(queryFile)
 		queryStream = irelate.StreamVCF(rdr)
 	}
 
-	streams := a.SetupStreams(queryStream)
+	streams, err := a.SetupStreams(queryStream)
+	if err != nil {
+		log.Fatal(err)
+	}
 	var cadd *CaddIdx
 
 	if nil != rdr { // it was vcf, print the header

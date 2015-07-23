@@ -86,7 +86,9 @@ func (s *APISuite) SetUpTest(c *C) {
 
 	c.Assert(2, Equals, len(s.v1.Related()))
 
-	s.bed = irelate.IntervalFromBedLine("chr1\t224\t244\t111\t222").(*irelate.Interval)
+	sbed, err := irelate.IntervalFromBedLine("chr1\t224\t244\t111\t222")
+	c.Assert(err, IsNil)
+	s.bed = sbed.(*irelate.Interval)
 	s.bed.SetSource(2)
 	s.v1.AddRelated(s.bed)
 
@@ -226,8 +228,8 @@ func (s *APISuite) TestVFromB(c *C) {
 // utility functions.
 
 func makeBed(chrom string, start int, end int, val float32) *irelate.Interval {
-	i := irelate.IntervalFromBedLine(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val)).(*irelate.Interval)
-	return i
+	i, _ := irelate.IntervalFromBedLine(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val))
+	return i.(*irelate.Interval)
 }
 
 func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string) *irelate.Variant {

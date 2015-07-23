@@ -375,7 +375,7 @@ func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 }
 
 // SetupStreams takes the query stream and sets everything up for annotation.
-func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) []irelate.RelatableChannel {
+func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.RelatableChannel, error) {
 
 	streams := make([]irelate.RelatableChannel, 1)
 	streams[0] = qStream
@@ -388,9 +388,13 @@ func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) []irelate.Rel
 			continue
 		}
 		seen[src.Index] = true
-		streams = append(streams, irelate.Streamer(src.File))
+		s, err := irelate.Streamer(src.File)
+		streams = append(streams, s)
+		if err != nil {
+			return streams[:0], err
+		}
 	}
-	return streams
+	return streams, nil
 }
 
 // Annotate annotates a file with the sources in the Annotator.

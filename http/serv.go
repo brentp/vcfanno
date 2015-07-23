@@ -74,7 +74,10 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	streams := annot.SetupStreams(queryStream)
+	streams, err := annot.SetupStreams(queryStream)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	for interval := range annot.Annotate(streams...) {
 		fmt.Fprintf(vcfWriter, "%s\n", interval)
 	}
