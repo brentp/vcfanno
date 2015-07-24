@@ -14,6 +14,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/brentp/irelate"
 	. "github.com/brentp/vcfanno/api"
+	vhttp "github.com/brentp/vcfanno/http"
 	. "github.com/brentp/vcfanno/shared"
 	"github.com/brentp/vcfgo"
 	"github.com/brentp/xopen"
@@ -28,6 +29,11 @@ vcfanno version %s
 see: https://github.com/brentp/vcfanno
 `, VERSION)
 
+	if len(os.Args) > 1 && os.Args[1] == "server" {
+		vhttp.Server()
+		os.Exit(0)
+	}
+
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
 	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
 		" share the same ref and alt alleles. Default is to require exact match between variants.")
@@ -41,7 +47,11 @@ see: https://github.com/brentp/vcfanno
 		fmt.Printf(`Usage:
 %s config.toml intput.vcf > annotated.vcf
 
-`, os.Args[0])
+To run a server:
+
+%s server
+
+`, os.Args[0], os.Args[0])
 		flag.PrintDefaults()
 		return
 	}

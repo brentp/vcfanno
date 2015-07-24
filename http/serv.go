@@ -1,8 +1,9 @@
-package main
+package server
 
 import (
 	"bufio"
 	"compress/gzip"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -117,10 +118,30 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func main() {
+func Server() {
 	var h AnnoHandler
-	cfg := os.Args[1]
-	basepath := os.Args[2]
+	// os.Args[1] == "server"
+	if os.Args[1] == "server" {
+		if len(os.Args) > 1 {
+			os.Args = append(os.Args[:1], os.Args[2:]...)
+		} else {
+			os.Args = append(os.Args[:1])
+		}
+	}
+
+	port := flag.String("port", ":8080", "port for server")
+	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
+	base := flag.String("base-path", "", "optional base-path to prepend to annotation files in the config")
+	flag.Parse()
+
+	args := flag.Args()
+	if len(args) == 0 || !xopen.Exists(args[0]) {
+		fmt.Printf("must send in path to config file\n")
+		flag.PrintDefaults()
+		return
+	}
+	cfg := args[0]
+
 	if !xopen.Exists(cfg) {
 		fmt.Errorf("config not found %s", cfg)
 	}
@@ -129,7 +150,7 @@ func main() {
 	if _, err := toml.DecodeFile(cfg, &config); err != nil {
 		log.Fatal(err)
 	}
-	config.Base = basepath
+	config.Base = *base
 	for _, a := range config.Annotation {
 		err := shared.CheckAnno(&a)
 		if err != nil {
@@ -138,11 +159,10 @@ func main() {
 	}
 
 	h.config = config
-	var js string
-	if len(os.Args) > 3 {
-		js = os.Args[3]
-		h.jsString = shared.ReadJs(js)
+	if *js != "" {
+		h.jsString = shared.ReadJs(*js)
 	}
 	http.Handle("/", h)
-	http.ListenAndServe(":8080", nil)
+	fmt.Fprintf(os.Stderr, "\nstarting vcfanno server on port %s\n", *port)
+	http.ListenAndServe(*port, nil)
 }
