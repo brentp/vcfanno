@@ -250,19 +250,28 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 	// modify the variant in-place to create a 1-base variant at the end of
 	// the interval. annotate that end and then change the position back to what it was.
 	if ends == LEFT || ends == RIGHT {
-		// save end here to get the right end.
-		pos, ref, alt, end := v.Pos, v.Ref, v.Alt, v.End()
-		svlen, err := v.Info.Get("SVLEN")
-		v.Info.Set("SVLEN", 1)
-		// the end is determined by the alt, so we have to make sure it has length 1.
-		v.Ref, v.Alt = "A", []string{"T"}
-		if ends == RIGHT {
-			v.Pos = uint64(end)
+		// the end is determined by the SVLEN, so we have to make sure it has length 1.
+		var l, r uint32
+		if ends == LEFT {
+			l, r = v.CIPos()
+		} else {
+			l, r = v.CIEnd()
 		}
+		// dont reannotate same interval
+		if l == v.Start() && r == v.End() {
+			return nil
+		}
+		// save end here to get the right end.
+		pos, ref, alt := v.Pos, v.Ref, v.Alt
+		// store the orginal svlen since we are going to modify it.
+		v.Ref, v.Alt = "A", []string{"<DEL>"}
+		svlen, _ := v.Info.Get("SVLEN")
 
+		v.Pos = uint64(l + 1)
+		v.Info.Set("SVLEN", r-l)
 		a.AnnotateOne(v, false, ends)
 		v.Pos, v.Ref, v.Alt = pos, ref, alt
-		if err == nil && ok {
+		if svlen != nil && svlen != "" {
 			v.Info.Set("SVLEN", svlen)
 		} else {
 			v.Info.Delete("SVLEN")

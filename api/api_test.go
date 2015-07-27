@@ -13,9 +13,10 @@ import (
 func Test(t *testing.T) { TestingT(t) }
 
 type APISuite struct {
-	v1 *irelate.Variant
-	v2 *irelate.Variant
-	v3 *irelate.Variant
+	sv1 *irelate.Variant
+	v1  *irelate.Variant
+	v2  *irelate.Variant
+	v3  *irelate.Variant
 
 	bed *irelate.Interval
 	bam *irelate.Bam
@@ -50,10 +51,23 @@ var v1 = &vcfgo.Variant{
 	Filter:     "PASS",
 	Info:       vcfgo.NewInfoByte("DP=35", h),
 }
+var sv1 = &vcfgo.Variant{
+	Chromosome: "chr1",
+	Pos:        uint64(230),
+	Id:         "id",
+	Ref:        "A",
+	Alt:        []string{"<DEL>"},
+	Quality:    float32(555.5),
+	Filter:     "PASS",
+	Info:       vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h),
+}
 
 func (s *APISuite) SetUpTest(c *C) {
 
 	h.Infos["DP"] = &vcfgo.Info{Id: "DP", Description: "depth", Number: "1", Type: "Integer"}
+	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Description: "SVLEN", Number: "1", Type: "Integer"}
+	h.Infos["CIPOS"] = &vcfgo.Info{Id: "CIPOS", Description: "CIPOS", Number: "2", Type: "Integer"}
+	h.Infos["CIEND"] = &vcfgo.Info{Id: "CIEND", Description: "CIEND", Number: "2", Type: "Integer"}
 
 	s.v1 = &irelate.Variant{Variant: v1}
 	s.v1.Info = vcfgo.NewInfoByte("DP=35", h)
@@ -63,6 +77,10 @@ func (s *APISuite) SetUpTest(c *C) {
 	s.v2 = &irelate.Variant{Variant: &v2}
 	s.v2.Info.Add("AC_AFR", 33)
 	s.v2.SetSource(1)
+
+	s.sv1 = &irelate.Variant{Variant: sv1}
+	s.sv1.Info = vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h)
+	s.sv1.SetSource(0)
 
 	v3 := *v1
 	v3.Info = vcfgo.NewInfoByte("DP=88", h)
@@ -83,6 +101,8 @@ func (s *APISuite) SetUpTest(c *C) {
 
 	s.v1.AddRelated(s.v2)
 	s.v1.AddRelated(s.v3)
+	s.sv1.AddRelated(s.v2)
+	s.sv1.AddRelated(s.v3)
 
 	c.Assert(2, Equals, len(s.v1.Related()))
 
@@ -91,10 +111,12 @@ func (s *APISuite) SetUpTest(c *C) {
 	s.bed = sbed.(*irelate.Interval)
 	s.bed.SetSource(2)
 	s.v1.AddRelated(s.bed)
+	s.sv1.AddRelated(s.bed)
 
 	s.bam = &irelate.Bam{Record: bam_rec, Chromosome: "chr1"}
 	s.bam.SetSource(3)
 	s.v1.AddRelated(s.bam)
+	s.sv1.AddRelated(s.bam)
 
 	s.src = Source{
 		File:   "example/fitcons.bed",
@@ -196,18 +218,21 @@ func (s *APISuite) TestAnnotateOne(c *C) {
 }
 
 func (s *APISuite) TestAnnotateEndsLeft(c *C) {
-	s.annotator.AnnotateEnds(s.v1, LEFT)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30")
+	s.annotator.AnnotateEnds(s.sv1, LEFT)
+	c.Assert(s.sv1.Info.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsRight(c *C) {
 	s.annotator.AnnotateEnds(s.v1, RIGHT)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;right_AC_AFR=33;right_fitcons_mean=111;right_bam_qual=30")
+	c.Assert(s.v1.Info.String(), Equals, "DP=35")
+
+	s.annotator.AnnotateEnds(s.sv1, RIGHT)
+	c.Assert(s.sv1.Info.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;right_fitcons_mean=111;right_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsBoth(c *C) {
-	s.annotator.AnnotateEnds(s.v1, BOTH)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30;right_AC_AFR=33;right_fitcons_mean=111;right_bam_qual=30")
+	s.annotator.AnnotateEnds(s.sv1, BOTH)
+	c.Assert(s.sv1.Info.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;AC_AFR=33;fitcons_mean=111;bam_qual=30;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30;right_fitcons_mean=111;right_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsInterval(c *C) {
@@ -335,7 +360,7 @@ func (s *APISuite) TestIdAnno(c *C) {
 	b2.AddRelated(v)
 	a.AnnotateEnds(b2, BOTH)
 	// variant only overlaps in middle.
-	c.Assert(b2.Fields[4], Equals, "o_id=rs")
+	c.Assert(b2.Fields[4], Equals, "o_id=rs", Commentf("%s", b2.Fields))
 }
 
 // TODO: test with bam.

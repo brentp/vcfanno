@@ -5,6 +5,8 @@ v0.0.7 (development)
 + -base-path argument replaces basepath in .toml file
 + [vcfgo] report all headers in original file.
 + integrated server to host annotations
++ -ends argument will now use CIPOS and CIEND to annotate the left and right interval of an SV. If CIPOS
+   and CIEND are undefined for a given interval, the ends will not be annotated.
 
 v0.0.6
 ------
