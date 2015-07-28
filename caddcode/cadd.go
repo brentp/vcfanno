@@ -88,15 +88,21 @@ func (i Index) At(chrom string, pos int, alt string) (float64, error) {
 	}
 
 	leftShift := uint32(2)
+	max := uint32(0)
 	for i, a := range letters {
+		val := (num >> leftShift)
 		if a == alt[0] {
-			return float64((num>>leftShift)&off) / 10.23, nil
+			return float64(val&off) / 10.23, nil
 		}
 		if i != missing {
 			leftShift += 10
 		}
+		if val > max {
+			max = val
+		}
 	}
-	return float64(-1.0), fmt.Errorf("position not found %s:%d\n", chrom, pos)
+	// Return the maximum for use with SVs.
+	return float64(max&off) / 10.23, fmt.Errorf("position not found %s:%d\n", chrom, pos)
 }
 
 func Reader(f string) Index {

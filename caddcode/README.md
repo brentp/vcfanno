@@ -45,14 +45,11 @@ annotation
 The user can define a reduction function (mean, max, concat, etc) to
 apply to the resulting values...
 
-- For single-base changes, we report the single cadd score. 
+- For single-nucleotide variants, we report the single cadd score.
 
-- For deletions where the alt is a single base, we report the list of changes from ref[i] to alt.
-  e.g.  ref=CCGCCGTTGCAAAGGCGCGCCG, alt=C, the first 2 changes will be C->C and will have score 0.
-  Each score will be calculated by it's position in the reference.
-
-- For insertions, and other MNP's that don't have an alt of length 1. We report the 2 scores of the
-  positions flanking the event.
+- For all other events, we report the maximum CADD score at each position
+  over the length of the event. Users can then perform operations on the
+  resulting list of values.
 
 We are open to suggestions on how to better handle MNPs.
 

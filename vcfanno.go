@@ -141,30 +141,14 @@ func caddAnno(cadd *CaddIdx, interval irelate.Relatable) {
 				// handle multiple alts.
 				for iAlt, alt := range v.Alt {
 					vals[iAlt] = make([]interface{}, 0)
-					// e.g ref is ACTGC, alt is C, report list of changes from ref[i] to C.
-					if len(alt) == 1 {
-						for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
-							score, err := cadd.Idx.At(interval.Chrom(), pos, alt)
-							if err != nil {
-								log.Println("cadd error:", err)
-							}
-							vals[iAlt] = append(vals[iAlt], score)
+					// report list of changes from ref[i] to C.
+					for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
+						score, err := cadd.Idx.At(interval.Chrom(), pos, alt)
+						if err != nil && alt[0] != '<' {
+							log.Println("cadd error:", err)
 						}
-					} else {
-						// take the flanking positions.
-						for j, pos := range []int{int(interval.Start() + 1), int(interval.End())} {
-							k := 0
-							if j > 0 {
-								k = len(alt) - 1
-							}
-							score, err := cadd.Idx.At(interval.Chrom(), pos, alt[k:k+1])
-							if err != nil {
-								log.Println("cadd error:", err)
-							}
-							vals[iAlt] = append(vals[iAlt], score)
-						}
+						vals[iAlt] = append(vals[iAlt], score)
 					}
-					// TODO: handle ends (left, right end of SV?)
 					src.AnnotateOne(v, vals[iAlt], "")
 					vStr[iAlt] = string(v.Info.SGet(src.Name))
 					v.Info.Delete(src.Name)
