@@ -118,7 +118,7 @@ To run a server:
 	n := 0
 
 	for interval := range a.Annotate(streams...) {
-		caddAnno(cadd, interval)
+		cadd3(cadd, interval)
 		fmt.Fprintf(out, "%s\n", interval)
 		n++
 	}
@@ -131,31 +131,72 @@ To run a server:
 
 }
 
-// if the cadd index was requested, annotate the variant.
-func caddAnno(cadd *CaddIdx, interval irelate.Relatable) {
-	if cadd != nil {
-		if v, ok := interval.(*irelate.Variant); ok {
-			for _, src := range cadd.Sources {
-				vals := make([][]interface{}, len(v.Alt))
-				vStr := make([]string, len(v.Alt))
-				// handle multiple alts.
-				for iAlt, alt := range v.Alt {
-					vals[iAlt] = make([]interface{}, 0)
-					// report list of changes from ref[i] to C.
-					for pos := int(interval.Start()) + 1; pos <= int(interval.End()); pos++ {
-						score, err := cadd.Idx.At(interval.Chrom(), pos, alt)
-						if err != nil && alt[0] != '<' {
-							log.Println("cadd error:", err)
-						}
-						vals[iAlt] = append(vals[iAlt], score)
-					}
-					src.AnnotateOne(v, vals[iAlt], "")
-					vStr[iAlt] = string(v.Info.SGet(src.Name))
-					v.Info.Delete(src.Name)
-				}
-				v.Info.Set(src.Name, strings.Join(vStr, ","))
-			}
+func cadd3(cadd *CaddIdx, interval irelate.Relatable) {
+	if cadd == nil {
+		return
+	}
+	var v *irelate.Variant
+	var ok bool
+
+	if v, ok = interval.(*irelate.Variant); !ok {
+		return
+	}
+	caddAnno(cadd, v, "")
+	cip0, cip1, okp := v.CIPos()
+	cie0, cie1, oke := v.CIEnd()
+	ends := []string{LEFT, RIGHT}
+	oks := []bool{okp, oke}
+	for i, lr := range [][]uint32{{cip0, cip1}, {cie0, cie1}} {
+		if !oks[i] {
+			continue
 		}
+		l, r := lr[0], lr[1]
+		prefix := ends[i]
+
+		if l == v.Start() && r == v.End() {
+			return
+		}
+		pos, ref, alt := v.Pos, v.Ref, v.Alt
+		v.Ref, v.Alt = "A", []string{"<DUP>"}
+		svlen, _ := v.Info.Get("SVLEN")
+		v.Pos = uint64(l + 1)
+		v.Info.Set("SVLEN", r-l-1)
+		caddAnno(cadd, v, prefix)
+		v.Pos, v.Ref, v.Alt = pos, ref, alt
+		if svlen != nil && svlen != "" {
+			v.Info.Set("SVLEN", svlen)
+		} else {
+			v.Info.Delete("SVLEN")
+		}
+	}
+}
+
+// if the cadd index was requested, annotate the variant.
+func caddAnno(cadd *CaddIdx, v *irelate.Variant, prefix string) {
+	if cadd == nil {
+		return
+	}
+
+	for _, src := range cadd.Sources {
+		vals := make([][]interface{}, len(v.Alt))
+		vStr := make([]string, len(v.Alt))
+		// handle multiple alts.
+		for iAlt, alt := range v.Alt {
+			vals[iAlt] = make([]interface{}, 0)
+			// report list of changes from ref[i] to C.
+			for pos := int(v.Start()) + 1; pos <= int(v.End()); pos++ {
+				score, err := cadd.Idx.At(v.Chrom(), pos, alt)
+				if err != nil && alt[0] != '<' {
+					log.Println("cadd error:", err)
+				}
+				vals[iAlt] = append(vals[iAlt], score)
+			}
+			src.AnnotateOne(v, vals[iAlt], prefix)
+			vStr[iAlt] = string(v.Info.SGet(prefix + src.Name))
+			v.Info.Delete(prefix + src.Name)
+		}
+		v.Info.Set(prefix+src.Name, strings.Join(vStr, ","))
+
 	}
 }
 

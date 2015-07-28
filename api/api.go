@@ -252,13 +252,14 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 	if ends == LEFT || ends == RIGHT {
 		// the end is determined by the SVLEN, so we have to make sure it has length 1.
 		var l, r uint32
+		var ok bool
 		if ends == LEFT {
-			l, r = v.CIPos()
+			l, r, ok = v.CIPos()
 		} else {
-			l, r = v.CIEnd()
+			l, r, ok = v.CIEnd()
 		}
 		// dont reannotate same interval
-		if l == v.Start() && r == v.End() {
+		if !ok || (l == v.Start() && r == v.End()) {
 			return nil
 		}
 		// save end here to get the right end.
@@ -268,7 +269,7 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 		svlen, _ := v.Info.Get("SVLEN")
 
 		v.Pos = uint64(l + 1)
-		v.Info.Set("SVLEN", r-l)
+		v.Info.Set("SVLEN", r-l-1)
 		a.AnnotateOne(v, false, ends)
 		v.Pos, v.Ref, v.Alt = pos, ref, alt
 		if svlen != nil && svlen != "" {
