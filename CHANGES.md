@@ -7,6 +7,8 @@ v0.0.7 (development)
 + integrated server to host annotations
 + -ends argument will now use CIPOS and CIEND to annotate the left and right interval of an SV. If CIPOS
    and CIEND are undefined for a given interval, the ends will not be annotated.
++ for MNPs, cadd score is reported as a list of max values (of the 3 possible changes) for each reference base
+  covered by the event.
 
 v0.0.6
 ------
