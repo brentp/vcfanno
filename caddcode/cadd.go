@@ -53,7 +53,7 @@ func (i Index) Get(chrom string, pos int) (uint32, error) {
 	off *= 4
 	off += (pos * 4)
 	if pos > i.MapLengths[chrom] {
-		log.Println(chrom, pos, i.MapLengths[chrom])
+		log.Println("Out of Range:", chrom, pos, i.MapLengths[chrom])
 		return 0, ErrorOutofRange
 	}
 	copy(i.val[0:4], i.mmap[off:off+4])

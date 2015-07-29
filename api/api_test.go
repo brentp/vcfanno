@@ -283,17 +283,22 @@ func (s *APISuite) TestEndsDiff(c *C) {
 
 	a := NewAnnotator([]*Source{&bsrc}, "", true, true, false)
 
-	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "")
+	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=-10,10;CIEND=-10,10")
 	v.SetSource(0)
-
 	v.AddRelated(b1)
 	v.AddRelated(b2)
 
 	a.AnnotateEnds(v, BOTH)
 
-	// the 2 b intervals only overlap in the middle, so we see their respective values for the left
-	// and right and their mean for the middle.
-	c.Assert(v.Info.String(), Equals, "some_mean=54.275;left_some_mean=9.11;right_some_mean=99.44")
+	c.Assert(v.Info.String(), Equals, "CIPOS=-10,10;CIEND=-10,10;some_mean=54.275;left_some_mean=54.275;right_some_mean=54.275")
+
+	v.Info.Info = []byte("CIPOS=-5,5;CIEND=0,0")
+	a.AnnotateEnds(v, BOTH)
+	c.Assert(v.Info.String(), Equals, "CIPOS=-5,5;CIEND=0,0;some_mean=54.275;left_some_mean=54.275;right_some_mean=99.44")
+
+	v.Info.Info = []byte("CIPOS=0,0;CIEND=-5,5")
+	a.AnnotateEnds(v, BOTH)
+	c.Assert(v.Info.String(), Equals, "CIPOS=0,0;CIEND=-5,5;some_mean=54.275;left_some_mean=9.11;right_some_mean=54.275")
 }
 
 func (s *APISuite) TestEndsBedQuery(c *C) {
@@ -316,12 +321,12 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 
 	a := NewAnnotator([]*Source{&bsrc}, "", true, false, false)
 	a.AnnotateEnds(b1, BOTH)
-	c.Assert(b1.Fields[4], Equals, "some_mean=9.11;left_some_mean=9.11")
+	c.Assert(b1.Fields[4], Equals, "some_mean=9.11")
 
 	b1.SetSource(1)
 	b2.SetSource(0)
 	a.AnnotateEnds(b2, BOTH)
-	c.Assert(b2.Fields[4], Equals, "some_mean=99.44;right_some_mean=99.44")
+	c.Assert(b2.Fields[4], Equals, "some_mean=99.44")
 
 	b3 := makeBed("chr1", 50, 66, 99.44)
 	b3.SetSource(0)

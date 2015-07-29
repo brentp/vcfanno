@@ -186,7 +186,7 @@ func caddAnno(cadd *CaddIdx, v *irelate.Variant, prefix string) {
 			// report list of changes from ref[i] to C.
 			for pos := int(v.Start()) + 1; pos <= int(v.End()); pos++ {
 				score, err := cadd.Idx.At(v.Chrom(), pos, alt)
-				if err != nil && alt[0] != '<' {
+				if err != nil && (alt[0] != '<' && !(alt[0] == ']' || alt[0] == '[' || alt[len(alt)-1] == ']' || alt[len(alt)-1] == '[')) {
 					log.Println("cadd error:", err)
 				}
 				vals[iAlt] = append(vals[iAlt], score)

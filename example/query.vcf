@@ -11,6 +11,8 @@
 ##INFO=<ID=AC,Number=A,Type=Integer,Description="Total number of alternate alleles in called genotypes">
 ##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
 ##INFO=<ID=AF,Number=A,Type=Float,Description="Estimated allele frequency in the range (0,1]">
+##INFO=<ID=ICIPOS,Number=2,Type=Integer,Description="CIPOS">
+##INFO=<ID=ICIEND,Number=2,Type=Integer,Description="CIEND">
 ##INFO=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count, with partial observations recorded fractionally">
 ##INFO=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observations, with partial observations recorded fractionally">
 ##INFO=<ID=PRO,Number=1,Type=Float,Description="Reference allele observation count, with partial observations recorded fractionally">
@@ -469,4 +471,4 @@
 1	97937	.	T	A	12.2917	.	AB=0.428571;ABP=3.32051;AC=2;AF=0.0588235;AN=34;AO=5;CIGAR=1X;TYPE=snp	GT:DP:RO:QR:AO:QA:GL	0/0:26:26:899:0:0:0,-7.82678,-10	0/0:3:3:113:0:0:0,-0.90309,-10	0/0:7:7:248:0:0:0,-2.10721,-10
 1	97953	.	A	G	1000.58	.	AB=0.401709;ABP=12.8283;AC=13;AF=0.382353;AN=34;AO=48;CIGAR=1X;TYPE=snp	GT:DP:RO:QR:AO:QA:GL	0/0:32:32:1102:0:0:0,-9.63296,-10	0/1:6:4:155:2:77:-6.68491,0,-10	0/0:10:10:355:0:0:0,-3.0103,-10
 1	98683	.	G	A	610.487	.	AB=0.282443;ABP=56.8661;AC=11;AF=0.34375;AN=32;AO=45;CIGAR=1X;TYPE=snp	GT:DP:RO:QR:AO:QA:GL	0/0:73:71:2641:2:78:0,-10,-10	0/0:1:0:0:1:34:-3.4,-0.30103,0	0/1:33:29:1059:4:139:-7.53545,0,-10
-1	98688	.	G	<DEL>	610.487	.	SVLEN=10;AB=0.282443;ABP=56.8661;AC=11;AF=0.34375;AN=32;AO=45;CIGAR=1X;TYPE=snp	GT:DP:RO:QR:AO:QA:GL	0/0:73:71:2641:2:78:0,-10,-10	0/0:1:0:0:1:34:-3.4,-0.30103,0	0/1:33:29:1059:4:139:-7.53545,0,-10
+1	98688	.	G	<DEL>	610.487	.	CIEND=-4,2;SVLEN=10;AB=0.282443;ABP=56.8661;AC=11;AF=0.34375;AN=32;AO=45;CIGAR=1X;TYPE=snp	GT:DP:RO:QR:AO:QA:GL	0/0:73:71:2641:2:78:0,-10,-10	0/0:1:0:0:1:34:-3.4,-0.30103,0	0/1:33:29:1059:4:139:-7.53545,0,-10
