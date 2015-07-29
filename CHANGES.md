@@ -9,6 +9,7 @@ v0.0.7 (development)
    and CIEND are undefined for a given interval, the ends will not be annotated.
 + for MNPs, cadd score is reported as a list of max values (of the 3 possible changes) for each reference base
   covered by the event.
++ fix bug in CADD annotation and provide CADD v1.3 download
 
 v0.0.6
 ------
