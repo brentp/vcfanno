@@ -74,6 +74,7 @@ if __name__ == "__main__":
     sin = (x.rstrip().split("\t", 5) for x in sys.stdin if not x[0] == "#")
     pairs = []
     last_chrom = None
+    last_pos = None
     zero = encode3(None, 0, 0, 0)
 
     prefix = sys.argv[1]
@@ -97,6 +98,7 @@ if __name__ == "__main__":
                 1/0
 
         a, b, c = grp
+        pos = int(a[1])
 
         if a[0] != last_chrom:
             print a[0]
@@ -106,9 +108,16 @@ if __name__ == "__main__":
                 fh_idx.flush()
                 cache = []
 
-            cache.extend([zero] * int(a[1]))
+            cache.extend([zero] * pos)
+            last_pos = pos - 1
             last_chrom = a[0]
 
+        # skipped regions.
+        if pos - 1 != last_pos:
+            sys.stderr.write("writing %d empties at %s:%d-%d\n" % (pos - 1 - last_pos, a[0], last_pos, pos))
+            cache.extend([zero] * (pos - 1 - last_pos))
+
+        assert pos == len(cache)
         phred = {a[3]: float(a[5]),
                  b[3]: float(b[5]),
                  c[3]: float(c[5])}
@@ -116,6 +125,7 @@ if __name__ == "__main__":
         phred_encoded = encode3(phred.get('A'), phred.get('C'),
                                 phred.get('G'), phred.get('T'))
         cache.append(phred_encoded)
+        last_pos = pos
 
     array.array('I', cache).write(fh_bin)
     fh_idx.write("%s\t%d\n" % (last_chrom, len(cache)))

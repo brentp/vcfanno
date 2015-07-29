@@ -26,15 +26,20 @@ download
 
 The index and the binary file are here:
 
- - https://s3.amazonaws.com/vcfanno/cadd_v1.2.idx
- - https://s3.amazonaws.com/vcfanno/cadd_v1.2.bin
+ - https://s3.amazonaws.com/vcfanno/cadd_v1.2a.idx
+ - https://s3.amazonaws.com/vcfanno/cadd_v1.2a.bin
+
+or for version 1.3
+
+ - https://s3.amazonaws.com/vcfanno/cadd_v1.3a.idx
+ - https://s3.amazonaws.com/vcfanno/cadd_v1.3a.bin
 
 The `vcfanno` conf file should point to the .idx file as in the [example](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
 The conf file should be updated as:
 
 ```
 [caddidx]
-file="/path/to/cadd_v1.2.idx"
+file="/path/to/cadd_v1.2a.idx"
 names=["cadd_phred_score"]
 ops=["concat"]
 ```
@@ -84,7 +89,7 @@ Then use E.g:
 
 
 ```Shell
-IDX=$CADD_PATH/cadd_v1.2.idx
+IDX=$CADD_PATH/cadd_v1.2a.idx
 
 $ ./cadd $IDX 1 10618 C
 1.075268817204301 <nil>

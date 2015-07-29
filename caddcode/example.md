@@ -1,8 +1,8 @@
 **NOTE** that you can annotate a VCF directly with CADD using [vcfanno](https://github.com/brentp/vcfanno)
 but `caddencode` can also be used directly.
 
-In most cases, users will want to download the full encoded data set for the [index](https://s3.amazonaws.com/vcfanno/cadd_v1.2.idx) and
-[bin file](https://s3.amazonaws.com/vcfanno/cadd_v1.2.bin) (11GB)
+In most cases, users will want to download the full encoded data set for the [index](https://s3.amazonaws.com/vcfanno/cadd_v1.2a.idx) and
+[bin file](https://s3.amazonaws.com/vcfanno/cadd_v1.2a.bin) (11GB)
 
 # build the index
 

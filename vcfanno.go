@@ -72,7 +72,11 @@ To run a server:
 			log.Fatal("CheckAnno err:", err)
 		}
 	}
-	sources := config.Sources()
+	sources, e := config.Sources()
+	if e != nil {
+		log.Fatal(e)
+	}
+
 	log.Printf("found %d sources from %d files\n", len(sources), len(config.Annotation))
 
 	jsString := ReadJs(*js)
@@ -103,7 +107,11 @@ To run a server:
 
 	if nil != rdr { // it was vcf, print the header
 		var err error
-		cadd = config.Cadd(rdr.Header, a.Ends)
+		cadd, err = config.Cadd(rdr.Header, a.Ends)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		out, err = vcfgo.NewWriter(out, rdr.Header)
 		if err != nil {
 			log.Fatal(err)

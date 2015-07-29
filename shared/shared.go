@@ -39,10 +39,10 @@ type Annotation struct {
 // Flatten turns an annotation into a slice of Sources. Pass in the index of the file.
 // having it as a Source makes the code cleaner, but it's simpler for the user to
 // specify multiple ops per file in the toml config.
-func (a *Annotation) Flatten(index int, basepath string) []*Source {
+func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 	if len(a.Ops) == 0 {
 		if !strings.HasSuffix(a.File, ".bam") {
-			log.Fatalf("no ops specified for %s\n", a.File)
+			return nil, fmt.Errorf("no ops specified for %s\n", a.File)
 		}
 		// auto-fill bam to count.
 		a.Ops = make([]string, len(a.Names))
@@ -53,7 +53,7 @@ func (a *Annotation) Flatten(index int, basepath string) []*Source {
 	if len(a.Columns) == 0 && len(a.Fields) == 0 {
 		// index of -1 is cadd.
 		if !strings.HasSuffix(a.File, ".bam") && index != -1 {
-			log.Fatalf("no columns or fields specified for %s\n", a.File)
+			return nil, fmt.Errorf("no columns or fields specified for %s\n", a.File)
 		}
 		// auto-fill bam to count.
 		if len(a.Fields) == 0 {
@@ -68,7 +68,7 @@ func (a *Annotation) Flatten(index int, basepath string) []*Source {
 			a.File = basepath + "/" + a.File
 		}
 		if !(xopen.Exists(a.File) || a.File == "-") {
-			log.Fatalf("[Flatten] unable to open file: %s in %s\n", a.File, basepath)
+			return nil, fmt.Errorf("[Flatten] unable to open file: %s in %s\n", a.File, basepath)
 		}
 	}
 
@@ -78,7 +78,7 @@ func (a *Annotation) Flatten(index int, basepath string) []*Source {
 		isjs := strings.HasPrefix(a.Ops[i], "js:")
 		if !isjs {
 			if _, ok := Reducers[a.Ops[i]]; !ok {
-				log.Fatalf("requested op not found: %s for %s\n", a.Ops[i], a.File)
+				return nil, fmt.Errorf("requested op not found: %s for %s\n", a.Ops[i], a.File)
 			}
 		}
 		op := a.Ops[i]
@@ -93,15 +93,19 @@ func (a *Annotation) Flatten(index int, basepath string) []*Source {
 			sources[i].Column = a.Columns[i]
 		}
 	}
-	return sources
+	return sources, nil
 }
 
-func (c Config) Sources() []*Source {
+func (c Config) Sources() ([]*Source, error) {
 	s := make([]*Source, 0)
 	for i, a := range c.Annotation {
-		s = append(s, a.Flatten(i, c.Base)...)
+		flats, err := a.Flatten(i, c.Base)
+		if err != nil {
+			return nil, err
+		}
+		s = append(s, flats...)
 	}
-	return s
+	return s, nil
 }
 
 func CheckAnno(a *Annotation) error {
@@ -144,17 +148,21 @@ func CheckAnno(a *Annotation) error {
 }
 
 // Cadd parses the cadd fields and updates the vcf Header.
-func (c Config) Cadd(h *vcfgo.Header, ends bool) *CaddIdx {
+func (c Config) Cadd(h *vcfgo.Header, ends bool) (*CaddIdx, error) {
 	if &c.CaddIdx == nil || c.CaddIdx.File == "" {
-		return nil
+		return nil, nil
 	}
-	c.CaddIdx.Sources = c.CaddIdx.Annotation.Flatten(-1, c.Base)
+	var err error
+	c.CaddIdx.Sources, err = c.CaddIdx.Annotation.Flatten(-1, c.Base)
+	if err != nil {
+		return nil, err
+	}
 	c.CaddIdx.Idx = caddcode.Reader(c.CaddIdx.File)
 	for _, src := range c.CaddIdx.Sources {
 		src.UpdateHeader(h, ends)
 		h.Infos[src.Name].Number = "A"
 	}
-	return &c.CaddIdx
+	return &c.CaddIdx, nil
 }
 
 func ReadJs(js string) string {
