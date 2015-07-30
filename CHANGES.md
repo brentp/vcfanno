@@ -10,7 +10,7 @@ v0.0.7 (development)
 + for MNPs, cadd score is reported as a list of max values (of the 3 possible changes) for each reference base
   covered by the event.
 + fix bug in CADD annotation and provide CADD v1.3 download
-+ ~20% speed improvement.
++ ~25-30% speed improvement.
 
 v0.0.6
 ------
