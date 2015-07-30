@@ -94,11 +94,11 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	queryStream := irelate.StreamVCF(rdr)
 
-	annot := api.NewAnnotator(h.config.Sources(), h.jsString, true, true, true)
-
+	srcs, err := h.config.Sources()
 	if check(err, w) {
 		return
 	}
+	annot := api.NewAnnotator(srcs, h.jsString, true, true, true)
 
 	vcfWriter, err := vcfgo.NewWriter(wh, rdr.Header)
 	if check(err, w) {
