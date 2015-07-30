@@ -69,22 +69,22 @@ func (s *APISuite) SetUpTest(c *C) {
 	h.Infos["CIPOS"] = &vcfgo.Info{Id: "CIPOS", Description: "CIPOS", Number: "2", Type: "Integer"}
 	h.Infos["CIEND"] = &vcfgo.Info{Id: "CIEND", Description: "CIEND", Number: "2", Type: "Integer"}
 
-	s.v1 = &irelate.Variant{Variant: v1}
+	s.v1 = &irelate.Variant{Variant: *v1}
 	s.v1.Info = vcfgo.NewInfoByte("DP=35", h)
 	s.v1.SetSource(0)
 	v2 := *v1
 	v2.Info = vcfgo.NewInfoByte("DP=44", h)
-	s.v2 = &irelate.Variant{Variant: &v2}
+	s.v2 = &irelate.Variant{Variant: v2}
 	s.v2.Info.Add("AC_AFR", 33)
 	s.v2.SetSource(1)
 
-	s.sv1 = &irelate.Variant{Variant: sv1}
+	s.sv1 = &irelate.Variant{Variant: *sv1}
 	s.sv1.Info = vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h)
 	s.sv1.SetSource(0)
 
 	v3 := *v1
 	v3.Info = vcfgo.NewInfoByte("DP=88", h)
-	s.v3 = &irelate.Variant{Variant: &v3}
+	s.v3 = &irelate.Variant{Variant: v3}
 	s.v3.SetSource(1)
 
 	v, e := s.v1.Info.Get("DP")
@@ -262,7 +262,7 @@ func makeVariant(chrom string, pos int, ref string, alt []string, name string, i
 	binfo := vcfgo.NewInfoByte(info, h)
 	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Ref: ref, Alt: alt,
 		Id: name, Info: binfo}
-	return irelate.NewVariant(&v, 0, make([]irelate.Relatable, 0))
+	return irelate.NewVariant(v, 0, make([]irelate.Relatable, 0))
 }
 
 func (s *APISuite) TestEndsDiff(c *C) {

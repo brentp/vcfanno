@@ -38,16 +38,16 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 
 	h.Infos["DP"] = &vcfgo.Info{Id: "DP", Description: "depth", Number: "1", Type: "Integer"}
 
-	s.v1 = &irelate.Variant{Variant: v1}
+	s.v1 = &irelate.Variant{Variant: *v1}
 	s.v1.SetSource(0)
 	v2 := *v1
 	v2.Info = vcfgo.NewInfoByte("DP=44", h)
-	s.v2 = &irelate.Variant{Variant: &v2}
+	s.v2 = &irelate.Variant{Variant: v2}
 	s.v2.SetSource(1)
 
 	v3 := *v1
 	v3.Info = vcfgo.NewInfoByte("DP=88", h)
-	s.v3 = &irelate.Variant{Variant: &v3}
+	s.v3 = &irelate.Variant{Variant: v3}
 	s.v3.SetSource(1)
 
 	v, e := s.v1.Info.Get("DP")

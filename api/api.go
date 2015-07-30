@@ -48,7 +48,7 @@ type Annotator struct {
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
-func (s *Source) JsOp(v *vcfgo.Variant, js *otto.Script, vals []interface{}) string {
+func (s *Source) JsOp(v vcfgo.Variant, js *otto.Script, vals []interface{}) string {
 	s.Vm.Set("chrom", v.Chrom())
 	s.Vm.Set("start", v.Start())
 	s.Vm.Set("end", v.End())
@@ -143,7 +143,7 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 			continue
 		}
 		if o, ok := other.(*irelate.Variant); ok {
-			if strict && !v.Is(o.Variant) {
+			if strict && !v.Is(&o.Variant) {
 				continue
 			}
 			// special case pulling the rsid
@@ -210,7 +210,7 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 	h := vcfgo.NewHeader()
 	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Type: "Integer", Description: "", Number: "1"}
 	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", int(b.End()-b.Start())-1), h)
-	v := irelate.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
+	v := irelate.NewVariant(vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
 		Ref: "A", Alt: []string{"<DEL>"}, Info: m}, 0, b.Related())
 	return v
 }
