@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"testing"
 
 	"github.com/BurntSushi/toml"
@@ -24,7 +25,11 @@ func benchmarkAnno(b *testing.B, natural bool) {
 	jbytes, _ := ioutil.ReadAll(Js)
 	js_string := string(jbytes)
 
-	a := api.NewAnnotator(configs.Sources(), js_string, false, true, natural)
+	srcs, err := configs.Sources()
+	if err != nil {
+		log.Fatal(err)
+	}
+	a := api.NewAnnotator(srcs, js_string, false, true, natural)
 	for n := 0; n < b.N; n++ {
 		q := irelate.Vopen("example/query.vcf")
 		stream := irelate.StreamVCF(q)

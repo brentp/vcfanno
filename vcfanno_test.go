@@ -91,7 +91,9 @@ func (s *AnnoSuite) TestFlatten(c *C) {
 		Names:   []string{"bed_mean", "bed_max", "bedFlag"},
 	}
 
-	c.Assert(len(cfgBed.Flatten(0, "")), Equals, 3)
+	f, err := cfgBed.Flatten(0, "")
+	c.Assert(len(f), Equals, 3)
+	c.Assert(err, IsNil)
 }
 
 /*
