@@ -417,7 +417,7 @@ func (a *Annotator) Annotate(streams ...irelate.RelatableChannel) irelate.Relata
 		ends = BOTH
 	}
 
-	go func(irelate.RelatableChannel, *Annotator, string) {
+	go func(ch irelate.RelatableChannel, a *Annotator, ends string) {
 		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
 			a.AnnotateEnds(interval, ends)
 			ch <- interval
