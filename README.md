@@ -12,7 +12,7 @@ For BED, values are pulled from (1-based) column number.
 For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 
 `vcfanno` is written in [go](http://golang.org)
-It can annotate ~ 5,000 variants per second with 5 annotations from 3 files on a modest laptop.
+It can annotate more than 5,000 variants per second with 34 annotations from 9 files on a modest laptop.
 
 We are actively developing `vcfanno` and appreciate feedback and bug reports.
 
