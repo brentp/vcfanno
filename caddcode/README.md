@@ -7,7 +7,7 @@ base-change in the genome (totalling 8.6 billion bases). The download from the
 to use to annotate a VCF. It is free for **academic** use, please contact the
 CADD creators for commercial use.
 
-`caddcode` encodes the CADD phred scores into an 11GB binary file with O(1)
+`caddcode` encodes the CADD phred scores into an 12GB binary file with O(1)
 access (and provides a means to annotate a VCF). It does this by encoding the
 reference base using 2 bits (0: A, 1:C, 2:G, 3:T) and the CADD phred score of a
 change to each of the 3 alternate alleles using 10 bits each (2^10 == 1024) for
