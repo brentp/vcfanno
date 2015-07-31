@@ -38,6 +38,7 @@ ops=["js:start", "js:end", "js:vals.length", "js:sum=0;for(i=0;i<vals.length;i++
 # https://s3.amazonaws.com/vcfanno/cadd_v1.2.bin
 # See: https://github.com/brentp/vcfanno/blob/master/caddencode/README.md
 [caddidx]
+#file="/media/brentp/ffd28ae3-3dca-4f44-8aed-1685a55661f8/cadd_v1.2.idx"
 file="example/cadd.sub.idx"
 names=["cadd_phred_score", "cadd_max"]
 ops=["concat", "max"]
