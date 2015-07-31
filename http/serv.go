@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -143,7 +144,7 @@ func Server() {
 	cfg := args[0]
 
 	if !xopen.Exists(cfg) {
-		fmt.Errorf("config not found %s", cfg)
+		log.Fatalf("config not found %s", cfg)
 	}
 
 	var config shared.Config

@@ -45,8 +45,8 @@ func asfloat32(i interface{}) float32 {
 	case string:
 		f, err := strconv.ParseFloat(i.(string), 32)
 		if err != nil {
-			return float32(0)
 			log.Println(err)
+			return float32(0)
 		}
 		return float32(f)
 	}

@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -24,10 +25,12 @@ const VERSION = "0.0.7"
 
 func main() {
 	fmt.Fprintf(os.Stderr, `
-vcfanno version %s
+=============================================
+vcfanno version %s [built with %s]
 
 see: https://github.com/brentp/vcfanno
-`, VERSION)
+=============================================
+`, VERSION, runtime.Version())
 
 	if len(os.Args) > 1 && os.Args[1] == "server" {
 		vhttp.Server()
