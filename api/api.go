@@ -226,7 +226,7 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 	}
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
-		if e := a.AnnotateOne(v, false); e != nil {
+		if e := a.AnnotateOne(v, a.Strict); e != nil {
 			return e
 		}
 		if e := a.AnnotateEnds(v, LEFT); e != nil {
