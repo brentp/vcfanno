@@ -60,6 +60,17 @@ function clinvar_histocompatibility_flag(vals){
 	return false
 }
 
+function div2(vals){
+	if(vals.length != 2){
+		return "BAD"
+	}
+	denom = 0 + vals[0] + vals[1]
+	if(denom == 0){
+		return 0
+	}
+	return vals[1] / denom
+}
+
 function clinvar_drug_response_flag(vals){
 	for(i=0;i<vals.length;i++){
 		if(vals[i] == 6){

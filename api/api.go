@@ -53,7 +53,7 @@ func (s *Source) JsOp(v vcfgo.Variant, js *otto.Script, vals []interface{}) stri
 	s.Vm.Set("start", v.Start())
 	s.Vm.Set("end", v.End())
 	s.Vm.Set("vals", vals)
-	s.Vm.Set("info", v.Info.String())
+	//s.Vm.Set("info", v.Info.String())
 	value, err := s.Vm.Run(js)
 	if err != nil {
 		return fmt.Sprintf("js-error: %s", err)
@@ -152,6 +152,23 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 					continue
 				}
 				val = o.Id
+			} else if strings.ContainsRune(src.Field, '/') {
+				fields := strings.Split(src.Field, "/")
+				vals := make([]interface{}, len(fields))
+				var err error
+				for i, f := range fields {
+					vals[i], err = o.Info.Get(f)
+					if v, ok := vals[i].([]interface{}); ok {
+						vals[i] = v[0]
+						if len(v) != 1 {
+							log.Println("not decomposed")
+						}
+					}
+					if err != nil {
+						log.Println(err)
+					}
+				}
+				val = float64(vals[0].(int)) / float64(vals[1].(int))
 			} else {
 				var err error
 				val, err = o.Info.Get(src.Field)
