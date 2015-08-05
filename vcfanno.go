@@ -100,6 +100,7 @@ To run a server:
 	} else {
 		rdr = irelate.Vopen(queryFile)
 		queryStream = irelate.StreamVCF(rdr)
+		a.UpdateHeader(rdr.Header)
 	}
 
 	streams, err := a.SetupStreams(queryStream)
@@ -185,6 +186,10 @@ func cadd3(cadd *CaddIdx, interval irelate.Relatable) {
 // if the cadd index was requested, annotate the variant.
 func caddAnno(cadd *CaddIdx, v *irelate.Variant, prefix string) {
 	if cadd == nil {
+		return
+	}
+	if v.End()-v.Start() > 100000 {
+		log.Printf("skipping long variant at %s:%d (%d bases)\n", v.Chrom(), v.Pos, v.End()-v.Start())
 		return
 	}
 

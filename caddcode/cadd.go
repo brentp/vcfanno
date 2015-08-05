@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -26,10 +27,11 @@ type Index struct {
 	mmap       mmap.MMap
 	offsets    map[string]int
 	MapLengths map[string]int
-	val        []byte
+	count      int
+	rdr        *os.File
 }
 
-func (i Index) Offset(chrom string) (int, error) {
+func (i *Index) Offset(chrom string) (int, error) {
 	if o, ok := i.offsets[chrom]; ok {
 		return o, nil
 	}
@@ -47,7 +49,7 @@ func (i Index) Offset(chrom string) (int, error) {
 
 var ErrorOutofRange = errors.New("requested position out of range")
 
-func (i Index) Get(chrom string, pos int) (uint32, error) {
+func (i *Index) Get(chrom string, pos int) (uint32, error) {
 	off, err := i.Offset(chrom)
 	check(err)
 	off *= 4
@@ -56,13 +58,28 @@ func (i Index) Get(chrom string, pos int) (uint32, error) {
 		log.Println("Out of Range:", chrom, pos, i.MapLengths[chrom])
 		return 0, ErrorOutofRange
 	}
-	copy(i.val[0:4], i.mmap[off:off+4])
+	i.count++
+	v := binary.LittleEndian.Uint32(i.mmap[off : off+4])
+	if i.count == 100000 {
+		// for some reason this is required to keep memory use low.
+		// will have to lock for concurrent use.
+		i.count = 0
+		i.mmap.Unlock()
+		i.mmap.Unmap()
+		runtime.GC()
+		i.mmap = nil
+		i.rdr.Seek(0, 0)
+		i.mmap, err = mmap.Map(i.rdr, mmap.RDONLY, 0)
+		if err != nil {
+			return 0, err
+		}
 
-	v := binary.LittleEndian.Uint32(i.val)
+	}
+	//i.mmap.Unlock()
 	return v, nil
 }
 
-func (i Index) At(chrom string, pos int, alt string) (float64, error) {
+func (i *Index) At(chrom string, pos int, alt string) (float64, error) {
 	if (pos == 60830534 || pos == 60830763 || pos == 60830764) && chrom[0] == '3' {
 		// these have ambiguous bases in the cadd v1.2 file so we just hard code the actual values
 		// for all 4 bases.
@@ -105,7 +122,7 @@ func (i Index) At(chrom string, pos int, alt string) (float64, error) {
 	return float64(max&off) / 10.23, fmt.Errorf("position not found %s:%d\n", chrom, pos)
 }
 
-func Reader(f string) Index {
+func Reader(f string) *Index {
 	binPath := f[:len(f)-4] + ".bin"
 
 	if !(xopen.Exists(f) && xopen.Exists(binPath)) {
@@ -120,8 +137,7 @@ func Reader(f string) Index {
 	mmap, err := mmap.Map(mrdr, mmap.RDONLY, 0)
 	check(err)
 
-	i := Index{make([]string, 0), make([]int, 0), mmap, make(map[string]int), make(map[string]int),
-		make([]byte, 4)}
+	i := &Index{Chroms: make([]string, 0), Lengths: make([]int, 0), mmap: mmap, offsets: make(map[string]int), MapLengths: make(map[string]int), count: 0, rdr: mrdr}
 	for {
 		line, err := rdr.ReadString('\n')
 		if err == io.EOF {

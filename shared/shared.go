@@ -15,7 +15,7 @@ import (
 // CaddIdx is same as annotation, but has extra fields due to custom nature of CADD score.
 type CaddIdx struct {
 	Annotation
-	Idx     caddcode.Index
+	Idx     *caddcode.Index
 	Sources []*Source
 }
 
