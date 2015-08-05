@@ -371,17 +371,27 @@ func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 
 func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 	ntype, number := "Character", "1"
-	if src.Op == "flag" {
-		ntype, number = "Flag", "0"
-	}
 	var desc string
-	if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
-		ntype = "Float"
-	} else if src.Js != nil {
-		if strings.Contains(src.Op, "_flag(") {
+
+	if strings.HasSuffix(src.Field, "_float") {
+		ntype, number = "Float", "1"
+	} else if strings.HasSuffix(src.Field, "_int") {
+		ntype, number = "Integer", "1"
+	} else if strings.HasSuffix(src.Field, "_flag") || strings.Contains(src.Field, "flag(") {
+		ntype, number = "Integer", "1"
+
+	} else {
+		if src.Op == "flag" {
 			ntype, number = "Flag", "0"
-		} else {
-			ntype = "."
+		}
+		if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
+			ntype = "Float"
+		} else if src.Js != nil {
+			if strings.Contains(src.Op, "_flag(") {
+				ntype, number = "Flag", "0"
+			} else {
+				ntype = "Character"
+			}
 		}
 	}
 
