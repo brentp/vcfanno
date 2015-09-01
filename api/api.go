@@ -24,6 +24,10 @@ type CIFace interface {
 	CIEnd() (uint32, uint32, bool)
 }
 
+type HeaderUpdater interface {
+	Update(id string, itype string, number string, description string)
+}
+
 // Source holds the information for a single annotation to be added to a query.
 // Many sources can come from the same file, but each must have their own Source.
 type Source struct {
@@ -313,6 +317,7 @@ func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
 	return err
 }
 
+// TODO: cleanup how ends are handled. Thats the most error-prone part fo the code.
 // AnnotateOne annotates a relatable with the Sources in an Annotator.
 // In most cases, no need to specify end (it should always be a single
 // arugment indicting LEFT, RIGHT, or INTERVAL, used from AnnotateEnds
@@ -379,12 +384,15 @@ func (src *Source) AnnotateOne(v *irelate.Variant, vals []interface{}, prefix st
 }
 
 // UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
+//func (a *Annotator) UpdateHeader(h HeaderUpdater) {
 func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
 	for _, src := range a.Sources {
 		src.UpdateHeader(h, a.Ends)
 	}
 }
 
+// TODO make an interface for Header so we can do this for cgtabix as well.
+//func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
 func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 	ntype, number := "Character", "1"
 	var desc string
