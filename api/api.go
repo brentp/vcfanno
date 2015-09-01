@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/biogo/hts/sam"
+	"github.com/brentp/cgotabix"
 	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/vcfgo"
 	"github.com/robertkrimen/otto"
 )
@@ -16,6 +18,11 @@ const LEFT = "left_"
 const RIGHT = "right_"
 const BOTH = "both_"
 const INTERVAL = ""
+
+type CIFace interface {
+	CIPos() (uint32, uint32, bool)
+	CIEnd() (uint32, uint32, bool)
+}
 
 // Source holds the information for a single annotation to be added to a query.
 // Many sources can come from the same file, but each must have their own Source.
@@ -43,12 +50,12 @@ type Annotator struct {
 	Sources []*Source
 	Strict  bool // require a variant to have same ref and share at least 1 alt
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
-	Less    func(a, b irelate.Relatable) bool
+	Less    func(a, b interfaces.Relatable) bool
 }
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
-func (s *Source) JsOp(v vcfgo.Variant, js *otto.Script, vals []interface{}) string {
+func (s *Source) JsOp(v *irelate.Variant, js *otto.Script, vals []interface{}) string {
 	s.Vm.Set("chrom", v.Chrom())
 	s.Vm.Set("start", v.Start())
 	s.Vm.Set("end", v.End())
@@ -76,7 +83,7 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort 
 			log.Fatal(e)
 		}
 	}
-	var less func(a, b irelate.Relatable) bool
+	var less func(a, b interfaces.Relatable) bool
 	if natsort {
 		less = irelate.NaturalLessPrefix
 	} else {
@@ -118,12 +125,12 @@ func checkSource(s *Source) error {
 }
 
 // partition separates the relateds for a relatable so it reduces running over the data multiple times for each file.
-func (a *Annotator) partition(r irelate.Relatable) [][]irelate.Relatable {
-	parted := make([][]irelate.Relatable, 0)
+func (a *Annotator) partition(r interfaces.Relatable) [][]interfaces.Relatable {
+	parted := make([][]interfaces.Relatable, 0)
 	for _, o := range r.Related() {
 		s := int(o.Source()) - 1
 		for len(parted) <= s {
-			parted = append(parted, make([]irelate.Relatable, 0))
+			parted = append(parted, make([]interfaces.Relatable, 0))
 		}
 		parted[s] = append(parted[s], o)
 	}
@@ -131,7 +138,7 @@ func (a *Annotator) partition(r irelate.Relatable) [][]irelate.Relatable {
 }
 
 // collect applies the reduction (op) specified in src on the rels.
-func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict bool) []interface{} {
+func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, strict bool) []interface{} {
 	coll := make([]interface{}, 0)
 	var val interface{}
 	for _, other := range rels {
@@ -139,31 +146,32 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 		if int(other.Source())-1 != src.Index {
 			log.Fatalf("got source %d with related %d", src.Index, other.Source())
 		}
-		if !overlap(v, other) {
+		if !overlap(v.(interfaces.Relatable), other) {
 			continue
 		}
 		if o, ok := other.(*irelate.Variant); ok {
-			if strict && !v.Is(&o.Variant) {
+			if strict && !interfaces.Same(v, o.IVariant, strict) {
 				continue
 			}
 			// special case pulling the rsid
 			if src.Field == "ID" {
-				if o.Id == "." {
-					continue
+				if ov, ok := o.IVariant.(*vcfgo.Variant); ok {
+					if ov.Id == "." {
+						continue
+					}
+					val = ov.Id
+				} else if ov, ok := o.IVariant.(*cgotabix.Variant); ok {
+					if ov.Id == "." || ov.Id == "" {
+						continue
+					}
+					val = ov.Id
 				}
-				val = o.Id
 			} else if strings.ContainsRune(src.Field, '/') {
 				fields := strings.Split(src.Field, "/")
 				vals := make([]interface{}, len(fields))
 				var err error
 				for i, f := range fields {
-					vals[i], err = o.Info.Get(f)
-					if v, ok := vals[i].([]interface{}); ok {
-						vals[i] = v[0]
-						if len(v) != 1 {
-							log.Println("not decomposed")
-						}
-					}
+					vals[i], err = o.Info().Get(f)
 					if err != nil {
 						log.Println(err)
 					}
@@ -171,7 +179,7 @@ func collect(v *irelate.Variant, rels []irelate.Relatable, src *Source, strict b
 				val = float64(vals[0].(int)) / float64(vals[1].(int))
 			} else {
 				var err error
-				val, err = o.Info.Get(src.Field)
+				val, err = o.Info().Get(src.Field)
 				if err != nil {
 					log.Println(err)
 				}
@@ -227,36 +235,41 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 	h := vcfgo.NewHeader()
 	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Type: "Integer", Description: "", Number: "1"}
 	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", int(b.End()-b.Start())-1), h)
-	v := irelate.NewVariant(vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
-		Ref: "A", Alt: []string{"<DEL>"}, Info: m}, 0, b.Related())
+	v := irelate.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
+		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, 0, b.Related())
 	return v
 }
 
 // AnnotatedEnds makes a new 1-base interval for the left and one for the right end
 // so that it can use the same machinery to annotate the ends and the entire interval.
 // Output into the info field is prefixed with "left_" or "right_".
-func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
+func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
 	var v *irelate.Variant
 	var ok bool
+	var err error
 	if v, ok = r.(*irelate.Variant); !ok {
 		v = vFromB(r.(*irelate.Interval))
 	}
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
-		if e := a.AnnotateOne(v, a.Strict); e != nil {
+		// dont want strict for BED.
+		if e := a.AnnotateOne(v, a.Strict && ok); e != nil {
+			log.Println(e)
 			return e
 		}
 		if e := a.AnnotateEnds(v, LEFT); e != nil {
+			log.Println(e)
 			return e
 		}
 		if e := a.AnnotateEnds(v, RIGHT); e != nil {
+			log.Println(e)
 			return e
 		}
 		// it was a Bed, we add the info to its fields
 		if !ok {
 			b := r.(*irelate.Interval)
-			v.Info.Delete("SVLEN")
-			b.Fields = append(b.Fields, v.Info.String())
+			v.Info().Delete("SVLEN")
+			b.Fields = append(b.Fields, v.Info().String())
 		}
 		return nil
 	}
@@ -271,37 +284,39 @@ func (a *Annotator) AnnotateEnds(r irelate.Relatable, ends string) error {
 		var l, r uint32
 		var ok bool
 		if ends == LEFT {
-			l, r, ok = v.CIPos()
+			l, r, ok = v.IVariant.(CIFace).CIPos()
 		} else {
-			l, r, ok = v.CIEnd()
+			l, r, ok = v.IVariant.(CIFace).CIEnd()
 		}
 		// dont reannotate same interval
-		if !ok || (l == v.Start() && r == v.End()) {
+		if !ok && (l == v.Start() && r == v.End()) {
 			return nil
 		}
-		// save end here to get the right end.
-		pos, ref, alt := v.Pos, v.Ref, v.Alt
-		// store the orginal svlen since we are going to modify it.
-		v.Ref, v.Alt = "A", []string{"<DEL>"}
-		svlen, _ := v.Info.Get("SVLEN")
 
-		v.Pos = uint64(l + 1)
-		v.Info.Set("SVLEN", r-l-1)
-		a.AnnotateOne(v, false, ends)
-		v.Pos, v.Ref, v.Alt = pos, ref, alt
-		if svlen != nil && svlen != "" {
-			v.Info.Set("SVLEN", svlen)
-		} else {
-			v.Info.Delete("SVLEN")
+		m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), v.IVariant.(*vcfgo.Variant).Header)
+		v2 := irelate.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(l + 1),
+			Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, v.Source(), v.Related())
+
+		err = a.AnnotateOne(v2, false, ends)
+		if err != nil {
+			log.Println(err)
+		}
+		var val interface{}
+		for _, key := range v2.Info().Keys() {
+			if key == "SVLEN" {
+				continue
+			}
+			val, err = v2.Info().Get(key)
+			v.Info().Set(key, val)
 		}
 	}
-	return nil
+	return err
 }
 
 // AnnotateOne annotates a relatable with the Sources in an Annotator.
 // In most cases, no need to specify end (it should always be a single
 // arugment indicting LEFT, RIGHT, or INTERVAL, used from AnnotateEnds
-func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string) error {
+func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...string) error {
 	if len(r.Related()) == 0 {
 		return nil
 	}
@@ -338,8 +353,8 @@ func (a *Annotator) AnnotateOne(r irelate.Relatable, strict bool, end ...string)
 		src.AnnotateOne(v, vals, prefix)
 	}
 	if isBed {
-		v.Info.Delete("SVLEN")
-		b.Fields = append(b.Fields, v.Info.String())
+		v.Info().Delete("SVLEN")
+		b.Fields = append(b.Fields, v.Info().String())
 	}
 	return nil
 }
@@ -349,16 +364,17 @@ func (src *Source) AnnotateOne(v *irelate.Variant, vals []interface{}, prefix st
 		return
 	}
 	if src.Js != nil {
-		jsval := src.JsOp(v.Variant, src.Js, vals)
+		jsval := src.JsOp(v, src.Js, vals)
 		if jsval == "true" || jsval == "false" && strings.Contains(src.Op, "_flag(") {
 			if jsval == "true" {
-				v.Info.Add(prefix+src.Name, true)
+				v.Info().Set(prefix+src.Name, true)
 			}
 		} else {
-			v.Info.Add(prefix+src.Name, jsval)
+			v.Info().Set(prefix+src.Name, jsval)
 		}
 	} else {
-		v.Info.Add(prefix+src.Name, Reducers[src.Op](vals))
+		val := Reducers[src.Op](vals)
+		v.Info().Set(prefix+src.Name, val)
 	}
 }
 

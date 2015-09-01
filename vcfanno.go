@@ -14,6 +14,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/interfaces"
 	. "github.com/brentp/vcfanno/api"
 	vhttp "github.com/brentp/vcfanno/http"
 	. "github.com/brentp/vcfanno/shared"
@@ -143,7 +144,7 @@ To run a server:
 
 }
 
-func cadd3(cadd *CaddIdx, interval irelate.Relatable) {
+func cadd3(cadd *CaddIdx, interval interfaces.Relatable) {
 	if cadd == nil {
 		return
 	}
@@ -154,8 +155,8 @@ func cadd3(cadd *CaddIdx, interval irelate.Relatable) {
 		return
 	}
 	caddAnno(cadd, v, "")
-	cip0, cip1, okp := v.CIPos()
-	cie0, cie1, oke := v.CIEnd()
+	cip0, cip1, okp := v.IVariant.(CIFace).CIPos()
+	cie0, cie1, oke := v.IVariant.(CIFace).CIEnd()
 	ends := []string{LEFT, RIGHT}
 	oks := []bool{okp, oke}
 	for i, lr := range [][]uint32{{cip0, cip1}, {cie0, cie1}} {
@@ -168,18 +169,21 @@ func cadd3(cadd *CaddIdx, interval irelate.Relatable) {
 		if l == v.Start() && r == v.End() {
 			return
 		}
-		pos, ref, alt := v.Pos, v.Ref, v.Alt
-		v.Ref, v.Alt = "A", []string{"<DUP>"}
-		svlen, _ := v.Info.Get("SVLEN")
-		v.Pos = uint64(l + 1)
-		v.Info.Set("SVLEN", r-l-1)
-		caddAnno(cadd, v, prefix)
-		v.Pos, v.Ref, v.Alt = pos, ref, alt
-		if svlen != nil && svlen != "" {
-			v.Info.Set("SVLEN", svlen)
-		} else {
-			v.Info.Delete("SVLEN")
+
+		m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), nil)
+		v2 := irelate.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(v.Start() + 1),
+			Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, v.Source(), nil)
+
+		caddAnno(cadd, v2, prefix)
+		for _, key := range v2.Info().Keys() {
+			if key == "SVLEN" {
+				continue
+			}
+			val, err := v2.Info().Get(key)
+			log.Println(err)
+			v.Info().Set(key, val)
 		}
+
 	}
 }
 
@@ -189,15 +193,15 @@ func caddAnno(cadd *CaddIdx, v *irelate.Variant, prefix string) {
 		return
 	}
 	if v.End()-v.Start() > 100000 {
-		log.Printf("skipping long variant at %s:%d (%d bases)\n", v.Chrom(), v.Pos, v.End()-v.Start())
+		log.Printf("skipping long variant at %s:%d (%d bases)\n", v.Chrom(), v.Start()-1, v.End()-v.Start())
 		return
 	}
 
 	for _, src := range cadd.Sources {
-		vals := make([][]interface{}, len(v.Alt))
-		vStr := make([]string, len(v.Alt))
+		vals := make([][]interface{}, len(v.Alt()))
+		vStr := make([]string, len(v.Alt()))
 		// handle multiple alts.
-		for iAlt, alt := range v.Alt {
+		for iAlt, alt := range v.Alt() {
 			vals[iAlt] = make([]interface{}, 0)
 			// report list of changes from ref[i] to C.
 			for pos := int(v.Start()) + 1; pos <= int(v.End()); pos++ {
@@ -208,11 +212,15 @@ func caddAnno(cadd *CaddIdx, v *irelate.Variant, prefix string) {
 				vals[iAlt] = append(vals[iAlt], score)
 			}
 			src.AnnotateOne(v, vals[iAlt], prefix)
-			vStr[iAlt] = string(v.Info.SGet(prefix + src.Name))
-			v.Info.Delete(prefix + src.Name)
+			var err error
+			var val interface{}
+			val, err = v.Info().Get(prefix + src.Name)
+			vStr[iAlt] = fmt.Sprintf("%.3f", val)
+			if err != nil {
+				log.Println(err)
+			}
 		}
-		v.Info.Set(prefix+src.Name, strings.Join(vStr, ","))
-
+		v.Info().Set(prefix+src.Name, strings.Join(vStr, ","))
 	}
 }
 

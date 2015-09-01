@@ -6,6 +6,7 @@ import (
 
 	"github.com/biogo/hts/sam"
 	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/vcfgo"
 	. "gopkg.in/check.v1"
 )
@@ -45,21 +46,21 @@ var v1 = &vcfgo.Variant{
 	Chromosome: "chr1",
 	Pos:        uint64(234),
 	Id:         "id",
-	Ref:        "A",
-	Alt:        []string{"T", "G"},
+	Reference:  "A",
+	Alternate:  []string{"T", "G"},
 	Quality:    float32(555.5),
 	Filter:     "PASS",
-	Info:       vcfgo.NewInfoByte("DP=35", h),
+	Info_:      vcfgo.NewInfoByte("DP=35", h),
 }
 var sv1 = &vcfgo.Variant{
 	Chromosome: "chr1",
 	Pos:        uint64(230),
 	Id:         "id",
-	Ref:        "A",
-	Alt:        []string{"<DEL>"},
+	Reference:  "A",
+	Alternate:  []string{"<DEL>"},
 	Quality:    float32(555.5),
 	Filter:     "PASS",
-	Info:       vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h),
+	Info_:      vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h),
 }
 
 func (s *APISuite) SetUpTest(c *C) {
@@ -68,34 +69,37 @@ func (s *APISuite) SetUpTest(c *C) {
 	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Description: "SVLEN", Number: "1", Type: "Integer"}
 	h.Infos["CIPOS"] = &vcfgo.Info{Id: "CIPOS", Description: "CIPOS", Number: "2", Type: "Integer"}
 	h.Infos["CIEND"] = &vcfgo.Info{Id: "CIEND", Description: "CIEND", Number: "2", Type: "Integer"}
+	h.Infos["AF"] = &vcfgo.Info{Id: "AF", Description: "AF", Number: "1", Type: "Float"}
+	h.Infos["AC_AFR"] = &vcfgo.Info{Id: "AF_AFR", Description: "AF_AFR", Number: "1", Type: "Float"}
 
-	s.v1 = &irelate.Variant{Variant: *v1}
-	s.v1.Info = vcfgo.NewInfoByte("DP=35", h)
+	vv := *v1
+	vv.Info_ = vcfgo.NewInfoByte("DP=35", h)
+	s.v1 = &irelate.Variant{IVariant: &vv}
 	s.v1.SetSource(0)
 	v2 := *v1
-	v2.Info = vcfgo.NewInfoByte("DP=44", h)
-	s.v2 = &irelate.Variant{Variant: v2}
-	s.v2.Info.Add("AC_AFR", 33)
+	v2.Info_ = vcfgo.NewInfoByte("DP=44", h)
+	s.v2 = &irelate.Variant{IVariant: &v2}
+	s.v2.Info().Set("AC_AFR", 33)
 	s.v2.SetSource(1)
 
-	s.sv1 = &irelate.Variant{Variant: *sv1}
-	s.sv1.Info = vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h)
+	sv1.Info_ = vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h)
+	s.sv1 = &irelate.Variant{IVariant: sv1}
 	s.sv1.SetSource(0)
 
 	v3 := *v1
-	v3.Info = vcfgo.NewInfoByte("DP=88", h)
-	s.v3 = &irelate.Variant{Variant: v3}
+	v3.Info_ = vcfgo.NewInfoByte("DP=88", h)
+	s.v3 = &irelate.Variant{IVariant: &v3}
 	s.v3.SetSource(1)
 
-	v, e := s.v1.Info.Get("DP")
+	v, e := v1.Info_.Get("DP")
 	c.Assert(e, IsNil)
 	c.Assert(v, Equals, 35)
 
-	v, e = s.v2.Info.Get("DP")
+	v, e = v2.Info_.Get("DP")
 	c.Assert(e, IsNil)
 	c.Assert(v, Equals, 44)
 
-	v, e = s.v3.Info.Get("DP")
+	v, e = v3.Info_.Get("DP")
 	c.Assert(e, IsNil)
 	c.Assert(v, Equals, 88)
 
@@ -154,9 +158,9 @@ func (s *APISuite) TestPartition(c *C) {
 	parted := s.annotator.partition(s.v1)
 	c.Assert(len(parted), Equals, 3)
 
-	c.Assert(parted[0], DeepEquals, []irelate.Relatable{s.v2, s.v3})
-	c.Assert(parted[1], DeepEquals, []irelate.Relatable{s.bed})
-	c.Assert(parted[2], DeepEquals, []irelate.Relatable{s.bam})
+	c.Assert(parted[0], DeepEquals, []interfaces.Relatable{s.v2, s.v3})
+	c.Assert(parted[1], DeepEquals, []interfaces.Relatable{s.bed})
+	c.Assert(parted[2], DeepEquals, []interfaces.Relatable{s.bam})
 }
 
 func (s *APISuite) TestSource(c *C) {
@@ -195,7 +199,7 @@ func (s *APISuite) TestJsOp(c *C) {
 	for _, jst := range jstest {
 		script, err := vm.Compile("", jst.js)
 		c.Assert(err, IsNil)
-		v := s.annotator.Sources[0].JsOp(s.v1.Variant, script, []interface{}{})
+		v := s.annotator.Sources[0].JsOp(s.v1, script, []interface{}{})
 		c.Assert(v, Equals, jst.result)
 	}
 }
@@ -214,30 +218,32 @@ func (s *APISuite) TestCollectBam(c *C) {
 
 func (s *APISuite) TestAnnotateOne(c *C) {
 	s.annotator.AnnotateOne(s.v1, s.annotator.Strict)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
+	c.Assert(s.v1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsLeft(c *C) {
 	s.annotator.AnnotateEnds(s.sv1, LEFT)
-	c.Assert(s.sv1.Info.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30")
+	c.Assert(s.sv1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsRight(c *C) {
 	s.annotator.AnnotateEnds(s.v1, RIGHT)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35")
+	c.Assert(s.v1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35")
 
 	s.annotator.AnnotateEnds(s.sv1, RIGHT)
-	c.Assert(s.sv1.Info.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;right_fitcons_mean=111;right_bam_qual=30")
+	c.Assert(s.sv1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;right_fitcons_mean=111;right_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsBoth(c *C) {
+	//pos:= 230 vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h),
+	s.annotator.Strict = false
 	s.annotator.AnnotateEnds(s.sv1, BOTH)
-	c.Assert(s.sv1.Info.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;AC_AFR=33;fitcons_mean=111;bam_qual=30;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30;right_fitcons_mean=111;right_bam_qual=30")
+	c.Assert(s.sv1.Info().String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;AC_AFR=33;fitcons_mean=111;bam_qual=30;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30;right_fitcons_mean=111;right_bam_qual=30")
 }
 
 func (s *APISuite) TestAnnotateEndsInterval(c *C) {
 	s.annotator.AnnotateEnds(s.v1, INTERVAL)
-	c.Assert(s.v1.Info.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
+	c.Assert(s.v1.Info().String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
 }
 
 func (s *APISuite) TestVFromB(c *C) {
@@ -260,9 +266,9 @@ func makeBed(chrom string, start int, end int, val float32) *irelate.Interval {
 func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string) *irelate.Variant {
 
 	binfo := vcfgo.NewInfoByte(info, h)
-	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Ref: ref, Alt: alt,
-		Id: name, Info: binfo}
-	return irelate.NewVariant(v, 0, make([]irelate.Relatable, 0))
+	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Reference: ref, Alternate: alt,
+		Id: name, Info_: binfo}
+	return irelate.NewVariant(&v, 0, make([]interfaces.Relatable, 0))
 }
 
 func (s *APISuite) TestEndsDiff(c *C) {
@@ -282,23 +288,28 @@ func (s *APISuite) TestEndsDiff(c *C) {
 	}
 
 	a := NewAnnotator([]*Source{&bsrc}, "", true, true, false)
-
 	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=-10,10;CIEND=-10,10")
+
 	v.SetSource(0)
 	v.AddRelated(b1)
 	v.AddRelated(b2)
-
 	a.AnnotateEnds(v, BOTH)
+	c.Assert(v.Info().String(), Equals, "CIPOS=-10,10;CIEND=-10,10;some_mean=54.275;left_some_mean=54.275;right_some_mean=54.275")
 
-	c.Assert(v.Info.String(), Equals, "CIPOS=-10,10;CIEND=-10,10;some_mean=54.275;left_some_mean=54.275;right_some_mean=54.275")
-
-	v.Info.Info = []byte("CIPOS=-5,5;CIEND=0,0")
+	v = makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=0,0;CIEND=-5,5")
+	v.SetSource(0)
+	v.AddRelated(b1)
+	v.AddRelated(b2)
+	c.Assert(v.Info().String(), Equals, "CIPOS=0,0;CIEND=-5,5")
 	a.AnnotateEnds(v, BOTH)
-	c.Assert(v.Info.String(), Equals, "CIPOS=-5,5;CIEND=0,0;some_mean=54.275;left_some_mean=54.275;right_some_mean=99.44")
+	c.Assert(v.Info().String(), Equals, "CIPOS=0,0;CIEND=-5,5;some_mean=54.275;left_some_mean=9.11;right_some_mean=54.275")
 
-	v.Info.Info = []byte("CIPOS=0,0;CIEND=-5,5")
+	v = makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=0,0;CIEND=-5,5")
+	v.SetSource(0)
+	v.AddRelated(b1)
+	v.AddRelated(b2)
 	a.AnnotateEnds(v, BOTH)
-	c.Assert(v.Info.String(), Equals, "CIPOS=0,0;CIEND=-5,5;some_mean=54.275;left_some_mean=9.11;right_some_mean=54.275")
+	c.Assert(v.Info().String(), Equals, "CIPOS=0,0;CIEND=-5,5;some_mean=54.275;left_some_mean=9.11;right_some_mean=54.275")
 }
 
 func (s *APISuite) TestEndsBedQuery(c *C) {
@@ -321,12 +332,12 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 
 	a := NewAnnotator([]*Source{&bsrc}, "", true, false, false)
 	a.AnnotateEnds(b1, BOTH)
-	c.Assert(b1.Fields[4], Equals, "some_mean=9.11")
+	c.Assert(b1.Fields[4], Equals, "some_mean=9.11;left_some_mean=9.11")
 
 	b1.SetSource(1)
 	b2.SetSource(0)
 	a.AnnotateEnds(b2, BOTH)
-	c.Assert(b2.Fields[4], Equals, "some_mean=99.44")
+	c.Assert(b2.Fields[4], Equals, "some_mean=99.44;right_some_mean=99.44")
 
 	b3 := makeBed("chr1", 50, 66, 99.44)
 	b3.SetSource(0)
@@ -354,7 +365,7 @@ func (s *APISuite) TestIdAnno(c *C) {
 	a := NewAnnotator([]*Source{&vsrc}, "", true, true, false)
 
 	a.AnnotateOne(v, a.Strict)
-	c.Assert(v.Info.String(), Equals, "o_id=rs")
+	c.Assert(v.Info().String(), Equals, "o_id=rs")
 
 	b := makeBed("chr1", 50, 66, 99.44)
 	b.AddRelated(v)

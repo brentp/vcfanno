@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/interfaces"
 )
 
 type Reducer func([]interface{}) interface{}
@@ -110,7 +110,7 @@ func vflag(vals []interface{}) interface{} {
 
 // don't need to use chrom since we are only testing things
 // returned from irelate.IRelate.
-func overlap(a, b irelate.Relatable) bool {
+func overlap(a, b interfaces.Relatable) bool {
 	return b.Start() < a.End() && a.Start() < b.End()
 }
 
