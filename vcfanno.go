@@ -22,7 +22,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-const VERSION = "0.0.7"
+const VERSION = "0.0.8"
 
 func main() {
 	fmt.Fprintf(os.Stderr, `
@@ -104,7 +104,7 @@ To run a server:
 		a.UpdateHeader(rdr.Header)
 	}
 
-	streams, err := a.SetupStreams(queryStream)
+	streams, getters, err := a.SetupStreams(queryStream)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -123,6 +123,9 @@ To run a server:
 		}
 
 	} else {
+		if &config.CaddIdx != nil || config.CaddIdx.File != "" {
+			log.Println("can't currently use CADD on BED files")
+		}
 		bw := bufio.NewWriter(out)
 		defer bw.Flush()
 		out = bw
@@ -130,7 +133,7 @@ To run a server:
 	start := time.Now()
 	n := 0
 
-	for interval := range a.Annotate(streams...) {
+	for interval := range a.Annotate(streams, getters) {
 		cadd3(cadd, interval)
 		fmt.Fprintf(out, "%s\n", interval)
 		n++
@@ -180,7 +183,9 @@ func cadd3(cadd *CaddIdx, interval interfaces.Relatable) {
 				continue
 			}
 			val, err := v2.Info().Get(key)
-			log.Println(err)
+			if err != nil {
+				log.Println(err)
+			}
 			v.Info().Set(key, val)
 		}
 

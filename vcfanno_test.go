@@ -24,7 +24,7 @@ var h = vcfgo.NewHeader()
 var v1 = &vcfgo.Variant{
 	Chromosome: "chr1",
 	Pos:        uint64(234),
-	Id:         "id",
+	Id_:        "id",
 	Reference:  "A",
 	Alternate:  []string{"T", "G"},
 	Quality:    float32(555.5),
@@ -84,15 +84,15 @@ var cfg = shared.Annotation{
 func (s *AnnoSuite) TestFlatten(c *C) {
 
 	cfgBed := shared.Annotation{
-		File:    "example/fitcons.bed",
+		File:    "example/fitcons.bed.gz",
 		Ops:     []string{"mean", "max", "flag"},
 		Columns: []int{4, 5, 1},
 		Names:   []string{"bed_mean", "bed_max", "bedFlag"},
 	}
 
 	f, err := cfgBed.Flatten(0, "")
-	c.Assert(len(f), Equals, 3)
 	c.Assert(err, IsNil)
+	c.Assert(len(f), Equals, 3)
 }
 
 /*

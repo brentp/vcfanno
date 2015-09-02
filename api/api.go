@@ -40,6 +40,8 @@ type Source struct {
 	Field string
 	// 0-based index of the file order this source is from.
 	Index int
+	// if sweep is true, use chrom sweep, otherwise, use tabix
+	Sweep bool
 	Js    *otto.Script
 	Vm    *otto.Otto
 }
@@ -153,22 +155,15 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 		if !overlap(v.(interfaces.Relatable), other) {
 			continue
 		}
-		if o, ok := other.(*irelate.Variant); ok {
-			if strict && !interfaces.Same(v, o.IVariant, strict) {
+		if o, ok := other.(interfaces.IVariant); ok {
+			if strict && !interfaces.Same(v, o, strict) {
 				continue
 			}
 			// special case pulling the rsid
 			if src.Field == "ID" {
-				if ov, ok := o.IVariant.(*vcfgo.Variant); ok {
-					if ov.Id == "." {
-						continue
-					}
-					val = ov.Id
-				} else if ov, ok := o.IVariant.(*cgotabix.Variant); ok {
-					if ov.Id == "." || ov.Id == "" {
-						continue
-					}
-					val = ov.Id
+				val = o.Id()
+				if val == "." || val == "" {
+					continue
 				}
 			} else if strings.ContainsRune(src.Field, '/') {
 				fields := strings.Split(src.Field, "/")
@@ -226,7 +221,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				}
 			}
 		} else {
-			msg := fmt.Sprintf("not supported for: %v", other)
+			msg := fmt.Sprintf("not supported for: %T", other)
 			log.Println(msg)
 			coll = []interface{}{msg}
 		}
@@ -343,6 +338,7 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 		}
 		// make a Variant, annotate it, pull out the info, put back in bed
 		v = vFromB(b)
+		strict = false // can't be strict with bed query.
 	}
 
 	for _, src := range a.Sources {
@@ -436,10 +432,11 @@ func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 }
 
 // SetupStreams takes the query stream and sets everything up for annotation.
-func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.RelatableChannel, error) {
+func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.RelatableChannel, []interfaces.RandomGetter, error) {
 
 	streams := make([]irelate.RelatableChannel, 1)
 	streams[0] = qStream
+	getters := make([]interfaces.RandomGetter, 0)
 
 	seen := make(map[int]bool)
 	for _, src := range a.Sources {
@@ -449,27 +446,44 @@ func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.Re
 			continue
 		}
 		seen[src.Index] = true
-		s, err := irelate.Streamer(src.File)
-		streams = append(streams, s)
-		if err != nil {
-			return streams[:0], err
+		if src.Sweep {
+			s, err := irelate.Streamer(src.File)
+			streams = append(streams, s)
+			if err != nil {
+				return streams[:0], getters[:0], err
+			}
+		} else {
+			tbx, err := cgotabix.New(src.File)
+			if err != nil {
+				return streams[:0], getters[:0], err
+			}
+			getters = append(getters, tbx)
 		}
 	}
-	return streams, nil
+	return streams, getters, nil
 }
 
 // Annotate annotates a file with the sources in the Annotator.
 // It accepts RelatableChannels, and returns a RelatableChannel on which it will send
 // annotated variants.
-func (a *Annotator) Annotate(streams ...irelate.RelatableChannel) irelate.RelatableChannel {
+func (a *Annotator) Annotate(streams []irelate.RelatableChannel, getters []interfaces.RandomGetter) irelate.RelatableChannel {
 	ch := make(irelate.RelatableChannel, 48)
 	ends := INTERVAL
 	if a.Ends {
 		ends = BOTH
 	}
 
+	n := len(streams)
 	go func(ch irelate.RelatableChannel, a *Annotator, ends string) {
 		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
+			for i, getter := range getters {
+				for _, rel := range getter.Get(interval) {
+					// TODO: just check A.Ends and expand interval as needed.
+					orel := rel.(interfaces.Relatable)
+					orel.SetSource(uint32(n + i))
+					interval.AddRelated(orel)
+				}
+			}
 			a.AnnotateEnds(interval, ends)
 			ch <- interval
 		}

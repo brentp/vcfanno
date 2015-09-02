@@ -45,7 +45,7 @@ var bam_rec = &sam.Record{Name: "read1",
 var v1 = &vcfgo.Variant{
 	Chromosome: "chr1",
 	Pos:        uint64(234),
-	Id:         "id",
+	Id_:        "id",
 	Reference:  "A",
 	Alternate:  []string{"T", "G"},
 	Quality:    float32(555.5),
@@ -55,7 +55,7 @@ var v1 = &vcfgo.Variant{
 var sv1 = &vcfgo.Variant{
 	Chromosome: "chr1",
 	Pos:        uint64(230),
-	Id:         "id",
+	Id_:        "id",
 	Reference:  "A",
 	Alternate:  []string{"<DEL>"},
 	Quality:    float32(555.5),
@@ -267,7 +267,7 @@ func makeVariant(chrom string, pos int, ref string, alt []string, name string, i
 
 	binfo := vcfgo.NewInfoByte(info, h)
 	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Reference: ref, Alternate: alt,
-		Id: name, Info_: binfo}
+		Id_: name, Info_: binfo}
 	return irelate.NewVariant(&v, 0, make([]interfaces.Relatable, 0))
 }
 

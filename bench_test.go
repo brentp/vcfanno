@@ -33,9 +33,9 @@ func benchmarkAnno(b *testing.B, natural bool) {
 	for n := 0; n < b.N; n++ {
 		q := irelate.Vopen("example/query.vcf")
 		stream := irelate.StreamVCF(q)
-		streams, _ := a.SetupStreams(stream)
+		streams, getters, _ := a.SetupStreams(stream)
 
-		for interval := range a.Annotate(streams...) {
+		for interval := range a.Annotate(streams, getters) {
 			fmt.Fprintf(out, "%s\n", interval)
 		}
 		out.Flush()

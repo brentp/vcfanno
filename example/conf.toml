@@ -1,5 +1,5 @@
 [[annotation]]
-file="example/exac.vcf"
+file="example/exac.vcf.gz"
 # the special name 'ID' pulls out the rs id from the VCF
 fields = ["AC_AFR", "AC_AMR", "AC_EAS", "ID"]
 ops=["first", "first", "first", "first"]
@@ -13,7 +13,7 @@ ops=["mean", "count"]
 
 
 [[annotation]]
-file="example/fitcons.bed"
+file="example/fitcons.bed.gz"
 names=["otto_start", "otto_end", "otto_len", "otto_sum", "otto_mean", "otto_loc"]
 columns=[4, 4, 4, 4, 4, 4]
 # when a custom value is needed, specify arbitrary javascript after "js:"

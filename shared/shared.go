@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"sort"
 	"strings"
 
 	. "github.com/brentp/vcfanno/api"
@@ -34,6 +35,27 @@ type Annotation struct {
 	Columns []int
 	// the names in the output.
 	Names []string
+	// (default of false is to use tabix)
+	Sweep bool
+}
+
+func (a Annotation) Indexable() bool {
+	// update when we have bam and csi support.
+	return strings.HasSuffix(a.File, ".gz") && xopen.Exists(a.File+".tbi")
+}
+
+type Annotations []Annotation
+
+func (ss Annotations) Len() int {
+	return len(ss)
+}
+func (ss Annotations) Swap(i, j int) {
+	ss[i], ss[j] = ss[j], ss[i]
+}
+
+// we want sweeps to come first.
+func (ss Annotations) Less(i, j int) bool {
+	return ss[i].Sweep || !ss[i].Indexable()
 }
 
 // Flatten turns an annotation into a slice of Sources. Pass in the index of the file.
@@ -85,7 +107,7 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 		if len(a.Names) == 0 {
 			a.Names = a.Fields
 		}
-		sources[i] = &Source{File: a.File, Op: op, Name: a.Names[i], Index: index}
+		sources[i] = &Source{File: a.File, Op: op, Name: a.Names[i], Index: index, Sweep: a.Sweep || !a.Indexable()}
 		if nil != a.Fields {
 			sources[i].Field = a.Fields[i]
 			sources[i].Column = -1
@@ -97,8 +119,12 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 }
 
 func (c Config) Sources() ([]*Source, error) {
+	// we sort so that Sweep files come first and we use the index to determin
+	// which Source object to use.
+	var annos Annotations = c.Annotation
+	sort.Sort(&annos)
 	s := make([]*Source, 0)
-	for i, a := range c.Annotation {
+	for i, a := range annos {
 		flats, err := a.Flatten(i, c.Base)
 		if err != nil {
 			return nil, err

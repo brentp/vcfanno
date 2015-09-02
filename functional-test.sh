@@ -17,9 +17,9 @@ show() {
 }
 
 
-./vcfanno -js example/custom.js example/conf.toml example/fitcons.bed > obs
+./vcfanno -js example/custom.js example/conf.toml example/fitcons.bed.gz > obs
 show "annotated bed"
-check $(wc -l < example/fitcons.bed) $(wc -l < obs)
+check $(zless example/fitcons.bed.gz | wc -l) $(wc -l < obs)
 
 
 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf > obs
