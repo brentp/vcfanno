@@ -39,12 +39,6 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("must POST or PUT a VCF"))
 		return
 	}
-
-	mpr, err := r.MultipartReader()
-	if check(err, w) {
-		return
-	}
-
 	hj, ok := w.(http.Hijacker)
 	if !ok {
 		log.Println("hijacking not supported")
@@ -55,7 +49,15 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if check(err, w) {
 		return
 	}
+
+	mpr, err := r.MultipartReader()
+	if check(err, w) {
+		return
+	}
+
 	defer conn.Close()
+	//conn.Write([]byte("Content-Type: text/plain\n"))
+	//conn.Write([]byte("Content-Disposition: attachment\n"))
 
 	var vcf io.Reader
 	var wtr io.WriteCloser
@@ -77,6 +79,7 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			io.Copy(wtr, part)
+			log.Println("copied")
 		}
 		wtr.Close()
 	}()
@@ -99,19 +102,19 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if check(err, w) {
 		return
 	}
-	annot := api.NewAnnotator(srcs, h.jsString, true, true, true)
+	annot := api.NewAnnotator(srcs, h.jsString, true, true, true, "")
 
 	vcfWriter, err := vcfgo.NewWriter(wh, rdr.Header)
 	if check(err, w) {
 		return
 	}
 
-	streams, err := annot.SetupStreams(queryStream)
+	streams, getters, err := annot.SetupStreams(queryStream)
 	if check(err, w) {
 		return
 	}
 
-	for interval := range annot.Annotate(streams...) {
+	for interval := range annot.Annotate(streams, getters) {
 		fmt.Fprintf(vcfWriter, "%s\n", interval)
 	}
 	if err := wh.Flush(); err != nil {
@@ -165,5 +168,5 @@ func Server() {
 	}
 	http.Handle("/", h)
 	fmt.Fprintf(os.Stderr, "\nstarting vcfanno server on port %s\n", *port)
-	http.ListenAndServe(*port, nil)
+	log.Println(http.ListenAndServe(*port, nil))
 }

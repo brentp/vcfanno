@@ -97,7 +97,7 @@ To run a server:
 	var err error
 	var queryStream irelate.RelatableChannel
 	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
-		queryStream, err = irelate.Streamer(queryFile, "")
+		queryStream, err = irelate.Streamer(queryFile, *region)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -118,7 +118,8 @@ To run a server:
 			if err != nil {
 				log.Fatal(err)
 			}
-			q, err = bx.Query(chrom, start, end)
+			log.Fatal("querying")
+			q, err = bx.Query(chrom, start, end, true)
 			if err != nil {
 				log.Fatal(err)
 			}

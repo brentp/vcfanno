@@ -1,3 +1,4 @@
+set -e
 check() {
 	if [[ "$a" -ne "$b" ]]; then
 		echo " <ERROR!>"
@@ -17,6 +18,7 @@ show() {
 }
 
 
+rm -f obs
 ./vcfanno -js example/custom.js example/conf.toml example/fitcons.bed.gz > obs
 show "annotated bed"
 check $(zless example/fitcons.bed.gz | wc -l) $(wc -l < obs)
