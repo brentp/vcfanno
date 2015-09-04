@@ -122,7 +122,13 @@ func (c Config) Sources() ([]*Source, error) {
 	// we sort so that Sweep files come first and we use the index to determin
 	// which Source object to use.
 	var annos Annotations = c.Annotation
-	sort.Sort(&annos)
+	for i, a := range annos {
+		if !xopen.Exists(a.File) && a.File != "-" {
+			a.File = c.Base + "/" + a.File
+			annos[i] = a
+		}
+	}
+	sort.Sort(annos)
 	s := make([]*Source, 0)
 	for i, a := range annos {
 		flats, err := a.Flatten(i, c.Base)

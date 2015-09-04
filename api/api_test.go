@@ -149,7 +149,7 @@ func (s *APISuite) SetUpTest(c *C) {
 		Index:  2,
 	}
 
-	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src, &s.srcBam}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true, true)
+	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src, &s.srcBam}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true, true, "")
 
 }
 
@@ -287,7 +287,7 @@ func (s *APISuite) TestEndsDiff(c *C) {
 		Index:  0,
 	}
 
-	a := NewAnnotator([]*Source{&bsrc}, "", true, true, false)
+	a := NewAnnotator([]*Source{&bsrc}, "", true, true, false, "")
 	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=-10,10;CIEND=-10,10")
 
 	v.SetSource(0)
@@ -330,7 +330,7 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 	b1.AddRelated(b2)
 	b2.AddRelated(b1)
 
-	a := NewAnnotator([]*Source{&bsrc}, "", true, false, false)
+	a := NewAnnotator([]*Source{&bsrc}, "", true, false, false, "")
 	a.AnnotateEnds(b1, BOTH)
 	c.Assert(b1.Fields[4], Equals, "some_mean=9.11;left_some_mean=9.11")
 
@@ -362,7 +362,7 @@ func (s *APISuite) TestIdAnno(c *C) {
 	v.AddRelated(v)
 	v.SetSource(1)
 
-	a := NewAnnotator([]*Source{&vsrc}, "", true, true, false)
+	a := NewAnnotator([]*Source{&vsrc}, "", true, true, false, "")
 
 	a.AnnotateOne(v, a.Strict)
 	c.Assert(v.Info().String(), Equals, "o_id=rs")

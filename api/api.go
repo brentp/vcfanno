@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/biogo/hts/sam"
-	"github.com/brentp/cgotabix"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/vcfgo"
@@ -57,6 +56,7 @@ type Annotator struct {
 	Strict  bool // require a variant to have same ref and share at least 1 alt
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
 	Less    func(a, b interfaces.Relatable) bool
+	Region  string // restrict annotation to this (chrom:start-end) region.
 }
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
@@ -83,7 +83,7 @@ func (s *Source) JsOp(v *irelate.Variant, js *otto.Script, vals []interface{}) s
 // If ends is true, it will annotate the 1 base ends of the interval as well as the
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.
-func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort bool) *Annotator {
+func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort bool, region string) *Annotator {
 	for _, s := range sources {
 		if e := checkSource(s); e != nil {
 			log.Fatal(e)
@@ -100,6 +100,7 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort 
 		Strict:  strict,
 		Ends:    ends,
 		Less:    less,
+		Region:  region,
 	}
 	vm := otto.New()
 	for _, s := range a.Sources {
@@ -148,10 +149,10 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 	coll := make([]interface{}, 0)
 	var val interface{}
 	for _, other := range rels {
-		// need this check for the ends stuff.
 		if int(other.Source())-1 != src.Index {
 			log.Fatalf("got source %d with related %d", src.Index, other.Source())
 		}
+		// need this check for the ends stuff.
 		if !overlap(v.(interfaces.Relatable), other) {
 			continue
 		}
@@ -446,19 +447,19 @@ func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.Re
 			continue
 		}
 		seen[src.Index] = true
-		if src.Sweep {
-			s, err := irelate.Streamer(src.File)
-			streams = append(streams, s)
-			if err != nil {
-				return streams[:0], getters[:0], err
-			}
-		} else {
-			tbx, err := cgotabix.New(src.File)
-			if err != nil {
-				return streams[:0], getters[:0], err
-			}
-			getters = append(getters, tbx)
+		s, err := irelate.Streamer(src.File, a.Region)
+		streams = append(streams, s)
+		if err != nil {
+			return streams[:0], getters[:0], err
 		}
+		/*
+			} else {
+				tbx, err := cgotabix.New(src.File)
+				if err != nil {
+					return streams[:0], getters[:0], err
+				}
+				getters = append(getters, tbx)
+			}*/
 	}
 	return streams, getters, nil
 }

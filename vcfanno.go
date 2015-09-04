@@ -9,10 +9,12 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"strings"
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
 	. "github.com/brentp/vcfanno/api"
@@ -44,6 +46,7 @@ see: https://github.com/brentp/vcfanno
 	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
 	lexsort := flag.Bool("lexicographical", false, "expect chromosomes in order of 1,10,11 ... 19, 2, 20... "+
 		" default is 1, 10, 11, ..., 19, 2, 20... . All files must be in the same order.")
+	region := flag.String("region", "", "optional region (chrom:start-end) to restrict annnotation. Useful for parallelization")
 	base := flag.String("base-path", "", "optional base-path to prepend to annotation files in the config")
 	flag.Parse()
 	inFiles := flag.Args()
@@ -85,7 +88,7 @@ To run a server:
 
 	jsString := ReadJs(*js)
 	strict := !*notstrict
-	var a = NewAnnotator(sources, jsString, *ends, strict, !*lexsort)
+	var a = NewAnnotator(sources, jsString, *ends, strict, !*lexsort, *region)
 
 	var out io.Writer = os.Stdout
 	defer os.Stdout.Close()
@@ -94,12 +97,34 @@ To run a server:
 	var err error
 	var queryStream irelate.RelatableChannel
 	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
-		queryStream, err = irelate.Streamer(queryFile)
+		queryStream, err = irelate.Streamer(queryFile, "")
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		rdr = irelate.Vopen(queryFile)
+
+		var q io.Reader
+		if *region == "" {
+			q, err = xopen.XReader(queryFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			bx, err := bix.New(queryFile)
+			if err != nil {
+				log.Fatal(err)
+			}
+			chrom, start, end, err := irelate.RegionToParts(*region)
+			if err != nil {
+				log.Fatal(err)
+			}
+			q, err = bx.Query(chrom, start, end)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+
+		rdr = irelate.Vopen(q)
 		queryStream = irelate.StreamVCF(rdr)
 		a.UpdateHeader(rdr.Header)
 	}
@@ -132,6 +157,16 @@ To run a server:
 	}
 	start := time.Now()
 	n := 0
+
+	if os.Getenv("IRELATE_PROFILE") == "TRUE" {
+		log.Println("profiling to: irelate.pprof")
+		f, err := os.Create("irelate.pprof")
+		if err != nil {
+			panic(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	for interval := range a.Annotate(streams, getters) {
 		cadd3(cadd, interval)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/BurntSushi/toml"
@@ -29,9 +30,13 @@ func benchmarkAnno(b *testing.B, natural bool) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a := api.NewAnnotator(srcs, js_string, false, true, natural)
+	a := api.NewAnnotator(srcs, js_string, false, true, natural, "")
 	for n := 0; n < b.N; n++ {
-		q := irelate.Vopen("example/query.vcf")
+		rdr, err := os.Open("example/query.vcf")
+		if err != nil {
+			log.Fatal(err)
+		}
+		q := irelate.Vopen(rdr)
 		stream := irelate.StreamVCF(q)
 		streams, getters, _ := a.SetupStreams(stream)
 
