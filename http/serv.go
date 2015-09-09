@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfanno/api"
 	"github.com/brentp/vcfanno/shared"
 	"github.com/brentp/vcfgo"
@@ -96,7 +96,7 @@ func (h AnnoHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if rdr, err = vcfgo.NewReader(vcf, true); check(err, w) {
 		return
 	}
-	queryStream := irelate.StreamVCF(rdr)
+	queryStream := parsers.StreamVCF(rdr)
 
 	srcs, err := h.config.Sources()
 	if check(err, w) {

@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfanno/shared"
 	"github.com/brentp/vcfgo"
 
@@ -13,10 +13,10 @@ import (
 func Test(t *testing.T) { TestingT(t) }
 
 type AnnoSuite struct {
-	v1 *irelate.Variant
-	v2 *irelate.Variant
-	v3 *irelate.Variant
-	b  *irelate.Interval
+	v1 *parsers.Variant
+	v2 *parsers.Variant
+	v3 *parsers.Variant
+	b  *parsers.Interval
 }
 
 var h = vcfgo.NewHeader()
@@ -38,16 +38,16 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 
 	h.Infos["DP"] = &vcfgo.Info{Id: "DP", Description: "depth", Number: "1", Type: "Integer"}
 
-	s.v1 = &irelate.Variant{IVariant: v1}
+	s.v1 = &parsers.Variant{IVariant: v1}
 	s.v1.SetSource(0)
 	v2 := *v1
 	v2.Info_ = vcfgo.NewInfoByte("DP=44", h)
-	s.v2 = &irelate.Variant{IVariant: &v2}
+	s.v2 = &parsers.Variant{IVariant: &v2}
 	s.v2.SetSource(1)
 
 	v3 := *v1
 	v3.Info_ = vcfgo.NewInfoByte("DP=88", h)
-	s.v3 = &irelate.Variant{IVariant: &v3}
+	s.v3 = &parsers.Variant{IVariant: &v3}
 	s.v3.SetSource(1)
 
 	v, e := v1.Info_.Get("DP")
@@ -67,8 +67,8 @@ func (s *AnnoSuite) SetUpTest(c *C) {
 
 	c.Assert(2, Equals, len(s.v1.Related()))
 
-	sb, err := irelate.IntervalFromBedLine("chr1\t224\t244\t111\t222")
-	s.b = sb.(*irelate.Interval)
+	sb, err := parsers.IntervalFromBedLine("chr1\t224\t244\t111\t222")
+	s.b = sb.(*parsers.Interval)
 	c.Assert(err, IsNil)
 	s.b.SetSource(2)
 	s.v1.AddRelated(s.b)
@@ -152,7 +152,7 @@ var cfgBed = annotation{
 	Names:   []string{"bed_mean", "bed_max", "bedFlag"},
 }
 
-var interval = irelate.IntervalFromBedLine("chr1\t224\t244")
+var interval = parsers.IntervalFromBedLine("chr1\t224\t244")
 
 func (s *AnnoSuite) TestAnnoBed(c *C) {
 	interval.SetSource(2)
@@ -182,11 +182,11 @@ func (s *AnnoSuite) TestCheck(c *C) {
 }
 
 func (s *AnnoSuite) TestOverlap(c *C) {
-	s1 := &irelate.Variant{Variant: v1}
+	s1 := &parsers.Variant{Variant: v1}
 	c.Assert(overlap(s1, s1), Equals, true)
 	vv := *v1
 	vv.Pos += 2
-	s2 := &irelate.Variant{Variant: &vv}
+	s2 := &parsers.Variant{Variant: &vv}
 	c.Assert(overlap(s1, s2), Equals, false)
 
 }

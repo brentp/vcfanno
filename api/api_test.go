@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/biogo/hts/sam"
-	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
+	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfgo"
 	. "gopkg.in/check.v1"
 )
@@ -14,13 +14,13 @@ import (
 func Test(t *testing.T) { TestingT(t) }
 
 type APISuite struct {
-	sv1 *irelate.Variant
-	v1  *irelate.Variant
-	v2  *irelate.Variant
-	v3  *irelate.Variant
+	sv1 *parsers.Variant
+	v1  *parsers.Variant
+	v2  *parsers.Variant
+	v3  *parsers.Variant
 
-	bed *irelate.Interval
-	bam *irelate.Bam
+	bed *parsers.Interval
+	bam *parsers.Bam
 
 	src    Source
 	src0   Source
@@ -74,21 +74,21 @@ func (s *APISuite) SetUpTest(c *C) {
 
 	vv := *v1
 	vv.Info_ = vcfgo.NewInfoByte("DP=35", h)
-	s.v1 = &irelate.Variant{IVariant: &vv}
+	s.v1 = &parsers.Variant{IVariant: &vv}
 	s.v1.SetSource(0)
 	v2 := *v1
 	v2.Info_ = vcfgo.NewInfoByte("DP=44", h)
-	s.v2 = &irelate.Variant{IVariant: &v2}
+	s.v2 = &parsers.Variant{IVariant: &v2}
 	s.v2.Info().Set("AC_AFR", 33)
 	s.v2.SetSource(1)
 
 	sv1.Info_ = vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h)
-	s.sv1 = &irelate.Variant{IVariant: sv1}
+	s.sv1 = &parsers.Variant{IVariant: sv1}
 	s.sv1.SetSource(0)
 
 	v3 := *v1
 	v3.Info_ = vcfgo.NewInfoByte("DP=88", h)
-	s.v3 = &irelate.Variant{IVariant: &v3}
+	s.v3 = &parsers.Variant{IVariant: &v3}
 	s.v3.SetSource(1)
 
 	v, e := v1.Info_.Get("DP")
@@ -110,14 +110,14 @@ func (s *APISuite) SetUpTest(c *C) {
 
 	c.Assert(2, Equals, len(s.v1.Related()))
 
-	sbed, err := irelate.IntervalFromBedLine("chr1\t224\t244\t111\t222")
+	sbed, err := parsers.IntervalFromBedLine("chr1\t224\t244\t111\t222")
 	c.Assert(err, IsNil)
-	s.bed = sbed.(*irelate.Interval)
+	s.bed = sbed.(*parsers.Interval)
 	s.bed.SetSource(2)
 	s.v1.AddRelated(s.bed)
 	s.sv1.AddRelated(s.bed)
 
-	s.bam = &irelate.Bam{Record: bam_rec, Chromosome: "chr1"}
+	s.bam = &parsers.Bam{Record: bam_rec, Chromosome: "chr1"}
 	s.bam.SetSource(3)
 	s.v1.AddRelated(s.bam)
 	s.sv1.AddRelated(s.bam)
@@ -258,17 +258,17 @@ func (s *APISuite) TestVFromB(c *C) {
 
 // utility functions.
 
-func makeBed(chrom string, start int, end int, val float32) *irelate.Interval {
-	i, _ := irelate.IntervalFromBedLine(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val))
-	return i.(*irelate.Interval)
+func makeBed(chrom string, start int, end int, val float32) *parsers.Interval {
+	i, _ := parsers.IntervalFromBedLine(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val))
+	return i.(*parsers.Interval)
 }
 
-func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string) *irelate.Variant {
+func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string) *parsers.Variant {
 
 	binfo := vcfgo.NewInfoByte(info, h)
 	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Reference: ref, Alternate: alt,
 		Id_: name, Info_: binfo}
-	return irelate.NewVariant(&v, 0, make([]interfaces.Relatable, 0))
+	return parsers.NewVariant(&v, 0, make([]interfaces.Relatable, 0))
 }
 
 func (s *APISuite) TestEndsDiff(c *C) {
@@ -344,7 +344,6 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 	b1.SetSource(1)
 	b2.SetSource(1)
 	b3.AddRelated(b1)
-
 	a.AnnotateEnds(b3, INTERVAL)
 	c.Assert(b3.Fields[4], Equals, "some_mean=99.44")
 }

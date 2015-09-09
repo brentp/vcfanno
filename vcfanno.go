@@ -17,6 +17,7 @@ import (
 	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
+	"github.com/brentp/irelate/parsers"
 	. "github.com/brentp/vcfanno/api"
 	vhttp "github.com/brentp/vcfanno/http"
 	. "github.com/brentp/vcfanno/shared"
@@ -95,7 +96,7 @@ To run a server:
 
 	var rdr *vcfgo.Reader
 	var err error
-	var queryStream irelate.RelatableChannel
+	var queryStream interfaces.RelatableChannel
 	if strings.HasSuffix(queryFile, ".bed") || strings.HasSuffix(queryFile, ".bed.gz") {
 		queryStream, err = irelate.Streamer(queryFile, *region)
 		if err != nil {
@@ -124,8 +125,8 @@ To run a server:
 			}
 		}
 
-		rdr = irelate.Vopen(q, nil)
-		queryStream = irelate.StreamVCF(rdr)
+		rdr = parsers.Vopen(q, nil)
+		queryStream = parsers.StreamVCF(rdr)
 		a.UpdateHeader(rdr.Header)
 	}
 
@@ -186,10 +187,10 @@ func cadd3(cadd *CaddIdx, interval interfaces.Relatable) {
 	if cadd == nil {
 		return
 	}
-	var v *irelate.Variant
+	var v *parsers.Variant
 	var ok bool
 
-	if v, ok = interval.(*irelate.Variant); !ok {
+	if v, ok = interval.(*parsers.Variant); !ok {
 		return
 	}
 	caddAnno(cadd, v, "")
@@ -209,7 +210,7 @@ func cadd3(cadd *CaddIdx, interval interfaces.Relatable) {
 		}
 
 		m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), nil)
-		v2 := irelate.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(v.Start() + 1),
+		v2 := parsers.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(v.Start() + 1),
 			Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, v.Source(), nil)
 
 		caddAnno(cadd, v2, prefix)
@@ -228,7 +229,7 @@ func cadd3(cadd *CaddIdx, interval interfaces.Relatable) {
 }
 
 // if the cadd index was requested, annotate the variant.
-func caddAnno(cadd *CaddIdx, v *irelate.Variant, prefix string) {
+func caddAnno(cadd *CaddIdx, v *parsers.Variant, prefix string) {
 	if cadd == nil {
 		return
 	}

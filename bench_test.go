@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/BurntSushi/toml"
-	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfanno/api"
 	"github.com/brentp/vcfanno/shared"
 	"github.com/brentp/xopen"
@@ -36,8 +36,8 @@ func benchmarkAnno(b *testing.B, natural bool) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		q := irelate.Vopen(rdr, nil)
-		stream := irelate.StreamVCF(q)
+		q := parsers.Vopen(rdr, nil)
+		stream := parsers.StreamVCF(q)
 		streams, getters, _ := a.SetupStreams(stream)
 
 		for interval := range a.Annotate(streams, getters) {

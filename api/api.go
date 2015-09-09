@@ -7,8 +7,10 @@ import (
 	"strings"
 
 	"github.com/biogo/hts/sam"
+	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
+	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfgo"
 	"github.com/robertkrimen/otto"
 )
@@ -39,10 +41,10 @@ type Source struct {
 	Field string
 	// 0-based index of the file order this source is from.
 	Index int
-	// if sweep is true, use chrom sweep, otherwise, use tabix
-	Sweep bool
 	Js    *otto.Script
 	Vm    *otto.Otto
+
+	Sweep bool
 }
 
 // IsNumber indicates that we expect the Source to return a number given the op
@@ -57,11 +59,13 @@ type Annotator struct {
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
 	Less    func(a, b interfaces.Relatable) bool
 	Region  string // restrict annotation to this (chrom:start-end) region.
+	// if sweep is true, use chrom sweep, otherwise, use tabix
+	Sweep bool
 }
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
-func (s *Source) JsOp(v *irelate.Variant, js *otto.Script, vals []interface{}) string {
+func (s *Source) JsOp(v *parsers.Variant, js *otto.Script, vals []interface{}) string {
 	s.Vm.Set("chrom", v.Chrom())
 	s.Vm.Set("start", v.Start())
 	s.Vm.Set("end", v.End())
@@ -191,7 +195,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			} else {
 				coll = append(coll, val)
 			}
-		} else if o, ok := other.(*irelate.Interval); ok {
+		} else if o, ok := other.(*parsers.Interval); ok {
 			sval := o.Fields[src.Column-1]
 			if src.IsNumber() {
 				v, e := strconv.ParseFloat(sval, 32)
@@ -202,7 +206,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			} else {
 				coll = append(coll, sval)
 			}
-		} else if bam, ok := other.(*irelate.Bam); ok {
+		} else if bam, ok := other.(*parsers.Bam); ok {
 			if bam.MapQ() < 1 || (bam.Flags&sam.Unmapped != 0) {
 				continue
 			}
@@ -231,11 +235,11 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 }
 
 // vFromB makes a variant from an interval. this helps avoid code duplication.
-func vFromB(b *irelate.Interval) *irelate.Variant {
+func vFromB(b *parsers.Interval) *parsers.Variant {
 	h := vcfgo.NewHeader()
 	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Type: "Integer", Description: "", Number: "1"}
 	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", int(b.End()-b.Start())-1), h)
-	v := irelate.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
+	v := parsers.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
 		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, 0, b.Related())
 	return v
 }
@@ -244,11 +248,11 @@ func vFromB(b *irelate.Interval) *irelate.Variant {
 // so that it can use the same machinery to annotate the ends and the entire interval.
 // Output into the info field is prefixed with "left_" or "right_".
 func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
-	var v *irelate.Variant
+	var v *parsers.Variant
 	var ok bool
 	var err error
-	if v, ok = r.(*irelate.Variant); !ok {
-		v = vFromB(r.(*irelate.Interval))
+	if v, ok = r.(*parsers.Variant); !ok {
+		v = vFromB(r.(*parsers.Interval))
 	}
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
@@ -267,7 +271,7 @@ func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
 		}
 		// it was a Bed, we add the info to its fields
 		if !ok {
-			b := r.(*irelate.Interval)
+			b := r.(*parsers.Interval)
 			v.Info().Delete("SVLEN")
 			b.Fields = append(b.Fields, v.Info().String())
 		}
@@ -294,7 +298,7 @@ func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
 		}
 
 		m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), v.IVariant.(*vcfgo.Variant).Header)
-		v2 := irelate.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(l + 1),
+		v2 := parsers.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(l + 1),
 			Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, v.Source(), v.Related())
 
 		err = a.AnnotateOne(v2, false, ends)
@@ -330,11 +334,11 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	}
 
 	parted := a.partition(r)
-	var b *irelate.Interval
-	var v *irelate.Variant
+	var b *parsers.Interval
+	var v *parsers.Variant
 	var isBed, isVariant bool
-	if v, isVariant = r.(*irelate.Variant); !isVariant {
-		if b, isBed = r.(*irelate.Interval); !isBed {
+	if v, isVariant = r.(*parsers.Variant); !isVariant {
+		if b, isBed = r.(*parsers.Interval); !isBed {
 			panic("can only annotate Bed or VCF at this time")
 		}
 		// make a Variant, annotate it, pull out the info, put back in bed
@@ -361,7 +365,7 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	return nil
 }
 
-func (src *Source) AnnotateOne(v *irelate.Variant, vals []interface{}, prefix string) {
+func (src *Source) AnnotateOne(v *parsers.Variant, vals []interface{}, prefix string) {
 	if len(vals) == 0 {
 		return
 	}
@@ -433,9 +437,9 @@ func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 }
 
 // SetupStreams takes the query stream and sets everything up for annotation.
-func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.RelatableChannel, []interfaces.RandomGetter, error) {
+func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfaces.RelatableChannel, []interfaces.RandomGetter, error) {
 
-	streams := make([]irelate.RelatableChannel, 1)
+	streams := make([]interfaces.RelatableChannel, 1)
 	streams[0] = qStream
 	getters := make([]interfaces.RandomGetter, 0)
 
@@ -446,23 +450,23 @@ func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.Re
 		if _, ok := seen[src.Index]; ok {
 			continue
 		}
-		seen[src.Index] = true
-		s, err := irelate.Streamer(src.File, a.Region)
-		if err != nil {
-			if a.Region != "" && strings.HasSuffix(src.File, ".bam") {
-				log.Println("ERROR: can't do regional queries on bam files")
-			}
-			return streams[:0], getters[:0], err
-		}
-		streams = append(streams, s)
-		/*
-			} else {
-				tbx, err := cgotabix.New(src.File)
-				if err != nil {
-					return streams[:0], getters[:0], err
+		if a.Sweep {
+			seen[src.Index] = true
+			s, err := irelate.Streamer(src.File, a.Region)
+			if err != nil {
+				if a.Region != "" && strings.HasSuffix(src.File, ".bam") {
+					log.Println("ERROR: can't do regional queries on bam files")
 				}
-				getters = append(getters, tbx)
-			}*/
+				return streams[:0], getters[:0], err
+			}
+			streams = append(streams, s)
+		} else {
+			tbx, err := bix.New(src.File)
+			if err != nil {
+				return streams[:0], getters[:0], err
+			}
+			getters = append(getters, tbx)
+		}
 	}
 	return streams, getters, nil
 }
@@ -470,15 +474,15 @@ func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.Re
 // Annotate annotates a file with the sources in the Annotator.
 // It accepts RelatableChannels, and returns a RelatableChannel on which it will send
 // annotated variants.
-func (a *Annotator) Annotate(streams []irelate.RelatableChannel, getters []interfaces.RandomGetter) irelate.RelatableChannel {
-	ch := make(irelate.RelatableChannel, 48)
+func (a *Annotator) Annotate(streams []interfaces.RelatableChannel, getters []interfaces.RandomGetter) interfaces.RelatableChannel {
+	ch := make(interfaces.RelatableChannel, 48)
 	ends := INTERVAL
 	if a.Ends {
 		ends = BOTH
 	}
 
 	n := len(streams)
-	go func(ch irelate.RelatableChannel, a *Annotator, ends string) {
+	go func(ch interfaces.RelatableChannel, a *Annotator, ends string) {
 		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
 			for i, getter := range getters {
 				for _, rel := range getter.Get(interval) {
