@@ -448,10 +448,13 @@ func (a *Annotator) SetupStreams(qStream irelate.RelatableChannel) ([]irelate.Re
 		}
 		seen[src.Index] = true
 		s, err := irelate.Streamer(src.File, a.Region)
-		streams = append(streams, s)
 		if err != nil {
+			if a.Region != "" && strings.HasSuffix(src.File, ".bam") {
+				log.Println("ERROR: can't do regional queries on bam files")
+			}
 			return streams[:0], getters[:0], err
 		}
+		streams = append(streams, s)
 		/*
 			} else {
 				tbx, err := cgotabix.New(src.File)

@@ -36,7 +36,7 @@ func benchmarkAnno(b *testing.B, natural bool) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		q := irelate.Vopen(rdr)
+		q := irelate.Vopen(rdr, nil)
 		stream := irelate.StreamVCF(q)
 		streams, getters, _ := a.SetupStreams(stream)
 

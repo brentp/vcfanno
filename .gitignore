@@ -3,3 +3,5 @@ cov.out
 cpu.prof
 *.swp
 http/http
+*.pprof
+*.prof

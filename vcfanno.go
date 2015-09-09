@@ -118,14 +118,13 @@ To run a server:
 			if err != nil {
 				log.Fatal(err)
 			}
-			log.Fatal("querying")
 			q, err = bx.Query(chrom, start, end, true)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		rdr = irelate.Vopen(q)
+		rdr = irelate.Vopen(q, nil)
 		queryStream = irelate.StreamVCF(rdr)
 		a.UpdateHeader(rdr.Header)
 	}
