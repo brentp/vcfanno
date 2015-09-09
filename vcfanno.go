@@ -127,7 +127,7 @@ To run a server:
 
 		rdr = parsers.Vopen(q, nil)
 		queryStream = parsers.StreamVCF(rdr)
-		a.UpdateHeader(rdr.Header)
+		a.UpdateHeader(rdr)
 	}
 
 	streams, getters, err := a.SetupStreams(queryStream)
@@ -138,7 +138,7 @@ To run a server:
 
 	if nil != rdr { // it was vcf, print the header
 		var err error
-		cadd, err = config.Cadd(rdr.Header, a.Ends)
+		cadd, err = config.Cadd(rdr, a.Ends)
 		if err != nil {
 			log.Fatal(err)
 		}

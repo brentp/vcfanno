@@ -180,7 +180,7 @@ func CheckAnno(a *Annotation) error {
 }
 
 // Cadd parses the cadd fields and updates the vcf Header.
-func (c Config) Cadd(h *vcfgo.Header, ends bool) (*CaddIdx, error) {
+func (c Config) Cadd(r *vcfgo.Reader, ends bool) (*CaddIdx, error) {
 	if &c.CaddIdx == nil || c.CaddIdx.File == "" {
 		return nil, nil
 	}
@@ -191,8 +191,8 @@ func (c Config) Cadd(h *vcfgo.Header, ends bool) (*CaddIdx, error) {
 	}
 	c.CaddIdx.Idx = caddcode.Reader(c.CaddIdx.File)
 	for _, src := range c.CaddIdx.Sources {
-		src.UpdateHeader(h, ends)
-		h.Infos[src.Name].Number = "A"
+		src.UpdateHeader(r, ends)
+		r.Header.Infos[src.Name].Number = "A"
 	}
 	return &c.CaddIdx, nil
 }

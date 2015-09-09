@@ -386,15 +386,15 @@ func (src *Source) AnnotateOne(v *parsers.Variant, vals []interface{}, prefix st
 
 // UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
 //func (a *Annotator) UpdateHeader(h HeaderUpdater) {
-func (a *Annotator) UpdateHeader(h *vcfgo.Header) {
+func (a *Annotator) UpdateHeader(r *vcfgo.Reader) {
 	for _, src := range a.Sources {
-		src.UpdateHeader(h, a.Ends)
+		src.UpdateHeader(r, a.Ends)
 	}
 }
 
 // TODO make an interface for Header so we can do this for cgtabix as well.
 //func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
-func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
+func (src *Source) UpdateHeader(r *vcfgo.Reader, ends bool) {
 	ntype, number := "Character", "1"
 	var desc string
 
@@ -427,11 +427,11 @@ func (src *Source) UpdateHeader(h *vcfgo.Header, ends bool) {
 	} else {
 		desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", src.Op, src.Column, src.File)
 	}
-	h.Infos[src.Name] = &vcfgo.Info{Id: src.Name, Number: number, Type: ntype, Description: desc}
+	r.AddInfoToHeader(src.Name, number, ntype, desc)
 	if ends {
 		for _, end := range []string{LEFT, RIGHT} {
-			h.Infos[end+src.Name] = &vcfgo.Info{Id: end + src.Name, Number: "1", Type: ntype,
-				Description: fmt.Sprintf("%s at end %s", desc, strings.TrimSuffix(end, "_"))}
+			d := fmt.Sprintf("%s at end %s", desc, strings.TrimSuffix(end, "_"))
+			r.AddInfoToHeader(end+src.Name, number, ntype, d)
 		}
 	}
 }
@@ -450,8 +450,8 @@ func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfa
 		if _, ok := seen[src.Index]; ok {
 			continue
 		}
+		seen[src.Index] = true
 		if a.Sweep {
-			seen[src.Index] = true
 			s, err := irelate.Streamer(src.File, a.Region)
 			if err != nil {
 				if a.Region != "" && strings.HasSuffix(src.File, ".bam") {
@@ -485,10 +485,16 @@ func (a *Annotator) Annotate(streams []interfaces.RelatableChannel, getters []in
 	go func(ch interfaces.RelatableChannel, a *Annotator, ends string) {
 		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
 			for i, getter := range getters {
-				for _, rel := range getter.Get(interval) {
+				related := getter.Get(interval)
+				for _, rel := range related {
 					// TODO: just check A.Ends and expand interval as needed.
-					orel := rel.(interfaces.Relatable)
-					orel.SetSource(uint32(n + i))
+					var orel interfaces.Relatable
+					if o, ok := rel.(*vcfgo.Variant); ok {
+						orel = parsers.NewVariant(o, uint32(n+i), nil)
+					} else {
+						orel = rel.(interfaces.Relatable)
+						orel.SetSource(uint32(n + i))
+					}
 					interval.AddRelated(orel)
 				}
 			}
