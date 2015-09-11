@@ -106,7 +106,7 @@ To run a server:
 
 		var q io.Reader
 		if *region == "" {
-			q, err = xopen.XReader(queryFile)
+			q, err = xopen.Ropen(queryFile)
 			if err != nil {
 				log.Fatal(err)
 			}

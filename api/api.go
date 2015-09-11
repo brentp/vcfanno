@@ -170,17 +170,6 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				if val == "." || val == "" {
 					continue
 				}
-			} else if strings.ContainsRune(src.Field, '/') {
-				fields := strings.Split(src.Field, "/")
-				vals := make([]interface{}, len(fields))
-				var err error
-				for i, f := range fields {
-					vals[i], err = o.Info().Get(f)
-					if err != nil {
-						log.Println(err)
-					}
-				}
-				val = float64(vals[0].(int)) / float64(vals[1].(int))
 			} else {
 				var err error
 				val, err = o.Info().Get(src.Field)
@@ -451,7 +440,7 @@ func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfa
 			continue
 		}
 		seen[src.Index] = true
-		if a.Sweep {
+		if src.Sweep {
 			s, err := irelate.Streamer(src.File, a.Region)
 			if err != nil {
 				if a.Region != "" && strings.HasSuffix(src.File, ".bam") {
@@ -461,7 +450,7 @@ func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfa
 			}
 			streams = append(streams, s)
 		} else {
-			tbx, err := bix.New(src.File)
+			tbx, err := bix.New(src.File, 1)
 			if err != nil {
 				return streams[:0], getters[:0], err
 			}
@@ -475,17 +464,19 @@ func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfa
 // It accepts RelatableChannels, and returns a RelatableChannel on which it will send
 // annotated variants.
 func (a *Annotator) Annotate(streams []interfaces.RelatableChannel, getters []interfaces.RandomGetter) interfaces.RelatableChannel {
-	ch := make(interfaces.RelatableChannel, 48)
+	ch := make(interfaces.RelatableChannel, 32)
 	ends := INTERVAL
 	if a.Ends {
 		ends = BOTH
 	}
 
 	n := len(streams)
+	k := 0
 	go func(ch interfaces.RelatableChannel, a *Annotator, ends string) {
 		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
 			for i, getter := range getters {
 				related := getter.Get(interval)
+				k += len(related)
 				for _, rel := range related {
 					// TODO: just check A.Ends and expand interval as needed.
 					var orel interfaces.Relatable

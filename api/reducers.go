@@ -49,6 +49,17 @@ func asfloat32(i interface{}) float32 {
 			return float32(0)
 		}
 		return float32(f)
+	case []int:
+		v := i.([]int)
+		if len(v) == 1 {
+			return asfloat32(v[0])
+		}
+	case []float32:
+		v := i.([]float32)
+		if len(v) == 1 {
+			return v[0]
+		}
+
 	}
 
 	return i.(float32)
