@@ -233,80 +233,6 @@ func vFromB(b *parsers.Interval) *parsers.Variant {
 	return v
 }
 
-// AnnotatedEnds makes a new 1-base interval for the left and one for the right end
-// so that it can use the same machinery to annotate the ends and the entire interval.
-// Output into the info field is prefixed with "left_" or "right_".
-func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
-	var v *parsers.Variant
-	var ok bool
-	var err error
-	if v, ok = r.(*parsers.Variant); !ok {
-		v = vFromB(r.(*parsers.Interval))
-	}
-	// if Both, call the interval, left, and right version to annotate.
-	if ends == BOTH {
-		// dont want strict for BED.
-		if e := a.AnnotateOne(v, a.Strict && ok); e != nil {
-			log.Println(e)
-			return e
-		}
-		if e := a.AnnotateEnds(v, LEFT); e != nil {
-			log.Println(e)
-			return e
-		}
-		if e := a.AnnotateEnds(v, RIGHT); e != nil {
-			log.Println(e)
-			return e
-		}
-		// it was a Bed, we add the info to its fields
-		if !ok {
-			b := r.(*parsers.Interval)
-			v.Info().Delete("SVLEN")
-			b.Fields = append(b.Fields, v.Info().String())
-		}
-		return nil
-	}
-	if ends == INTERVAL {
-		return a.AnnotateOne(r, a.Strict)
-	}
-	// hack:
-	// modify the variant in-place to create a 1-base variant at the end of
-	// the interval. annotate that end and then change the position back to what it was.
-	if ends == LEFT || ends == RIGHT {
-		// the end is determined by the SVLEN, so we have to make sure it has length 1.
-		var l, r uint32
-		var ok bool
-		if ends == LEFT {
-			l, r, ok = v.IVariant.(CIFace).CIPos()
-		} else {
-			l, r, ok = v.IVariant.(CIFace).CIEnd()
-		}
-		// dont reannotate same interval
-		if !ok && (l == v.Start() && r == v.End()) {
-			return nil
-		}
-
-		m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), v.IVariant.(*vcfgo.Variant).Header)
-		v2 := parsers.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(l + 1),
-			Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, v.Source(), v.Related())
-
-		err = a.AnnotateOne(v2, false, ends)
-		if err != nil {
-			log.Println(err)
-		}
-		var val interface{}
-		for _, key := range v2.Info().Keys() {
-			if key == "SVLEN" {
-				continue
-			}
-			val, err = v2.Info().Get(key)
-			v.Info().Set(key, val)
-		}
-	}
-	return err
-}
-
-// TODO: cleanup how ends are handled. Thats the most error-prone part fo the code.
 // AnnotateOne annotates a relatable with the Sources in an Annotator.
 // In most cases, no need to specify end (it should always be a single
 // arugment indicting LEFT, RIGHT, or INTERVAL, used from AnnotateEnds
@@ -381,7 +307,6 @@ func (a *Annotator) UpdateHeader(r *vcfgo.Reader) {
 	}
 }
 
-// TODO make an interface for Header so we can do this for cgtabix as well.
 //func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
 func (src *Source) UpdateHeader(r *vcfgo.Reader, ends bool) {
 	ntype, number := "Character", "1"
@@ -460,39 +385,115 @@ func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfa
 	return streams, getters, nil
 }
 
+// Functions to get self, left, right for -ends.
+type ender func(a interfaces.Relatable) interfaces.Relatable
+
+func aSame(a interfaces.Relatable) interfaces.Relatable {
+	return a
+}
+
+// return the left end (using CIPos) of an interval.
+func aLeft(a interfaces.Relatable) interfaces.Relatable {
+	o, ok := a.(*parsers.Variant)
+	if !ok {
+		return nil
+	}
+	l, r, ok := o.IVariant.(CIFace).CIPos()
+	// dont reannotate same interval
+	if l == a.Start() && r == a.End() {
+		return nil
+	}
+	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), o.IVariant.(*vcfgo.Variant).Header)
+	return parsers.NewVariant(&vcfgo.Variant{Chromosome: o.Chrom(), Pos: uint64(l + 1),
+		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, o.Source(), make([]interfaces.Relatable, 0, 2))
+
+}
+
+func aRight(a interfaces.Relatable) interfaces.Relatable {
+	o, ok := a.(*parsers.Variant)
+	if !ok {
+		return nil
+	}
+	l, r, ok := o.IVariant.(CIFace).CIEnd()
+	// dont reannotate same interval
+	if l == a.Start() && r == a.End() {
+		return nil
+	}
+	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), o.IVariant.(*vcfgo.Variant).Header)
+	return parsers.NewVariant(&vcfgo.Variant{Chromosome: o.Chrom(), Pos: uint64(l + 1),
+		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, o.Source(), make([]interfaces.Relatable, 0, 2))
+
+}
+
 // Annotate annotates a file with the sources in the Annotator.
 // It accepts RelatableChannels, and returns a RelatableChannel on which it will send
 // annotated variants.
 func (a *Annotator) Annotate(streams []interfaces.RelatableChannel, getters []interfaces.RandomGetter) interfaces.RelatableChannel {
 	ch := make(interfaces.RelatableChannel, 32)
-	ends := INTERVAL
+
+	M := map[string]ender{
+		INTERVAL: aSame,
+		LEFT:     aLeft,
+		RIGHT:    aRight,
+	}
+
+	ends := []string{INTERVAL}
 	if a.Ends {
-		ends = BOTH
+		ends = []string{INTERVAL, LEFT, RIGHT}
 	}
 
 	n := len(streams)
 	k := 0
-	go func(ch interfaces.RelatableChannel, a *Annotator, ends string) {
-		for interval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
-			for i, getter := range getters {
-				related := getter.Get(interval)
-				k += len(related)
-				for _, rel := range related {
-					// TODO: just check A.Ends and expand interval as needed.
-					var orel interfaces.Relatable
-					if o, ok := rel.(*vcfgo.Variant); ok {
-						orel = parsers.NewVariant(o, uint32(n+i), nil)
-					} else {
-						orel = rel.(interfaces.Relatable)
-						orel.SetSource(uint32(n + i))
+	go func(ch interfaces.RelatableChannel, a *Annotator) {
+		// IRelate can't do ends...
+		for ointerval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
+			// associate getter intervals with this interval.
+
+			for _, end := range ends {
+
+				interval := M[end](ointerval)
+				for i, getter := range getters {
+					related := getter.Get(interval)
+					k += len(related)
+					for _, rel := range related {
+						// TODO: just check A.Ends and expand interval as needed.
+						var orel interfaces.Relatable
+						if o, ok := rel.(*vcfgo.Variant); ok {
+							orel = parsers.NewVariant(o, uint32(n+i), nil)
+						} else {
+							orel = rel.(interfaces.Relatable)
+							orel.SetSource(uint32(n + i))
+						}
+						interval.AddRelated(orel)
 					}
-					interval.AddRelated(orel)
+				}
+
+				iv, ok := interval.(*parsers.Variant)
+				a.AnnotateOne(interval, a.Strict && ok && end == INTERVAL, end)
+				if end != INTERVAL {
+					transferInfo(iv.Info(), ointerval.(*parsers.Variant).Info())
 				}
 			}
-			a.AnnotateEnds(interval, ends)
-			ch <- interval
+			ch <- ointerval
 		}
 		close(ch)
-	}(ch, a, ends)
+	}(ch, a)
 	return ch
+}
+
+func transferInfo(a, b interfaces.Info) error {
+	var val interface{}
+	var err, _err error
+	for _, key := range a.Keys() {
+		if key == "SVLEN" {
+			continue
+		}
+		val, _err = a.Get(key)
+		if _err != nil {
+			err = _err
+		}
+
+		b.Set(key, val)
+	}
+	return err
 }

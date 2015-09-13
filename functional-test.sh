@@ -17,11 +17,12 @@ show() {
 	echo -n "<## TEST.$_N ##>" $1
 }
 
-
+<<EOF
 rm -f obs
 ./vcfanno -js example/custom.js example/conf.toml example/fitcons.bed.gz > obs
 show "annotated bed"
 check $(zless example/fitcons.bed.gz | wc -l) $(wc -l < obs)
+EOF
 
 
 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf > obs

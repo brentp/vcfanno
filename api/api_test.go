@@ -221,31 +221,6 @@ func (s *APISuite) TestAnnotateOne(c *C) {
 	c.Assert(s.v1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
 }
 
-func (s *APISuite) TestAnnotateEndsLeft(c *C) {
-	s.annotator.AnnotateEnds(s.sv1, LEFT)
-	c.Assert(s.sv1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30")
-}
-
-func (s *APISuite) TestAnnotateEndsRight(c *C) {
-	s.annotator.AnnotateEnds(s.v1, RIGHT)
-	c.Assert(s.v1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35")
-
-	s.annotator.AnnotateEnds(s.sv1, RIGHT)
-	c.Assert(s.sv1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;right_fitcons_mean=111;right_bam_qual=30")
-}
-
-func (s *APISuite) TestAnnotateEndsBoth(c *C) {
-	//pos:= 230 vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h),
-	s.annotator.Strict = false
-	s.annotator.AnnotateEnds(s.sv1, BOTH)
-	c.Assert(s.sv1.Info().String(), Equals, "DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8;AC_AFR=33;fitcons_mean=111;bam_qual=30;left_AC_AFR=33;left_fitcons_mean=111;left_bam_qual=30;right_fitcons_mean=111;right_bam_qual=30")
-}
-
-func (s *APISuite) TestAnnotateEndsInterval(c *C) {
-	s.annotator.AnnotateEnds(s.v1, INTERVAL)
-	c.Assert(s.v1.Info().String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
-}
-
 func (s *APISuite) TestVFromB(c *C) {
 
 	v := vFromB(s.bed)
@@ -271,47 +246,6 @@ func makeVariant(chrom string, pos int, ref string, alt []string, name string, i
 	return parsers.NewVariant(&v, 0, make([]interfaces.Relatable, 0))
 }
 
-func (s *APISuite) TestEndsDiff(c *C) {
-
-	b1 := makeBed("chr1", 60, 66, 99.44)
-	b1.SetSource(1)
-	b2 := makeBed("chr1", 45, 59, 9.11)
-	b2.SetSource(1)
-
-	bsrc := Source{
-		File:   "some.bed",
-		Op:     "mean",
-		Column: 4,
-		Name:   "some_mean",
-		Field:  "",
-		Index:  0,
-	}
-
-	a := NewAnnotator([]*Source{&bsrc}, "", true, true, false, "")
-	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=-10,10;CIEND=-10,10")
-
-	v.SetSource(0)
-	v.AddRelated(b1)
-	v.AddRelated(b2)
-	a.AnnotateEnds(v, BOTH)
-	c.Assert(v.Info().String(), Equals, "CIPOS=-10,10;CIEND=-10,10;some_mean=54.275;left_some_mean=54.275;right_some_mean=54.275")
-
-	v = makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=0,0;CIEND=-5,5")
-	v.SetSource(0)
-	v.AddRelated(b1)
-	v.AddRelated(b2)
-	c.Assert(v.Info().String(), Equals, "CIPOS=0,0;CIEND=-5,5")
-	a.AnnotateEnds(v, BOTH)
-	c.Assert(v.Info().String(), Equals, "CIPOS=0,0;CIEND=-5,5;some_mean=54.275;left_some_mean=9.11;right_some_mean=54.275")
-
-	v = makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "CIPOS=0,0;CIEND=-5,5")
-	v.SetSource(0)
-	v.AddRelated(b1)
-	v.AddRelated(b2)
-	a.AnnotateEnds(v, BOTH)
-	c.Assert(v.Info().String(), Equals, "CIPOS=0,0;CIEND=-5,5;some_mean=54.275;left_some_mean=9.11;right_some_mean=54.275")
-}
-
 func (s *APISuite) TestEndsBedQuery(c *C) {
 
 	b1 := makeBed("chr1", 50, 66, 99.44)
@@ -330,22 +264,7 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 	b1.AddRelated(b2)
 	b2.AddRelated(b1)
 
-	a := NewAnnotator([]*Source{&bsrc}, "", true, false, false, "")
-	a.AnnotateEnds(b1, BOTH)
-	c.Assert(b1.Fields[4], Equals, "some_mean=9.11;left_some_mean=9.11")
-
-	b1.SetSource(1)
-	b2.SetSource(0)
-	a.AnnotateEnds(b2, BOTH)
-	c.Assert(b2.Fields[4], Equals, "some_mean=99.44;right_some_mean=99.44")
-
-	b3 := makeBed("chr1", 50, 66, 99.44)
-	b3.SetSource(0)
-	b1.SetSource(1)
-	b2.SetSource(1)
-	b3.AddRelated(b1)
-	a.AnnotateEnds(b3, INTERVAL)
-	c.Assert(b3.Fields[4], Equals, "some_mean=99.44")
+	NewAnnotator([]*Source{&bsrc}, "", true, false, false, "")
 }
 
 func (s *APISuite) TestIdAnno(c *C) {
@@ -373,9 +292,4 @@ func (s *APISuite) TestIdAnno(c *C) {
 
 	b2 := makeBed("chr1", 50, 66, 99.44)
 	b2.AddRelated(v)
-	a.AnnotateEnds(b2, BOTH)
-	// variant only overlaps in middle.
-	c.Assert(b2.Fields[4], Equals, "o_id=rs", Commentf("%s", b2.Fields))
 }
-
-// TODO: test with bam.
