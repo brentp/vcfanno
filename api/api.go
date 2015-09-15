@@ -185,6 +185,9 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				coll = append(coll, val)
 			}
 		} else if o, ok := other.(*parsers.Interval); ok {
+			if src.Column > len(o.Fields) {
+				o.Fields = append(o.Fields[:len(o.Fields)-1], strings.Split(o.Fields[len(o.Fields)-1], "\t")...)
+			}
 			sval := o.Fields[src.Column-1]
 			if src.IsNumber() {
 				v, e := strconv.ParseFloat(sval, 32)
@@ -375,6 +378,7 @@ func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfa
 			}
 			streams = append(streams, s)
 		} else {
+
 			tbx, err := bix.New(src.File, 1)
 			if err != nil {
 				return streams[:0], getters[:0], err
@@ -448,6 +452,7 @@ func (a *Annotator) Annotate(streams []interfaces.RelatableChannel, getters []in
 		// IRelate can't do ends...
 		for ointerval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
 			// associate getter intervals with this interval.
+			a.AnnotateOne(ointerval, a.Strict)
 
 			for _, end := range ends {
 
