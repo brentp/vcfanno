@@ -186,7 +186,10 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			}
 		} else if o, ok := other.(*parsers.Interval); ok {
 			if src.Column > len(o.Fields) {
-				o.Fields = append(o.Fields[:len(o.Fields)-1], strings.Split(o.Fields[len(o.Fields)-1], "\t")...)
+				o.Fields = append(o.Fields[:len(o.Fields)-1], strings.Split(strings.TrimRight(o.Fields[len(o.Fields)-1], "\r\n"), "\t")...)
+			} else if src.Column == len(o.Fields) {
+
+				o.Fields[src.Column-1] = strings.TrimRight(o.Fields[src.Column-1], "\r\n")
 			}
 			sval := o.Fields[src.Column-1]
 			if src.IsNumber() {
