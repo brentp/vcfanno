@@ -14,7 +14,6 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
-	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
 	. "github.com/brentp/vcfanno/api"
 	. "github.com/brentp/vcfanno/shared"
@@ -88,7 +87,6 @@ To run a server:
 
 	var rdr *vcfgo.Reader
 	var err error
-	var queryStream interfaces.RelatableChannel
 	var q io.Reader
 
 	if *region == "" {
@@ -111,15 +109,18 @@ To run a server:
 		}
 	}
 
-	rdr = parsers.Vopen(q, nil)
-	queryStream = parsers.StreamVCF(rdr)
+	qs, rdr, err := parsers.VCFIterator(q)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	a.UpdateHeader(rdr)
 
 	files, err := a.SetupStreams()
 	if err != nil {
 		log.Fatal(err)
 	}
-	stream := irelate.PIRelate(80000, 200000, queryStream, files...)
+	stream := irelate.PIRelate(80000, 400000, qs, files...)
 
 	out, err = vcfgo.NewWriter(out, rdr.Header)
 	if err != nil {

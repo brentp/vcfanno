@@ -26,7 +26,7 @@ type CIFace interface {
 }
 
 type HeaderUpdater interface {
-	Update(id string, itype string, number string, description string)
+	AddInfoToHeader(id string, itype string, number string, description string)
 }
 
 // Source holds the information for a single annotation to be added to a query.
@@ -306,14 +306,14 @@ func (src *Source) AnnotateOne(v *parsers.Variant, vals []interface{}, prefix st
 
 // UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
 //func (a *Annotator) UpdateHeader(h HeaderUpdater) {
-func (a *Annotator) UpdateHeader(r *vcfgo.Reader) {
+func (a *Annotator) UpdateHeader(r HeaderUpdater) {
 	for _, src := range a.Sources {
 		src.UpdateHeader(r, a.Ends)
 	}
 }
 
 //func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
-func (src *Source) UpdateHeader(r *vcfgo.Reader, ends bool) {
+func (src *Source) UpdateHeader(r HeaderUpdater, ends bool) {
 	ntype, number := "Character", "1"
 	var desc string
 
