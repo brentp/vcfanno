@@ -5,9 +5,9 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"unsafe"
 
 	"github.com/biogo/hts/sam"
-	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
@@ -128,6 +128,10 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort 
 	return &a
 }
 
+func unsafeString(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
+}
+
 func checkSource(s *Source) error {
 	if s.Name == "" {
 		return fmt.Errorf("no name specified for %v", s)
@@ -185,15 +189,10 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				coll = append(coll, val)
 			}
 		} else if o, ok := other.(*parsers.Interval); ok {
-			if src.Column > len(o.Fields) {
-				o.Fields = append(o.Fields[:len(o.Fields)-1], strings.Split(strings.TrimRight(o.Fields[len(o.Fields)-1], "\r\n"), "\t")...)
-			} else if src.Column == len(o.Fields) {
-
-				o.Fields[src.Column-1] = strings.TrimRight(o.Fields[src.Column-1], "\r\n")
-			}
 			sval := o.Fields[src.Column-1]
 			if src.IsNumber() {
-				v, e := strconv.ParseFloat(sval, 32)
+
+				v, e := strconv.ParseFloat(unsafeString(sval), 32)
 				if e != nil {
 					log.Println(e)
 				}
@@ -233,7 +232,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 func vFromB(b *parsers.Interval) *parsers.Variant {
 	h := vcfgo.NewHeader()
 	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Type: "Integer", Description: "", Number: "1"}
-	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", int(b.End()-b.Start())-1), h)
+	m := vcfgo.NewInfoByte([]byte(fmt.Sprintf("SVLEN=%d", int(b.End()-b.Start())-1)), h)
 	v := parsers.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
 		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, 0, b.Related())
 	return v
@@ -281,7 +280,7 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	}
 	if isBed {
 		v.Info().Delete("SVLEN")
-		b.Fields = append(b.Fields, v.Info().String())
+		b.Fields = append(b.Fields, v.Info().Bytes())
 	}
 	return nil
 }
@@ -357,11 +356,9 @@ func (src *Source) UpdateHeader(r *vcfgo.Reader, ends bool) {
 }
 
 // SetupStreams takes the query stream and sets everything up for annotation.
-func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfaces.RelatableChannel, []interfaces.RandomGetter, error) {
+func (a *Annotator) SetupStreams() ([]string, error) {
 
-	streams := make([]interfaces.RelatableChannel, 1)
-	streams[0] = qStream
-	getters := make([]interfaces.RandomGetter, 0)
+	files := make([]string, 0, 4)
 
 	seen := make(map[int]bool)
 	for _, src := range a.Sources {
@@ -371,25 +368,9 @@ func (a *Annotator) SetupStreams(qStream interfaces.RelatableChannel) ([]interfa
 			continue
 		}
 		seen[src.Index] = true
-		if src.Sweep {
-			s, err := irelate.Streamer(src.File, a.Region)
-			if err != nil {
-				if a.Region != "" && strings.HasSuffix(src.File, ".bam") {
-					log.Println("ERROR: can't do regional queries on bam files")
-				}
-				return streams[:0], getters[:0], err
-			}
-			streams = append(streams, s)
-		} else {
-
-			tbx, err := bix.New(src.File, 1)
-			if err != nil {
-				return streams[:0], getters[:0], err
-			}
-			getters = append(getters, tbx)
-		}
+		files = append(files, src.File)
 	}
-	return streams, getters, nil
+	return files, nil
 }
 
 // Functions to get self, left, right for -ends.
@@ -410,7 +391,7 @@ func aLeft(a interfaces.Relatable) interfaces.Relatable {
 	if l == a.Start() && r == a.End() {
 		return nil
 	}
-	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), o.IVariant.(*vcfgo.Variant).Header)
+	m := vcfgo.NewInfoByte([]byte(fmt.Sprintf("SVLEN=%d", r-l-1)), o.IVariant.(*vcfgo.Variant).Header)
 	return parsers.NewVariant(&vcfgo.Variant{Chromosome: o.Chrom(), Pos: uint64(l + 1),
 		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, o.Source(), make([]interfaces.Relatable, 0, 2))
 
@@ -426,7 +407,7 @@ func aRight(a interfaces.Relatable) interfaces.Relatable {
 	if l == a.Start() && r == a.End() {
 		return nil
 	}
-	m := vcfgo.NewInfoByte(fmt.Sprintf("SVLEN=%d", r-l-1), o.IVariant.(*vcfgo.Variant).Header)
+	m := vcfgo.NewInfoByte([]byte(fmt.Sprintf("SVLEN=%d", r-l-1)), o.IVariant.(*vcfgo.Variant).Header)
 	return parsers.NewVariant(&vcfgo.Variant{Chromosome: o.Chrom(), Pos: uint64(l + 1),
 		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, o.Source(), make([]interfaces.Relatable, 0, 2))
 
@@ -435,53 +416,14 @@ func aRight(a interfaces.Relatable) interfaces.Relatable {
 // Annotate annotates a file with the sources in the Annotator.
 // It accepts RelatableChannels, and returns a RelatableChannel on which it will send
 // annotated variants.
-func (a *Annotator) Annotate(streams []interfaces.RelatableChannel, getters []interfaces.RandomGetter) interfaces.RelatableChannel {
+func (a *Annotator) Annotate(stream interfaces.RelatableChannel) interfaces.RelatableChannel {
 	ch := make(interfaces.RelatableChannel, 32)
 
-	M := map[string]ender{
-		INTERVAL: aSame,
-		LEFT:     aLeft,
-		RIGHT:    aRight,
-	}
-
-	ends := []string{INTERVAL}
-	if a.Ends {
-		ends = []string{INTERVAL, LEFT, RIGHT}
-	}
-
-	n := len(streams)
-	k := 0
 	go func(ch interfaces.RelatableChannel, a *Annotator) {
 		// IRelate can't do ends...
-		for ointerval := range irelate.IRelate(irelate.CheckOverlapPrefix, 0, a.Less, streams...) {
+		for ointerval := range stream {
 			// associate getter intervals with this interval.
 			a.AnnotateOne(ointerval, a.Strict)
-
-			for _, end := range ends {
-
-				interval := M[end](ointerval)
-				for i, getter := range getters {
-					related := getter.Get(interval)
-					k += len(related)
-					for _, rel := range related {
-						// TODO: just check A.Ends and expand interval as needed.
-						var orel interfaces.Relatable
-						if o, ok := rel.(*vcfgo.Variant); ok {
-							orel = parsers.NewVariant(o, uint32(n+i), nil)
-						} else {
-							orel = rel.(interfaces.Relatable)
-							orel.SetSource(uint32(n + i))
-						}
-						interval.AddRelated(orel)
-					}
-				}
-
-				iv, ok := interval.(*parsers.Variant)
-				a.AnnotateOne(interval, a.Strict && ok && end == INTERVAL, end)
-				if end != INTERVAL {
-					transferInfo(iv.Info(), ointerval.(*parsers.Variant).Info())
-				}
-			}
 			ch <- ointerval
 		}
 		close(ch)
