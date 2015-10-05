@@ -6,14 +6,18 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
 	"runtime/pprof"
+
 	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
 	. "github.com/brentp/vcfanno/api"
 	. "github.com/brentp/vcfanno/shared"
@@ -77,6 +81,9 @@ To run a server:
 	}
 
 	log.Printf("found %d sources from %d files\n", len(sources), len(config.Annotation))
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	jsString := ReadJs(*js)
 	strict := !*notstrict
@@ -120,7 +127,12 @@ To run a server:
 	if err != nil {
 		log.Fatal(err)
 	}
-	stream := irelate.PIRelate(80000, 400000, qs, files...)
+
+	fn := func(v interfaces.Relatable) {
+		a.AnnotateOne(v, a.Strict)
+	}
+
+	stream := irelate.PIRelate(5000, 40000, qs, fn, files...)
 
 	out, err = vcfgo.NewWriter(out, rdr.Header)
 	if err != nil {
@@ -140,8 +152,10 @@ To run a server:
 		defer pprof.StopCPUProfile()
 	}
 
-	for interval := range a.Annotate(stream) {
+	//for interval := range a.Annotate(stream) {
+	for interval := range stream {
 		fmt.Fprintf(out, "%s\n", interval)
+		_ = interval
 		n++
 	}
 	printTime(start, n)

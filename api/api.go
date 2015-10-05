@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"unsafe"
 
 	"github.com/biogo/hts/sam"
@@ -41,6 +42,7 @@ type Source struct {
 	Field string
 	// 0-based index of the file order this source is from.
 	Index int
+	mu    sync.RWMutex
 	Js    *otto.Script
 	Vm    *otto.Otto
 
@@ -66,6 +68,7 @@ type Annotator struct {
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
 func (s *Source) JsOp(v *parsers.Variant, js *otto.Script, vals []interface{}) string {
+	s.mu.Lock()
 	s.Vm.Set("chrom", v.Chrom())
 	s.Vm.Set("start", v.Start())
 	s.Vm.Set("end", v.End())
@@ -76,6 +79,7 @@ func (s *Source) JsOp(v *parsers.Variant, js *otto.Script, vals []interface{}) s
 		return fmt.Sprintf("js-error: %s", err)
 	}
 	val, err := value.ToString()
+	s.mu.Unlock()
 	if err != nil {
 		log.Println("js-error:", err)
 		val = fmt.Sprintf("error:%s", err)
@@ -106,22 +110,19 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort 
 		Less:    less,
 		Region:  region,
 	}
-	vm := otto.New()
-	for _, s := range a.Sources {
-		s.Vm = vm
-	}
-	if js != "" {
-		_, err := vm.Run(js)
-		if err != nil {
-			log.Fatalf("error parsing customjs:%s", err)
-		}
-	}
 	for _, src := range a.Sources {
 		if strings.HasPrefix(src.Op, "js:") {
+			src.Vm = otto.New() // create a new vm for each source and lock in the source
 			var err error
-			src.Js, err = vm.Compile(src.Op, src.Op[3:])
+			src.Js, err = src.Vm.Compile(src.Op, src.Op[3:])
 			if err != nil {
 				log.Fatalf("error parsing op: %s for file %s", src.Op, src.File)
+			}
+			if js != "" {
+				_, err := src.Vm.Run(js)
+				if err != nil {
+					log.Fatalf("error parsing customjs:%s", err)
+				}
 			}
 		}
 	}
@@ -154,7 +155,7 @@ func (a *Annotator) partition(r interfaces.Relatable) [][]interfaces.Relatable {
 
 // collect applies the reduction (op) specified in src on the rels.
 func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, strict bool) []interface{} {
-	coll := make([]interface{}, 0)
+	coll := make([]interface{}, 0, len(rels))
 	var val interface{}
 	for _, other := range rels {
 		if int(other.Source())-1 != src.Index {
@@ -266,7 +267,9 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 		strict = false // can't be strict with bed query.
 	}
 
-	for _, src := range a.Sources {
+	var src *Source
+	for i := range a.Sources {
+		src = a.Sources[i]
 		if len(parted) <= src.Index {
 			continue
 		}
@@ -417,7 +420,7 @@ func aRight(a interfaces.Relatable) interfaces.Relatable {
 // It accepts RelatableChannels, and returns a RelatableChannel on which it will send
 // annotated variants.
 func (a *Annotator) Annotate(stream interfaces.RelatableChannel) interfaces.RelatableChannel {
-	ch := make(interfaces.RelatableChannel, 32)
+	ch := make(interfaces.RelatableChannel, 64)
 
 	go func(ch interfaces.RelatableChannel, a *Annotator) {
 		// IRelate can't do ends...
