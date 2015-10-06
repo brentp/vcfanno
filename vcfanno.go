@@ -132,7 +132,7 @@ To run a server:
 		a.AnnotateOne(v, a.Strict)
 	}
 
-	stream := irelate.PIRelate(5000, 40000, qs, fn, files...)
+	stream := irelate.PIRelate(5000, 60000, qs, fn, files...)
 
 	out, err = vcfgo.NewWriter(out, rdr.Header)
 	if err != nil {
@@ -152,10 +152,8 @@ To run a server:
 		defer pprof.StopCPUProfile()
 	}
 
-	//for interval := range a.Annotate(stream) {
 	for interval := range stream {
 		fmt.Fprintf(out, "%s\n", interval)
-		_ = interval
 		n++
 	}
 	printTime(start, n)
