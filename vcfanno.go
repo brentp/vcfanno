@@ -127,12 +127,16 @@ To run a server:
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fn := func(v interfaces.Relatable) {
-		a.AnnotateOne(v, a.Strict)
+	aends := INTERVAL
+	if *ends {
+		aends = BOTH
 	}
 
-	stream := irelate.PIRelate(5000, 60000, qs, fn, files...)
+	fn := func(v interfaces.Relatable) {
+		a.AnnotateEnds(v, aends)
+	}
+
+	stream := irelate.PIRelate(5000, 60000, qs, *ends, fn, files...)
 
 	out, err = vcfgo.NewWriter(out, rdr.Header)
 	if err != nil {
