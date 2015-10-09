@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -45,7 +44,6 @@ func asfloat32(i interface{}) float32 {
 	case string:
 		f, err := strconv.ParseFloat(i.(string), 32)
 		if err != nil {
-			log.Println(err)
 			return float32(0)
 		}
 		return float32(f)
@@ -121,7 +119,7 @@ func vflag(vals []interface{}) interface{} {
 
 // don't need to use chrom since we are only testing things
 // returned from irelate.IRelate.
-func overlap(a, b interfaces.Relatable) bool {
+func overlap(a, b interfaces.IPosition) bool {
 	return b.Start() < a.End() && a.Start() < b.End()
 }
 

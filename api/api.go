@@ -62,7 +62,7 @@ type Annotator struct {
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
 // It makes the chrom, start, end, and values available to the js interpreter.
-func (s *Source) JsOp(v *parsers.Variant, js *otto.Script, vals []interface{}) string {
+func (s *Source) JsOp(v interfaces.IVariant, js *otto.Script, vals []interface{}) string {
 	s.mu.Lock()
 	s.Vm.Set("chrom", v.Chrom())
 	s.Vm.Set("start", v.Start())
@@ -157,7 +157,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			log.Fatalf("got source %d with related %d", src.Index, other.Source())
 		}
 		// need this check for the ends stuff.
-		if !overlap(v.(interfaces.Relatable), other) {
+		if !overlap(v.(interfaces.IPosition), other) {
 			continue
 		}
 		if o, ok := other.(interfaces.IVariant); ok {
@@ -250,16 +250,10 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	}
 
 	parted := a.partition(r)
-	var b *parsers.Interval
-	var v *parsers.Variant
-	var isBed, isVariant bool
-	if v, isVariant = r.(*parsers.Variant); !isVariant {
-		if b, isBed = r.(*parsers.Interval); !isBed {
-			panic("can only annotate Bed or VCF at this time")
-		}
-		// make a Variant, annotate it, pull out the info, put back in bed
-		v = vFromB(b)
-		strict = false // can't be strict with bed query.
+	var v interfaces.IVariant
+	v, ok := r.(interfaces.IVariant)
+	if !ok {
+		v = r.(interfaces.IVariant)
 	}
 
 	var src *Source
@@ -276,14 +270,10 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 		vals := collect(v, related, src, strict)
 		src.AnnotateOne(v, vals, prefix)
 	}
-	if isBed {
-		v.Info().Delete("SVLEN")
-		b.Fields = append(b.Fields, v.Info().Bytes())
-	}
 	return nil
 }
 
-func (src *Source) AnnotateOne(v *parsers.Variant, vals []interface{}, prefix string) {
+func (src *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix string) {
 	if len(vals) == 0 {
 		return
 	}
@@ -378,9 +368,6 @@ func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
 	var v *parsers.Variant
 	var ok bool
 	var err error
-	if v, ok = r.(*parsers.Variant); !ok {
-		v = vFromB(r.(*parsers.Interval))
-	}
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
 		// dont want strict for BED.

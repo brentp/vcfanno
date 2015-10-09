@@ -11,6 +11,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"time"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
-	"github.com/brentp/irelate/parsers"
 	. "github.com/brentp/vcfanno/api"
 	. "github.com/brentp/vcfanno/shared"
 	"github.com/brentp/vcfgo"
@@ -92,17 +92,21 @@ To run a server:
 	var out io.Writer = os.Stdout
 	defer os.Stdout.Close()
 
-	var rdr *vcfgo.Reader
 	var err error
-	var q io.Reader
+	var bx interfaces.RelatableIterator
+	b, err := bix.New(queryFile, 1)
+
+	a.UpdateHeader(b)
 
 	if *region == "" {
-		q, err = xopen.Ropen(queryFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bx, err = b.Query(nil)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		bx, err := bix.New(queryFile)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -110,18 +114,11 @@ To run a server:
 		if err != nil {
 			log.Fatal(err)
 		}
-		q, err = bx.Query(chrom, start, end, true)
+		bx, err = b.Query(interfaces.AsIPosition(chrom, start, end))
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
-
-	qs, rdr, err := parsers.VCFIterator(q)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	a.UpdateHeader(rdr)
 
 	files, err := a.SetupStreams()
 	if err != nil {
@@ -136,9 +133,21 @@ To run a server:
 		a.AnnotateEnds(v, aends)
 	}
 
-	stream := irelate.PIRelate(5000, 60000, qs, *ends, fn, files...)
+	queryables := make([]interfaces.Queryable, len(files))
+	for i, f := range files {
+		q, err := bix.New(f, 1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		queryables[i] = q
+	}
+	stream := irelate.PIRelate(6000, 70000, bx, *ends, fn, queryables...)
 
-	out, err = vcfgo.NewWriter(out, rdr.Header)
+	// make a reader from the string header.
+	hdr := strings.NewReader(b.Header)
+	v, err := vcfgo.NewReader(hdr, true)
+	out, err = vcfgo.NewWriter(out, v.Header)
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,12 +170,6 @@ To run a server:
 		n++
 	}
 	printTime(start, n)
-	if rdr != nil {
-		if e := rdr.Error(); e != nil {
-			log.Println(e)
-		}
-	}
-
 }
 
 func printTime(start time.Time, n int) {
