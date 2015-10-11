@@ -365,8 +365,11 @@ func (a *Annotator) SetupStreams() ([]string, error) {
 // so that it can use the same machinery to annotate the ends and the entire interval.
 // Output into the info field is prefixed with "left_" or "right_".
 func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
-	var v *parsers.Variant
-	var ok bool
+	v, ok := r.(interfaces.VarWrap)
+	if !ok {
+		return fmt.Errorf("unable to convert %v to Variant", r)
+	}
+
 	var err error
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
