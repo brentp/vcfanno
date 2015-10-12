@@ -40,9 +40,6 @@ see: https://github.com/brentp/vcfanno
 	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
 		" share the same ref and alt alleles. Default is to require exact match between variants.")
 	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
-	lexsort := flag.Bool("lexicographical", false, "expect chromosomes in order of 1,10,11 ... 19, 2, 20... "+
-		" default is 1, 10, 11, ..., 19, 2, 20... . All files must be in the same order.")
-	region := flag.String("region", "", "optional region (chrom:start-end) to restrict annnotation. Useful for parallelization")
 	base := flag.String("base-path", "", "optional base-path to prepend to annotation files in the config")
 	flag.Parse()
 	inFiles := flag.Args()
@@ -87,7 +84,7 @@ To run a server:
 
 	jsString := ReadJs(*js)
 	strict := !*notstrict
-	var a = NewAnnotator(sources, jsString, *ends, strict, !*lexsort, *region)
+	var a = NewAnnotator(sources, jsString, *ends, strict)
 
 	var out io.Writer = os.Stdout
 	defer os.Stdout.Close()
@@ -98,26 +95,12 @@ To run a server:
 
 	a.UpdateHeader(b)
 
-	if *region == "" {
-		if err != nil {
-			log.Fatal(err)
-		}
-		bx, err = b.Query(nil)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		if err != nil {
-			log.Fatal(err)
-		}
-		chrom, start, end, err := irelate.RegionToParts(*region)
-		if err != nil {
-			log.Fatal(err)
-		}
-		bx, err = b.Query(interfaces.AsIPosition(chrom, start, end))
-		if err != nil {
-			log.Fatal(err)
-		}
+	if err != nil {
+		log.Fatal(err)
+	}
+	bx, err = b.Query(nil)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	files, err := a.SetupStreams()

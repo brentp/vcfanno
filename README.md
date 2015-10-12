@@ -3,20 +3,25 @@ vcfanno
 
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
 
-vcfanno annotates a VCF with any number of *sorted* input BED, BAM, and VCF files.
+vcfanno annotates a VCF with any number of *sorted* and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
 user-defined operations on the overlapping annotations.
+
+In order to parallelize, work is broken down as follows. A slice (array) of query intervals is accumulated 
+until a specified number is reached (usually ~5K-25K) or a gap cutoff is exceeded; at that point, the
+bounds of the region are used to perform a tabix (or any regional) query on the database files. This is
+all done in [irelate](https://github.com/brentp/irelate). `vcfanno` then iterates over the streams that
+result from the tabix queries and finds intersections with the query stream. This is a parallel chrom-sweep.
+This method avoids problems with chromosome order.
 
 For VCF, values are pulled by name from the INFO field.
 For BED, values are pulled from (1-based) column number.
 For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 
 `vcfanno` is written in [go](http://golang.org)
-It can annotate more than 5,000 variants per second with 34 annotations from 9 files on a modest laptop.
+It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop.
 
 We are actively developing `vcfanno` and appreciate feedback and bug reports.
-
-`vcfanno` supports annotation with CADD phred scores. [See the docs](https://github.com/brentp/vcfanno/tree/master/caddcode#caddencode)
 
 Usage
 =====
@@ -137,14 +142,6 @@ under active development. The following are on our radar (most have been complet
 
 Additional Usage
 ================
-
--lexicographical
-----------------
-
-If your chromosomes are ordered as 
-1, 10, 11, ... 19, 2, 20 ...  instead of 1, 2, ... 9, 10, 11
-specify this flag.
-
 
 -ends
 -----

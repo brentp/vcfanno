@@ -9,7 +9,6 @@ import (
 	"unsafe"
 
 	"github.com/biogo/hts/sam"
-	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfgo"
@@ -40,8 +39,6 @@ type Source struct {
 	mu    sync.RWMutex
 	Js    *otto.Script
 	Vm    *otto.Otto
-
-	Sweep bool
 }
 
 // IsNumber indicates that we expect the Source to return a number given the op
@@ -54,10 +51,6 @@ type Annotator struct {
 	Sources []*Source
 	Strict  bool // require a variant to have same ref and share at least 1 alt
 	Ends    bool // annotate the ends of the variant in addition to the interval itself.
-	Less    func(a, b interfaces.Relatable) bool
-	Region  string // restrict annotation to this (chrom:start-end) region.
-	// if sweep is true, use chrom sweep, otherwise, use tabix
-	Sweep bool
 }
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
@@ -86,24 +79,16 @@ func (s *Source) JsOp(v interfaces.IVariant, js *otto.Script, vals []interface{}
 // If ends is true, it will annotate the 1 base ends of the interval as well as the
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.
-func NewAnnotator(sources []*Source, js string, ends bool, strict bool, natsort bool, region string) *Annotator {
+func NewAnnotator(sources []*Source, js string, ends bool, strict bool) *Annotator {
 	for _, s := range sources {
 		if e := checkSource(s); e != nil {
 			log.Fatal(e)
 		}
 	}
-	var less func(a, b interfaces.Relatable) bool
-	if natsort {
-		less = irelate.NaturalLessPrefix
-	} else {
-		less = irelate.LessPrefix
-	}
 	a := Annotator{
 		Sources: sources,
 		Strict:  strict,
 		Ends:    ends,
-		Less:    less,
-		Region:  region,
 	}
 	for _, src := range a.Sources {
 		if strings.HasPrefix(src.Op, "js:") {
