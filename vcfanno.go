@@ -41,6 +41,7 @@ see: https://github.com/brentp/vcfanno
 		" share the same ref and alt alleles. Default is to require exact match between variants.")
 	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
 	base := flag.String("base-path", "", "optional base-path to prepend to annotation files in the config")
+	procs := flag.Int("p", 2, "number of processes to use. default is 2")
 	flag.Parse()
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
@@ -60,6 +61,7 @@ To run a server:
 		fmt.Fprintf(os.Stderr, "\nERROR: can't find query file: %s\n", queryFile)
 		os.Exit(2)
 	}
+	runtime.GOMAXPROCS(*procs)
 
 	var config Config
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
