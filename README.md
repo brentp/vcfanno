@@ -165,6 +165,12 @@ the same position, the same reference allele and at least one alternate allele (
 variants, not for BED/BAM annotations). If this flag is specified, only overlap testing is used and shared
 REF/ALT are not required.
 
+-p
+--
+
+Set to the number of processes that `vcfanno` can use during annotation. `vcfanno` parallelizes well
+up to 15 or so cores.
+
 -js
 ---
 
@@ -200,23 +206,3 @@ See [example/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/co
 and [example/custom.js](https://github.com/brentp/vcfanno/blob/master/example/custom.js)
 for more examples.
 
-
-Server
-======
-
-`vcfanno` can also be run as a local or public annotation server that accepts VCF and serves annotated
-VCFs. For example, given a set of annotations in `/data/annotations/` and a conf file (vcfanno.conf):
-
-```./vcfanno server -port ":8455" -base-path /data/annotations/ -js custom.js vcfanno.conf 
-```
-
-This will start a server on 8455 that users can access like:
-
-```
-curl -F 'vcf=@user.vcf' http://yourhost.com:8455 > annotated.vcf
-```
-
-<!--
- goxc -include example/,README.md -d /tmp/vcfanno/ -pv=0.0.4 -bc='linux,darwin,windows,!arm'
- go test -cpu=1,2,3,4 -bench . -run NOTHING -benchtime 3s -cpuprofile cpu.prof
--->
