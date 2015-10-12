@@ -130,7 +130,7 @@ To run a server:
 		}
 		queryables[i] = q
 	}
-	stream := irelate.PIRelate(6000, 70000, bx, *ends, fn, queryables...)
+	stream := irelate.PIRelate(4000, 20000, bx, *ends, fn, queryables...)
 
 	// make a reader from the string header.
 	hdr := strings.NewReader(b.Header)
