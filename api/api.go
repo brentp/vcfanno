@@ -170,10 +170,10 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				coll = append(coll, val)
 			}
 		} else if o, ok := other.(*parsers.Interval); ok {
-			sval := o.Fields[src.Column-1]
+			sval := string(o.Fields[src.Column-1])
 			if src.IsNumber() {
 
-				v, e := strconv.ParseFloat(unsafeString(sval), 32)
+				v, e := strconv.ParseFloat(sval, 32)
 				if e != nil {
 					log.Println(e)
 				}

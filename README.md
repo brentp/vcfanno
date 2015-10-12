@@ -29,7 +29,7 @@ Usage
 After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/) (see section below) usage looks like:
 
 ```Shell
-  ./vcfanno -js example/custom.js example/conf.toml example/query.vcf
+  ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz
 ```
 
 Where conf.toml looks like:
@@ -76,7 +76,7 @@ from this directory.
 Then, you can annotate with:
 
 ```Shell
-GOMAXPROCS=4 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf > annotated.vcf
+GOMAXPROCS=4 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz > annotated.vcf
 ```
 
 An example INFO field row before annotation (pos 98683):
@@ -150,7 +150,7 @@ For annotating large variants, such as CNVs or structural variants (SVs), it can
 annotate the *ends* of the variant in addition to the region itself. To do this, specify the `-ends`
 flag to `vcfanno`. e.g.:
 ```Shell
-vcfanno -ends example/conf.toml example/query.vcf
+vcfanno -ends example/conf.toml example/query.vcf.gz
 ```
 In this case, the names field in the *conf* file contains, "fitcons\_mean". The output will contain
 `fitcons\_mean` as before along with `left\_fitcons\_mean` and `right\_fitcons\_mean` for any variants

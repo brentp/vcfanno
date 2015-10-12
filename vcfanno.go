@@ -57,8 +57,12 @@ To run a server:
 		return
 	}
 	queryFile := inFiles[1]
-	if !(xopen.Exists(queryFile) || queryFile == "-") {
+	if !(xopen.Exists(queryFile)) {
 		fmt.Fprintf(os.Stderr, "\nERROR: can't find query file: %s\n", queryFile)
+		os.Exit(2)
+	}
+	if !(xopen.Exists(queryFile + ".tbi")) {
+		fmt.Fprintf(os.Stderr, "\nERROR: can't find index for query file: %s\n", queryFile)
 		os.Exit(2)
 	}
 	runtime.GOMAXPROCS(*procs)

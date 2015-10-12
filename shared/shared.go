@@ -7,21 +7,11 @@ import (
 	"strings"
 
 	. "github.com/brentp/vcfanno/api"
-	"github.com/brentp/vcfanno/caddcode"
-	"github.com/brentp/vcfgo"
 	"github.com/brentp/xopen"
 )
 
-// CaddIdx is same as annotation, but has extra fields due to custom nature of CADD score.
-type CaddIdx struct {
-	Annotation
-	Idx     *caddcode.Index
-	Sources []*Source
-}
-
 type Config struct {
 	Annotation []Annotation
-	CaddIdx    CaddIdx
 	// base path to prepend to all files.
 	Base string
 }
@@ -51,8 +41,7 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 		}
 	}
 	if len(a.Columns) == 0 && len(a.Fields) == 0 {
-		// index of -1 is cadd.
-		if !strings.HasSuffix(a.File, ".bam") && index != -1 {
+		if !strings.HasSuffix(a.File, ".bam") {
 			return nil, fmt.Errorf("no columns or fields specified for %s\n", a.File)
 		}
 		// auto-fill bam to count.
@@ -152,24 +141,6 @@ func CheckAnno(a *Annotation) error {
 		a.Names = a.Fields
 	}
 	return nil
-}
-
-// Cadd parses the cadd fields and updates the vcf Header.
-func (c Config) Cadd(r *vcfgo.Reader, ends bool) (*CaddIdx, error) {
-	if &c.CaddIdx == nil || c.CaddIdx.File == "" {
-		return nil, nil
-	}
-	var err error
-	c.CaddIdx.Sources, err = c.CaddIdx.Annotation.Flatten(-1, c.Base)
-	if err != nil {
-		return nil, err
-	}
-	c.CaddIdx.Idx = caddcode.Reader(c.CaddIdx.File)
-	for _, src := range c.CaddIdx.Sources {
-		src.UpdateHeader(r, ends)
-		r.Header.Infos[src.Name].Number = "A"
-	}
-	return &c.CaddIdx, nil
 }
 
 func ReadJs(js string) string {
