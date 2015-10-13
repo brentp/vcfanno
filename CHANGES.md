@@ -1,6 +1,10 @@
 v0.0.8
 ------
 + respect strict when -ends is used.
++ parallel chrom-sweep (removes problems with chromosome sort order).
++ huge speed improvement (can annotate ~30K variants/second with 10 cpus).
++ remove server and cadd support (will return soon).
++ fix bug where header is not updated.
 
 
 v0.0.7
