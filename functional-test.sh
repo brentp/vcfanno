@@ -1,14 +1,16 @@
 set -e
 check() {
+	a=$1
+	b=$2
 	if [[ "$a" -ne "$b" ]]; then
-		echo " <ERROR!>"
+		echo " <ERROR!>" "$a != $b"
 	else
 		echo " <OK!>"
 	fi
 	echo ""
 }
   
-go build
+go install -race
 
 _N=0
 show() {
@@ -17,21 +19,9 @@ show() {
 	echo -n "<## TEST.$_N ##>" $1
 }
 
-<<EOF
-rm -f obs
-./vcfanno -js example/custom.js example/conf.toml example/fitcons.bed.gz > obs
-show "annotated bed"
-check $(zless example/fitcons.bed.gz | wc -l) $(wc -l < obs)
-EOF
-
-
-./vcfanno -js example/custom.js example/conf.toml example/query.vcf > obs
+vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz > obs
 show "annotated vcf"
-check $(grep -cv ^# example/query.vcf) $(grep -cv ^# obs)
+check $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# obs)
 
-
-./vcfanno -js example/custom.js example/conf.toml example/query.vcf > obs
-show "check cadd annotated vcf"
-check $(grep -v ^# example/query.vcf | grep -v cadd) 0
-
-rm -f obs
+show "checking that header is updated"
+check "6" $(grep ^# obs | grep -c otto)

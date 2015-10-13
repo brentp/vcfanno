@@ -11,7 +11,6 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
-	"strings"
 
 	"time"
 
@@ -132,10 +131,8 @@ To run a server:
 	}
 	stream := irelate.PIRelate(4000, 20000, bx, *ends, fn, queryables...)
 
-	// make a reader from the string header.
-	hdr := strings.NewReader(b.Header)
-	v, err := vcfgo.NewReader(hdr, true)
-	out, err = vcfgo.NewWriter(out, v.Header)
+	// make a new writer from the string header.
+	out, err = vcfgo.NewWriter(out, b.VReader.Header)
 
 	if err != nil {
 		log.Fatal(err)

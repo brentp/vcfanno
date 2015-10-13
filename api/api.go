@@ -289,14 +289,14 @@ func (a *Annotator) UpdateHeader(r HeaderUpdater) {
 func (src *Source) UpdateHeader(r HeaderUpdater, ends bool) {
 	ntype, number := "Character", "1"
 	var desc string
-
-	if strings.HasSuffix(src.Field, "_float") {
+	if src.Op == "mean" || src.Op == "max" {
+		ntype, number = "Float", "1"
+	} else if strings.HasSuffix(src.Field, "_float") {
 		ntype, number = "Float", "1"
 	} else if strings.HasSuffix(src.Field, "_int") {
 		ntype, number = "Integer", "1"
 	} else if strings.HasSuffix(src.Field, "_flag") || strings.Contains(src.Field, "flag(") {
 		ntype, number = "Integer", "1"
-
 	} else {
 		if src.Op == "flag" {
 			ntype, number = "Flag", "0"
