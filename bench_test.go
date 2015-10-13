@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"testing"
 
 	"github.com/BurntSushi/toml"
-	"github.com/brentp/irelate/parsers"
+	"github.com/brentp/bix"
+	"github.com/brentp/irelate"
+	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/vcfanno/api"
 	"github.com/brentp/vcfanno/shared"
 	"github.com/brentp/xopen"
 )
 
-func benchmarkAnno(b *testing.B, natural bool) {
+func benchmarkAnno(b *testing.B) {
 	var configs shared.Config
 	if _, err := toml.DecodeFile("example/conf.toml", &configs); err != nil {
 		panic(err)
@@ -30,22 +31,44 @@ func benchmarkAnno(b *testing.B, natural bool) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a := api.NewAnnotator(srcs, js_string, false, true, natural, "")
+	a := api.NewAnnotator(srcs, js_string, false, true)
+	files, err := a.SetupStreams()
+	if err != nil {
+		log.Fatal(err)
+	}
 	for n := 0; n < b.N; n++ {
-		rdr, err := os.Open("example/query.vcf")
+		q, err := bix.New("example/query.vcf.gz", 1)
 		if err != nil {
 			log.Fatal(err)
 		}
-		q := parsers.Vopen(rdr, nil)
-		stream := parsers.StreamVCF(q)
-		streams, getters, _ := a.SetupStreams(stream)
+		bx, err := q.Query(nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		a.UpdateHeader(q)
 
-		for interval := range a.Annotate(streams, getters) {
+		//files := []string{"example/cadd.sub.txt.gz", "example/query.vcf.gz", "example/fitcons.bed.gz"}
+		//files := []string{"example/query.vcf.gz", "example/fitcons.bed.gz"}
+
+		queryables := make([]interfaces.Queryable, len(files))
+		for i, f := range files {
+			q, err := bix.New(f, 1)
+			if err != nil {
+				log.Fatal(err)
+			}
+			queryables[i] = q
+		}
+
+		fn := func(v interfaces.Relatable) {
+			a.AnnotateEnds(v, api.INTERVAL)
+		}
+		stream := irelate.PIRelate(4000, 20000, bx, false, fn, queryables...)
+
+		for interval := range stream {
 			fmt.Fprintf(out, "%s\n", interval)
 		}
 		out.Flush()
 	}
 }
 
-func BenchmarkNormal(b *testing.B)  { benchmarkAnno(b, false) }
-func BenchmarkNatural(b *testing.B) { benchmarkAnno(b, true) }
+func BenchmarkNormal(b *testing.B) { benchmarkAnno(b) }
