@@ -33,3 +33,11 @@ n=$(grep -v ^# obs | grep -c right_)
 check $( (( $n > 0 )) ) true
 n=$(grep -v ^# obs | grep -c left_)
 check $( (( $n > 0 )) ) true
+
+show "checking that samples are retained"
+n=$(grep  ^"#CHROM" obs | cut -f 10- | wc -w)
+check $n 3
+
+show "checking that all non-header lines have same number of columns"
+n=$(grep  -v "^##" obs | awk 'BEGIN{FS="\t"}{ print NF}' | uniq)
+check $n 12
