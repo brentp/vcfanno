@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/brentp/irelate/interfaces"
+	"github.com/brentp/vcfgo"
 )
 
 type Reducer func([]interface{}) interface{}
@@ -74,35 +75,64 @@ func min(vals []interface{}) interface{} {
 	return imin
 }
 
-func concat(vals []interface{}) interface{} {
-	var s []string
+func count(vals []interface{}) interface{} {
+	return len(vals)
+}
+
+func _strings(vals []interface{}, uniq bool) []string {
+	s := make([]string, 0)
+	var m map[string]bool
+	if uniq {
+		m = make(map[string]bool)
+	}
 	for _, v := range vals {
 		if v == nil {
 			continue
 		}
 		if str, ok := v.(string); ok {
-			s = append(s, str)
+			if !uniq {
+				s = append(s, str)
+			} else if _, ok := m[str]; !ok {
+				s = append(s, str)
+			}
+
+		} else if arr, ok := v.([]interface{}); ok {
+			sub := make([]string, len(arr))
+			for i, a := range arr {
+				sub[i] = fmt.Sprintf("%s", a)
+			}
+			str := strings.Join(sub, ",")
+			if !uniq {
+				s = append(s, str)
+			} else if _, ok := m[str]; !ok {
+				s = append(s, str)
+			}
+		} else if arr, ok := v.([]string); ok {
+			str := strings.Join(arr, ",")
+			if !uniq {
+				s = append(s, str)
+			} else if _, ok := m[str]; !ok {
+				s = append(s, str)
+			}
+
 		} else {
-			s = append(s, fmt.Sprintf("%v", v))
+			str := vcfgo.ItoS("", v)
+			if !uniq {
+				s = append(s, str)
+			} else if _, ok := m[str]; !ok {
+				s = append(s, str)
+			}
 		}
 	}
-	return strings.Join(s, "|")
-}
-
-func count(vals []interface{}) interface{} {
-	return len(vals)
+	return s
 }
 
 func uniq(vals []interface{}) interface{} {
-	m := make(map[interface{}]bool)
-	var uvals []interface{}
-	for _, v := range vals {
-		if _, ok := m[v]; !ok {
-			m[v] = true
-			uvals = append(uvals, v)
-		}
-	}
-	return concat(uvals)
+	return strings.Join(_strings(vals, true), "|")
+}
+
+func concat(vals []interface{}) interface{} {
+	return strings.Join(_strings(vals, false), "|")
 }
 
 func first(vals []interface{}) interface{} {

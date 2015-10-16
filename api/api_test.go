@@ -205,7 +205,7 @@ func makeBed(chrom string, start int, end int, val float32) *parsers.Interval {
 	return i.(*parsers.Interval)
 }
 
-func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string) *parsers.Variant {
+func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string, h *vcfgo.Header) *parsers.Variant {
 
 	binfo := vcfgo.NewInfoByte([]byte(info), h)
 	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Reference: ref, Alternate: alt,
@@ -235,7 +235,7 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 }
 
 func (s *APISuite) TestIdAnno(c *C) {
-	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "")
+	v := makeVariant("chr1", 57, "AAAAAAAA", []string{"T"}, "rs", "", h)
 	vsrc := Source{
 		File:   "some.vcf",
 		Op:     "first",
