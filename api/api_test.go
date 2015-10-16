@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/biogo/hts/sam"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfgo"
@@ -20,27 +19,15 @@ type APISuite struct {
 	v3  *parsers.Variant
 
 	bed *parsers.Interval
-	bam *parsers.Bam
 
-	src    Source
-	src0   Source
-	srcBam Source
+	src  Source
+	src0 Source
 
 	annotator *Annotator
 }
 
 var _ = Suite(&APISuite{})
 var h = vcfgo.NewHeader()
-
-var bam_rec = &sam.Record{Name: "read1",
-	Flags:   sam.Paired | sam.ProperPair,
-	Pos:     232,
-	MatePos: -1,
-	MapQ:    30,
-	Cigar:   sam.Cigar{sam.NewCigarOp(sam.CigarMatch, 14)},
-	Seq:     sam.NewSeq([]byte("AAAAGATAAGGATA")),
-	Qual:    []uint8{0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
-}
 
 var v1 = &vcfgo.Variant{
 	Chromosome: "chr1",
@@ -50,7 +37,7 @@ var v1 = &vcfgo.Variant{
 	Alternate:  []string{"T", "G"},
 	Quality:    float32(555.5),
 	Filter:     "PASS",
-	Info_:      vcfgo.NewInfoByte("DP=35", h),
+	Info_:      vcfgo.NewInfoByte([]byte("DP=35"), h),
 }
 var sv1 = &vcfgo.Variant{
 	Chromosome: "chr1",
@@ -60,7 +47,7 @@ var sv1 = &vcfgo.Variant{
 	Alternate:  []string{"<DEL>"},
 	Quality:    float32(555.5),
 	Filter:     "PASS",
-	Info_:      vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h),
+	Info_:      vcfgo.NewInfoByte([]byte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8"), h),
 }
 
 func (s *APISuite) SetUpTest(c *C) {
@@ -73,21 +60,21 @@ func (s *APISuite) SetUpTest(c *C) {
 	h.Infos["AC_AFR"] = &vcfgo.Info{Id: "AF_AFR", Description: "AF_AFR", Number: "1", Type: "Float"}
 
 	vv := *v1
-	vv.Info_ = vcfgo.NewInfoByte("DP=35", h)
+	vv.Info_ = vcfgo.NewInfoByte([]byte("DP=35"), h)
 	s.v1 = &parsers.Variant{IVariant: &vv}
 	s.v1.SetSource(0)
 	v2 := *v1
-	v2.Info_ = vcfgo.NewInfoByte("DP=44", h)
+	v2.Info_ = vcfgo.NewInfoByte([]byte("DP=44"), h)
 	s.v2 = &parsers.Variant{IVariant: &v2}
 	s.v2.Info().Set("AC_AFR", 33)
 	s.v2.SetSource(1)
 
-	sv1.Info_ = vcfgo.NewInfoByte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8", h)
+	sv1.Info_ = vcfgo.NewInfoByte([]byte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8"), h)
 	s.sv1 = &parsers.Variant{IVariant: sv1}
 	s.sv1.SetSource(0)
 
 	v3 := *v1
-	v3.Info_ = vcfgo.NewInfoByte("DP=88", h)
+	v3.Info_ = vcfgo.NewInfoByte([]byte("DP=88"), h)
 	s.v3 = &parsers.Variant{IVariant: &v3}
 	s.v3.SetSource(1)
 
@@ -110,17 +97,12 @@ func (s *APISuite) SetUpTest(c *C) {
 
 	c.Assert(2, Equals, len(s.v1.Related()))
 
-	sbed, err := parsers.IntervalFromBedLine("chr1\t224\t244\t111\t222")
+	sbed, err := parsers.IntervalFromBedLine([]byte("chr1\t224\t244\t111\t222"))
 	c.Assert(err, IsNil)
 	s.bed = sbed.(*parsers.Interval)
 	s.bed.SetSource(2)
 	s.v1.AddRelated(s.bed)
 	s.sv1.AddRelated(s.bed)
-
-	s.bam = &parsers.Bam{Record: bam_rec, Chromosome: "chr1"}
-	s.bam.SetSource(3)
-	s.v1.AddRelated(s.bam)
-	s.sv1.AddRelated(s.bam)
 
 	s.src = Source{
 		File:   "example/fitcons.bed",
@@ -140,27 +122,17 @@ func (s *APISuite) SetUpTest(c *C) {
 		Index:  0,
 	}
 
-	s.srcBam = Source{
-		File:   "example/some.bam",
-		Op:     "mean",
-		Column: -1,
-		Field:  "mapq",
-		Name:   "bam_qual",
-		Index:  2,
-	}
-
-	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src, &s.srcBam}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true, true, "")
+	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true)
 
 }
 
 func (s *APISuite) TestPartition(c *C) {
 
 	parted := s.annotator.partition(s.v1)
-	c.Assert(len(parted), Equals, 3)
+	c.Assert(len(parted), Equals, 2)
 
 	c.Assert(parted[0], DeepEquals, []interfaces.Relatable{s.v2, s.v3})
 	c.Assert(parted[1], DeepEquals, []interfaces.Relatable{s.bed})
-	c.Assert(parted[2], DeepEquals, []interfaces.Relatable{s.bam})
 }
 
 func (s *APISuite) TestSource(c *C) {
@@ -207,18 +179,13 @@ func (s *APISuite) TestJsOp(c *C) {
 func (s *APISuite) TestCollect(c *C) {
 	parted := s.annotator.partition(s.v1)
 	r := collect(s.v1, parted[0], &s.src0, false)
-	c.Assert(r, DeepEquals, []interface{}{33})
-}
-
-func (s *APISuite) TestCollectBam(c *C) {
-	parted := s.annotator.partition(s.v1)
-	r := collect(s.v1, parted[2], &s.srcBam, false)
-	c.Assert(r, DeepEquals, []interface{}{30})
+	c.Assert(len(r), Equals, 1)
+	c.Assert(r[0], Equals, float64(33))
 }
 
 func (s *APISuite) TestAnnotateOne(c *C) {
 	s.annotator.AnnotateOne(s.v1, s.annotator.Strict)
-	c.Assert(s.v1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111;bam_qual=30")
+	c.Assert(s.v1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111")
 }
 
 func (s *APISuite) TestVFromB(c *C) {
@@ -234,13 +201,13 @@ func (s *APISuite) TestVFromB(c *C) {
 // utility functions.
 
 func makeBed(chrom string, start int, end int, val float32) *parsers.Interval {
-	i, _ := parsers.IntervalFromBedLine(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val))
+	i, _ := parsers.IntervalFromBedLine([]byte(fmt.Sprintf("%s\t%d\t%d\t%.3f", chrom, start, end, val)))
 	return i.(*parsers.Interval)
 }
 
 func makeVariant(chrom string, pos int, ref string, alt []string, name string, info string) *parsers.Variant {
 
-	binfo := vcfgo.NewInfoByte(info, h)
+	binfo := vcfgo.NewInfoByte([]byte(info), h)
 	v := vcfgo.Variant{Chromosome: chrom, Pos: uint64(pos), Reference: ref, Alternate: alt,
 		Id_: name, Info_: binfo}
 	return parsers.NewVariant(&v, 0, make([]interfaces.Relatable, 0))
@@ -264,7 +231,7 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 	b1.AddRelated(b2)
 	b2.AddRelated(b1)
 
-	NewAnnotator([]*Source{&bsrc}, "", true, false, false, "")
+	NewAnnotator([]*Source{&bsrc}, "", true, false)
 }
 
 func (s *APISuite) TestIdAnno(c *C) {
@@ -280,16 +247,9 @@ func (s *APISuite) TestIdAnno(c *C) {
 	v.AddRelated(v)
 	v.SetSource(1)
 
-	a := NewAnnotator([]*Source{&vsrc}, "", true, true, false, "")
+	a := NewAnnotator([]*Source{&vsrc}, "", true, true)
 
 	a.AnnotateOne(v, a.Strict)
 	c.Assert(v.Info().String(), Equals, "o_id=rs")
 
-	b := makeBed("chr1", 50, 66, 99.44)
-	b.AddRelated(v)
-	a.AnnotateOne(b, false)
-	c.Assert(b.Fields[4], Equals, "o_id=rs")
-
-	b2 := makeBed("chr1", 50, 66, 99.44)
-	b2.AddRelated(v)
 }

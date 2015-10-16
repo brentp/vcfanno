@@ -91,18 +91,18 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool) *Annotat
 		Ends:    ends,
 	}
 	for _, src := range a.Sources {
+		src.Vm = otto.New() // create a new vm for each source and lock in the source
 		if strings.HasPrefix(src.Op, "js:") {
-			src.Vm = otto.New() // create a new vm for each source and lock in the source
 			var err error
 			src.Js, err = src.Vm.Compile(src.Op, src.Op[3:])
 			if err != nil {
 				log.Fatalf("error parsing op: %s for file %s", src.Op, src.File)
 			}
-			if js != "" {
-				_, err := src.Vm.Run(js)
-				if err != nil {
-					log.Fatalf("error parsing customjs:%s", err)
-				}
+		}
+		if js != "" {
+			_, err := src.Vm.Run(js)
+			if err != nil {
+				log.Fatalf("error parsing customjs:%s", err)
 			}
 		}
 	}
@@ -163,7 +163,15 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				}
 			}
 			if arr, ok := val.([]interface{}); ok {
-				coll = append(coll, arr...)
+				if src.Op == "uniq" || src.Op == "concat" {
+					sarr := make([]string, len(arr))
+					for i, v := range arr {
+						sarr[i] = fmt.Sprintf("%v", v)
+					}
+					coll = append(coll, strings.Join(sarr, ","))
+				} else {
+					coll = append(coll, arr...)
+				}
 			} else if val == nil {
 				continue
 			} else {
@@ -238,7 +246,7 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	var v interfaces.IVariant
 	v, ok := r.(interfaces.IVariant)
 	if !ok {
-		v = r.(interfaces.IVariant)
+		log.Fatal("can't annotate non-IVariant", r)
 	}
 
 	var src *Source
