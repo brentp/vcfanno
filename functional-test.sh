@@ -4,6 +4,7 @@ check() {
 	b=$2
 	if [[ "$a" -ne "$b" ]]; then
 		echo " <ERROR!>" "$a != $b"
+		exit 4
 	else
 		echo " <OK!>"
 	fi
@@ -26,6 +27,8 @@ check $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# obs)
 show "checking that header is updated"
 check "6" $(grep ^# obs | grep -c otto)
 
+show "check warning message for missing chrom 2 in annotation dbs"
+check "3" $(grep -c "not found in" err)
 
 vcfanno -ends -js example/custom.js example/conf.toml example/query.vcf.gz > obs 2>err
 show "checking that ends works"
@@ -41,3 +44,6 @@ check $n 3
 show "checking that all non-header lines have same number of columns"
 n=$(grep  -v "^##" obs | awk 'BEGIN{FS="\t"}{ print NF}' | uniq)
 check $n 12
+
+echo "PASSED ALL TESTS"
+exit 0
