@@ -97,6 +97,9 @@ To run a server:
 	var err error
 	var bx interfaces.RelatableIterator
 	b, err := bix.New(queryFile, 1)
+	if err != nil {
+		log.Fatal(fmt.Errorf("error opening query file and/or index: %s ... %s", queryFile, err))
+	}
 
 	a.UpdateHeader(b)
 
