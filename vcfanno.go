@@ -132,7 +132,7 @@ To run a server:
 		}
 		queryables[i] = q
 	}
-	stream := irelate.PIRelate(4000, 20000, bx, *ends, fn, queryables...)
+	stream := irelate.PIRelate(10, 20000, bx, *ends, fn, queryables...)
 
 	// make a new writer from the string header.
 	out, err = vcfgo.NewWriter(out, b.VReader.Header)

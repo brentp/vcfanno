@@ -22,6 +22,7 @@ const INTERVAL = ""
 
 type HeaderUpdater interface {
 	AddInfoToHeader(id string, itype string, number string, description string)
+	GetHeaderType(field string) string
 }
 
 // Source holds the information for a single annotation to be added to a query.

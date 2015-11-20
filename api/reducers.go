@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -142,6 +143,17 @@ func first(vals []interface{}) interface{} {
 	return vals[0]
 }
 
+func self(vals []interface{}) interface{} {
+	if len(vals) == 0 {
+		return nil
+	}
+	if len(vals) > 1 {
+		log.Println("found > 1 value in self()")
+		return nil
+	}
+	return vals[0]
+}
+
 // named vflag because of conflict with builtin.
 func vflag(vals []interface{}) interface{} {
 	return len(vals) > 0
@@ -154,6 +166,7 @@ func overlap(a, b interfaces.IPosition) bool {
 }
 
 var Reducers = map[string]Reducer{
+	"self":   Reducer(self),
 	"mean":   Reducer(mean),
 	"max":    Reducer(max),
 	"min":    Reducer(min),
