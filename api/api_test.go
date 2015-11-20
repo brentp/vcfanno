@@ -188,16 +188,6 @@ func (s *APISuite) TestAnnotateOne(c *C) {
 	c.Assert(s.v1.IVariant.(*vcfgo.Variant).Info_.String(), Equals, "DP=35;AC_AFR=33;fitcons_mean=111")
 }
 
-func (s *APISuite) TestVFromB(c *C) {
-
-	v := vFromB(s.bed)
-
-	c.Assert(v.End(), Equals, s.bed.End())
-	c.Assert(v.Start(), Equals, s.bed.Start())
-	c.Assert(v.Chrom(), Equals, s.bed.Chrom())
-	c.Assert(len(v.Related()), Equals, 0)
-}
-
 // utility functions.
 
 func makeBed(chrom string, start int, end int, val float32) *parsers.Interval {

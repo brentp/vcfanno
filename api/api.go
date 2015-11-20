@@ -218,16 +218,6 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 	return coll
 }
 
-// vFromB makes a variant from an interval. this helps avoid code duplication.
-func vFromB(b *parsers.Interval) *parsers.Variant {
-	h := vcfgo.NewHeader()
-	h.Infos["SVLEN"] = &vcfgo.Info{Id: "SVLEN", Type: "Integer", Description: "", Number: "1"}
-	m := vcfgo.NewInfoByte([]byte(fmt.Sprintf("SVLEN=%d", int(b.End()-b.Start())-1)), h)
-	v := parsers.NewVariant(&vcfgo.Variant{Chromosome: b.Chrom(), Pos: uint64(b.Start() + 1),
-		Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, 0, b.Related())
-	return v
-}
-
 // AnnotateOne annotates a relatable with the Sources in an Annotator.
 // In most cases, no need to specify end (it should always be a single
 // arugment indicting LEFT, RIGHT, or INTERVAL, used from AnnotateEnds
