@@ -1,3 +1,8 @@
+v0.0.9
+------
++ restore ability to take query file from STDIN (no tabix required).
+
+
 v0.0.8
 ------
 + parallel chrom-sweep (removes problems with chromosome sort order).

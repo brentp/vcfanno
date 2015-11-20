@@ -23,7 +23,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-const VERSION = "0.0.8"
+const VERSION = "0.0.9a"
 
 func main() {
 	fmt.Fprintf(os.Stderr, `
