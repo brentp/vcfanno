@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"runtime"
@@ -15,9 +14,9 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	"github.com/brentp/bix"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
+	"github.com/brentp/irelate/parsers"
 	. "github.com/brentp/vcfanno/api"
 	. "github.com/brentp/vcfanno/shared"
 	"github.com/brentp/vcfgo"
@@ -56,12 +55,8 @@ To run a server:
 		return
 	}
 	queryFile := inFiles[1]
-	if !(xopen.Exists(queryFile)) {
+	if !(xopen.Exists(queryFile) || queryFile == "") {
 		fmt.Fprintf(os.Stderr, "\nERROR: can't find query file: %s\n", queryFile)
-		os.Exit(2)
-	}
-	if !(xopen.Exists(queryFile + ".tbi")) {
-		fmt.Fprintf(os.Stderr, "\nERROR: can't find index for query file: %s\n", queryFile)
 		os.Exit(2)
 	}
 	runtime.GOMAXPROCS(*procs)
@@ -83,9 +78,11 @@ To run a server:
 	}
 
 	log.Printf("found %d sources from %d files\n", len(sources), len(config.Annotation))
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+	/*
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	*/
 
 	jsString := ReadJs(*js)
 	strict := !*notstrict
@@ -95,23 +92,20 @@ To run a server:
 	defer os.Stdout.Close()
 
 	var err error
-	var bx interfaces.RelatableIterator
-	b, err := bix.New(queryFile, 1)
+	qrdr, err := xopen.Ropen(queryFile)
 	if err != nil {
-		log.Fatal(fmt.Errorf("error opening query file and/or index: %s ... %s", queryFile, err))
+		log.Fatal(fmt.Errorf("error opening query file %s", queryFile, err))
 	}
-
-	a.UpdateHeader(b)
-
+	qstream, query, err := parsers.VCFIterator(qrdr)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("error parsing VCF query file %s", queryFile, err))
 	}
-	bx, err = b.Query(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	/*
+		query, err := bix.New(queryFile, 1)
+		qstream, err := query.Query(nil)
+	*/
 
-	files, err := a.SetupStreams()
+	queryables, err := a.Setup(query)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -121,21 +115,16 @@ To run a server:
 	}
 
 	fn := func(v interfaces.Relatable) {
-		a.AnnotateEnds(v, aends)
+		e := a.AnnotateEnds(v, aends)
+		if e != nil {
+			log.Println(e)
+		}
 	}
 
-	queryables := make([]interfaces.Queryable, len(files))
-	for i, f := range files {
-		q, err := bix.New(f, 1)
-		if err != nil {
-			log.Fatal(err)
-		}
-		queryables[i] = q
-	}
-	stream := irelate.PIRelate(10, 20000, bx, *ends, fn, queryables...)
+	stream := irelate.PIRelate(6000, 20000, qstream, *ends, fn, queryables...)
 
 	// make a new writer from the string header.
-	out, err = vcfgo.NewWriter(out, b.VReader.Header)
+	out, err = vcfgo.NewWriter(out, query.Header)
 
 	if err != nil {
 		log.Fatal(err)
@@ -155,7 +144,8 @@ To run a server:
 	}
 
 	for interval := range stream {
-		fmt.Fprintf(out, "%s\n", interval)
+		//log.Printf("%v\n", interval)
+		fmt.Fprintln(out, interval)
 		n++
 	}
 	printTime(start, n)

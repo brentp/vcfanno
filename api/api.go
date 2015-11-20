@@ -9,6 +9,7 @@ import (
 	"unsafe"
 
 	"github.com/biogo/hts/sam"
+	"github.com/brentp/bix"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfgo"
@@ -22,6 +23,8 @@ const INTERVAL = ""
 
 type HeaderUpdater interface {
 	AddInfoToHeader(id string, itype string, number string, description string)
+}
+type HeaderTyped interface {
 	GetHeaderType(field string) string
 }
 
@@ -276,14 +279,6 @@ func (src *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix
 	}
 }
 
-// UpdateHeader adds to the Infos in the vcf Header so that the annotations will be reported in the header.
-//func (a *Annotator) UpdateHeader(h HeaderUpdater) {
-func (a *Annotator) UpdateHeader(r HeaderUpdater) {
-	for _, src := range a.Sources {
-		src.UpdateHeader(r, a.Ends)
-	}
-}
-
 //func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
 func (src *Source) UpdateHeader(r HeaderUpdater, ends bool) {
 	ntype, number := "Character", "1"
@@ -295,7 +290,7 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool) {
 	} else if strings.HasSuffix(src.Field, "_int") {
 		ntype, number = "Integer", "1"
 	} else if strings.HasSuffix(src.Field, "_flag") || strings.Contains(src.Field, "flag(") {
-		ntype, number = "Integer", "1"
+		ntype, number = "Flag", "0"
 	} else {
 		if src.Op == "flag" {
 			ntype, number = "Flag", "0"
@@ -327,38 +322,52 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool) {
 	}
 }
 
+func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
+	queryables := make([]interfaces.Queryable, 0)
+	files, fmap, err := a.setupStreams()
+	if err != nil {
+		return nil, err
+	}
+	for _, file := range files {
+		q, err := bix.New(file, 1)
+		if err != nil {
+			return nil, err
+		}
+		queryables = append(queryables, q)
+		for _, src := range fmap[file] {
+			src.UpdateHeader(query, a.Ends)
+		}
+	}
+	return queryables, nil
+}
+
 // SetupStreams takes the query stream and sets everything up for annotation.
-func (a *Annotator) SetupStreams() ([]string, error) {
+func (a *Annotator) setupStreams() ([]string, map[string][]*Source, error) {
 
-	files := make([]string, 0, 4)
-
-	seen := make(map[int]bool)
+	lookup := make(map[string][]*Source, len(a.Sources))
+	files := make([]string, 0)
 	for _, src := range a.Sources {
 		// have expanded so there are many sources per file.
 		// use seen to just grab the file the first time it is seen and start a stream
-		if _, ok := seen[src.Index]; ok {
-			continue
+		if _, ok := lookup[src.File]; !ok {
+			lookup[src.File] = make([]*Source, 0)
+			files = append(files, src.File)
 		}
-		seen[src.Index] = true
-		files = append(files, src.File)
+		lookup[src.File] = append(lookup[src.File], src)
 	}
-	return files, nil
+	return files, lookup, nil
 }
 
 // AnnotatedEnds makes a new 1-base interval for the left and one for the right end
 // so that it can use the same machinery to annotate the ends and the entire interval.
 // Output into the info field is prefixed with "left_" or "right_".
-func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
-	v, ok := r.(interfaces.VarWrap)
-	if !ok {
-		return fmt.Errorf("unable to convert %v to Variant", r)
-	}
+func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 
 	var err error
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
 		// dont want strict for BED.
-		if e := a.AnnotateOne(v, a.Strict && ok); e != nil {
+		if e := a.AnnotateOne(v, a.Strict); e != nil {
 			log.Println(e)
 			return e
 		}
@@ -370,35 +379,30 @@ func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
 			log.Println(e)
 			return e
 		}
-		// it was a Bed, we add the info to its fields
-		if !ok {
-			b := r.(*parsers.Interval)
-			v.Info().Delete("SVLEN")
-			b.Fields = append(b.Fields, v.Info().Bytes())
-		}
 		return nil
 	}
 	if ends == INTERVAL {
-		return a.AnnotateOne(r, a.Strict)
+		return a.AnnotateOne(v, a.Strict)
 	}
 	// hack:
 	// modify the variant in-place to create a 1-base variant at the end of
 	// the interval. annotate that end and then change the position back to what it was.
 	if ends == LEFT || ends == RIGHT {
 		// the end is determined by the SVLEN, so we have to make sure it has length 1.
+		variant := v.(*parsers.Variant).IVariant
 		var l, r uint32
 		var ok bool
 		if ends == LEFT {
-			l, r, ok = v.IVariant.(interfaces.CIFace).CIPos()
+			l, r, ok = variant.(interfaces.CIFace).CIPos()
 		} else {
-			l, r, ok = v.IVariant.(interfaces.CIFace).CIEnd()
+			l, r, ok = variant.(interfaces.CIFace).CIEnd()
 		}
 		// dont reannotate same interval
 		if !ok && (l == v.Start() && r == v.End()) {
 			return nil
 		}
 
-		m := vcfgo.NewInfoByte([]byte(fmt.Sprintf("SVLEN=%d;END=%d", r-l-1, r)), v.IVariant.(*vcfgo.Variant).Header)
+		m := vcfgo.NewInfoByte([]byte(fmt.Sprintf("SVLEN=%d;END=%d", r-l-1, r)), variant.(*vcfgo.Variant).Header)
 		v2 := parsers.NewVariant(&vcfgo.Variant{Chromosome: v.Chrom(), Pos: uint64(l + 1),
 			Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, v.Source(), v.Related())
 
@@ -412,7 +416,7 @@ func (a *Annotator) AnnotateEnds(r interfaces.Relatable, ends string) error {
 				continue
 			}
 			val, err = v2.Info().Get(key)
-			v.Info().Set(key, val)
+			variant.Info().Set(key, val)
 		}
 	}
 	return err
