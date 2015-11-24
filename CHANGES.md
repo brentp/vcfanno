@@ -1,6 +1,7 @@
 v0.0.9
 ------
 + restore ability to take query file from STDIN (no tabix required).
++ fix memory leak. memory use now scales with number of procs (-p)
 
 
 v0.0.8
