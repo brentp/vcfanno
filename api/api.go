@@ -191,7 +191,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				}
 				coll = append(coll, v)
 			} else {
-				coll = append(coll, sval)
+				coll = append(coll, strings.Replace(sval, ";", ",", -1))
 			}
 		} else if bam, ok := other.(*parsers.Bam); ok {
 			if bam.MapQ() < 1 || (bam.Flags&sam.Unmapped != 0) {
