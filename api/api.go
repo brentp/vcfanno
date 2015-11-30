@@ -24,6 +24,7 @@ const INTERVAL = ""
 type HeaderUpdater interface {
 	AddInfoToHeader(id string, itype string, number string, description string)
 }
+
 type HeaderTyped interface {
 	GetHeaderType(field string) string
 }
@@ -280,33 +281,39 @@ func (src *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix
 }
 
 //func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
-func (src *Source) UpdateHeader(r HeaderUpdater, ends bool) {
+func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 	ntype, number := "Character", "1"
 	var desc string
-	if src.Op == "mean" || src.Op == "max" {
-		ntype, number = "Float", "1"
-	} else if strings.HasSuffix(src.Field, "_float") {
-		ntype, number = "Float", "1"
-	} else if strings.HasSuffix(src.Field, "_int") {
-		ntype, number = "Integer", "1"
-	} else if strings.HasSuffix(src.Field, "_flag") || strings.Contains(src.Field, "flag(") {
-		ntype, number = "Flag", "0"
+	// for 'self' and 'first', we can get the type from the header of the annotation file.
+	if htype != "" && (src.Op == "self" || src.Op == "first") {
+		ntype = htype
 	} else {
-		if src.Op == "flag" {
+		if src.Op == "mean" || src.Op == "max" {
+			ntype, number = "Float", "1"
+		} else if strings.HasSuffix(src.Field, "_float") {
+			ntype, number = "Float", "1"
+		} else if strings.HasSuffix(src.Field, "_int") {
+			ntype, number = "Integer", "1"
+		} else if strings.HasSuffix(src.Field, "_flag") || strings.Contains(src.Field, "flag(") {
 			ntype, number = "Flag", "0"
-		}
-		if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
-			ntype = "Float"
-		} else if src.Js != nil {
-			if strings.Contains(src.Op, "_flag(") {
+		} else {
+			if src.Op == "flag" {
 				ntype, number = "Flag", "0"
-			} else {
-				ntype = "Character"
+			}
+			if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
+				ntype = "Float"
+			} else if src.Js != nil {
+				if strings.Contains(src.Op, "_flag(") {
+					ntype, number = "Flag", "0"
+				} else {
+					ntype = "Character"
+				}
 			}
 		}
 	}
-
-	if strings.HasSuffix(src.File, ".bam") && src.Field == "" {
+	if (src.Op == "first" || src.Op == "self") && htype == ntype {
+		desc = fmt.Sprintf("transfered from matched variants in %s", src.File)
+	} else if strings.HasSuffix(src.File, ".bam") && src.Field == "" {
 		desc = fmt.Sprintf("calculated by coverage from %s", src.File)
 	} else if src.Field != "" {
 		desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", src.Op, src.Field, src.File)
@@ -315,6 +322,9 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool) {
 	}
 	r.AddInfoToHeader(src.Name, number, ntype, desc)
 	if ends {
+		if src.Op == "self" {
+			// what to do here?
+		}
 		for _, end := range []string{LEFT, RIGHT} {
 			d := fmt.Sprintf("%s at end %s", desc, strings.TrimSuffix(end, "_"))
 			r.AddInfoToHeader(end+src.Name, number, ntype, d)
@@ -335,7 +345,7 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 		}
 		queryables = append(queryables, q)
 		for _, src := range fmap[file] {
-			src.UpdateHeader(query, a.Ends)
+			src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field))
 		}
 	}
 	return queryables, nil

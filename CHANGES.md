@@ -1,7 +1,10 @@
 v0.0.9
 ------
 + restore ability to take query file from STDIN (no tabix required).
-+ fix memory leak. memory use now scales with number of procs (-p)
++ fix memory leak. memory use now scales with number of procs (-p).
++ added new op 'self' which should be used for most cases when matching on ref and alt as it
+  determines the type from the annotation header and uses that to update the annotated header
+  with the correct type.
 
 
 v0.0.8

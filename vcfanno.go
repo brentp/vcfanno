@@ -100,10 +100,6 @@ To run a server:
 	if err != nil {
 		log.Fatal(fmt.Errorf("error parsing VCF query file %s", queryFile, err))
 	}
-	/*
-		query, err := bix.New(queryFile, 1)
-		qstream, err := query.Query(nil)
-	*/
 
 	queryables, err := a.Setup(query)
 	if err != nil {
