@@ -150,8 +150,5 @@ To run a server:
 func printTime(start time.Time, n int) {
 	dur := time.Since(start)
 	duri, duru := dur.Seconds(), "second"
-	if duri > float64(600) {
-		duri, duru = dur.Minutes(), "minute"
-	}
 	log.Printf("annotated %d variants in %.2f %ss (%.1f / %s)", n, duri, duru, float64(n)/duri, duru)
 }

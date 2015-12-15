@@ -148,8 +148,8 @@ func self(vals []interface{}) interface{} {
 		return nil
 	}
 	if len(vals) > 1 {
-		log.Println("found > 1 value in self()")
-		return nil
+		log.Println("found > 1 value in self()", vals)
+		return _strings(vals, false)
 	}
 	return vals[0]
 }
