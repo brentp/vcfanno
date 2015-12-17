@@ -10,6 +10,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 
 	"time"
 
@@ -72,6 +73,13 @@ To run a server:
 			log.Fatal("CheckAnno err:", err)
 		}
 	}
+	for _, r := range config.PostAnnotation {
+		err := CheckPostAnno(&r)
+		if err != nil {
+			log.Fatal(fmt.Sprintf("err in postannotaion section %s err: %s", r.Name, err))
+		}
+	}
+
 	sources, e := config.Sources()
 	if e != nil {
 		log.Fatal(e)
@@ -86,7 +94,7 @@ To run a server:
 
 	jsString := ReadJs(*js)
 	strict := !*notstrict
-	var a = NewAnnotator(sources, jsString, *ends, strict)
+	var a = NewAnnotator(sources, jsString, *ends, strict, config.PostAnnotation)
 
 	var out io.Writer = os.Stdout
 	defer os.Stdout.Close()
@@ -117,7 +125,18 @@ To run a server:
 		}
 	}
 
-	stream := irelate.PIRelate(6000, 20000, qstream, *ends, fn, queryables...)
+	smaxGap := os.Getenv("IRELATE_MAX_GAP")
+	maxGap := 20000
+	if smaxGap != "" {
+		maxGap, err = strconv.Atoi(smaxGap)
+		if err != nil {
+			log.Printf("couldn't parse %s using %d\n", smaxGap, maxGap)
+		} else {
+			log.Printf("using maxGap of %d\n", maxGap)
+		}
+	}
+
+	stream := irelate.PIRelate(6000, maxGap, qstream, *ends, fn, queryables...)
 
 	// make a new writer from the string header.
 	out, err = vcfgo.NewWriter(out, query.Header)

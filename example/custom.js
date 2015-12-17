@@ -79,3 +79,8 @@ function clinvar_drug_response_flag(vals){
 	}
 	return false
 }
+
+function div(a, b) {
+	if(a == 0){ return 0.0; }
+	return (a / b).toFixed(9)
+}

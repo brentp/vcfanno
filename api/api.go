@@ -41,7 +41,7 @@ type Source struct {
 	Field string
 	// 0-based index of the file order this source is from.
 	Index int
-	mu    sync.RWMutex
+	mu    sync.Mutex
 	Js    *otto.Script
 	Vm    *otto.Otto
 }
@@ -53,9 +53,10 @@ func (s *Source) IsNumber() bool {
 
 // Annotator holds the information to annotate a file.
 type Annotator struct {
-	Sources []*Source
-	Strict  bool // require a variant to have same ref and share at least 1 alt
-	Ends    bool // annotate the ends of the variant in addition to the interval itself.
+	Sources   []*Source
+	Strict    bool // require a variant to have same ref and share at least 1 alt
+	Ends      bool // annotate the ends of the variant in addition to the interval itself.
+	PostAnnos []*PostAnnotation
 }
 
 // JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
@@ -80,20 +81,53 @@ func (s *Source) JsOp(v interfaces.IVariant, js *otto.Script, vals []interface{}
 	return val
 }
 
+type PostAnnotation struct {
+	Fields []string
+	Op     string
+	Name   string
+	Type   string
+
+	Js *otto.Script
+
+	mu sync.Mutex
+	Vm *otto.Otto
+}
+
 // NewAnnotator returns an Annotator with the sources, seeded with some javascript.
 // If ends is true, it will annotate the 1 base ends of the interval as well as the
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.
-func NewAnnotator(sources []*Source, js string, ends bool, strict bool) *Annotator {
+func NewAnnotator(sources []*Source, js string, ends bool, strict bool, postannos []PostAnnotation) *Annotator {
 	for _, s := range sources {
 		if e := checkSource(s); e != nil {
 			log.Fatal(e)
 		}
 	}
+
 	a := Annotator{
-		Sources: sources,
-		Strict:  strict,
-		Ends:    ends,
+		Sources:   sources,
+		Strict:    strict,
+		Ends:      ends,
+		PostAnnos: make([]*PostAnnotation, len(postannos)),
+	}
+	for i := range postannos {
+		postannos[i].Vm = otto.New()
+		if strings.HasPrefix(postannos[i].Op, "js:") {
+			var err error
+			postannos[i].Js, err = postannos[i].Vm.Compile(postannos[i].Op, postannos[i].Op[3:])
+			if err != nil {
+				log.Fatalf("error parsing customjs:%s", err)
+			}
+		} else if _, ok := Reducers[postannos[i].Op]; !ok {
+			log.Fatalf("unknown op from %s: %s", postannos[i].Name, postannos[i].Op)
+		}
+		if js != "" {
+			_, err := postannos[i].Vm.Run(js)
+			if err != nil {
+				log.Fatalf("error parsing customjs:%s", err)
+			}
+		}
+		a.PostAnnos[i] = &postannos[i]
 	}
 	for _, src := range a.Sources {
 		src.Vm = otto.New() // create a new vm for each source and lock in the source
@@ -332,6 +366,61 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 	}
 }
 
+func (a *Annotator) PostAnnotate(info interfaces.Info) error {
+	var err error
+	vals := make([]interface{}, 0, 2)
+	for _, post := range a.PostAnnos {
+		// built in function
+		vals = vals[:0]
+		if post.Js != nil {
+			for _, field := range post.Fields {
+				val, _ := info.Get(field)
+				// ignore the error as it means the field is not present.
+				if val != nil {
+					vals = append(vals, val)
+				}
+			}
+			if len(vals) == 0 {
+				continue
+			}
+			post.mu.Lock()
+			for i, val := range vals {
+				post.Vm.Set(post.Fields[i], val)
+			}
+			value, e := post.Vm.Run(post.Js)
+			post.mu.Unlock()
+			if e != nil {
+				err = e
+			}
+			val, e := value.ToString()
+			if e == nil {
+				if e := info.Set(post.Name, val); e != nil {
+					err = e
+				}
+			} else {
+				err = e
+			}
+
+		} else {
+			// built in function.
+			// re-use vals
+			for _, field := range post.Fields {
+				// ignore error when field isnt found. we expect that to occur a lot.
+				val, _ := info.Get(field)
+				if val != nil {
+					vals = append(vals, val)
+				}
+			}
+			if len(vals) > 0 {
+				fn := Reducers[post.Op]
+				info.Set(post.Name, fn(vals))
+			}
+		}
+
+	}
+	return err
+}
+
 func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	queryables := make([]interfaces.Queryable, 0)
 	files, fmap, err := a.setupStreams()
@@ -347,6 +436,9 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 		for _, src := range fmap[file] {
 			src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field))
 		}
+	}
+	for _, post := range a.PostAnnos {
+		query.AddInfoToHeader(post.Name, ".", post.Type, fmt.Sprintf("calculated field: %s", post.Name))
 	}
 	return queryables, nil
 }
@@ -376,7 +468,6 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 	var err error
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
-		// dont want strict for BED.
 		if e := a.AnnotateOne(v, a.Strict); e != nil {
 			log.Println(e)
 			return e
@@ -389,10 +480,15 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 			log.Println(e)
 			return e
 		}
-		return nil
+		return a.PostAnnotate(v.(interfaces.IVariant).Info())
 	}
 	if ends == INTERVAL {
-		return a.AnnotateOne(v, a.Strict)
+		err := a.AnnotateOne(v, a.Strict)
+		err2 := a.PostAnnotate(v.(interfaces.IVariant).Info())
+		if err != nil {
+			return err
+		}
+		return err2
 	}
 	// hack:
 	// modify the variant in-place to create a 1-base variant at the end of
@@ -429,5 +525,6 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 			variant.Info().Set(key, val)
 		}
 	}
+	//err2 := a.PostAnnotate(v.(interfaces.IVariant).Info())
 	return err
 }

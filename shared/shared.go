@@ -11,7 +11,8 @@ import (
 )
 
 type Config struct {
-	Annotation []Annotation
+	Annotation     []Annotation
+	PostAnnotation []PostAnnotation
 	// base path to prepend to all files.
 	Base string
 }
@@ -102,6 +103,22 @@ func (c Config) Sources() ([]*Source, error) {
 		s = append(s, flats...)
 	}
 	return s, nil
+}
+
+func CheckPostAnno(p *PostAnnotation) error {
+	if len(p.Fields) == 0 {
+		return fmt.Errorf("must specify 'fields' for postannotation")
+	}
+	if p.Op == "" {
+		return fmt.Errorf("must specify an 'op' for postannotation")
+	}
+	if p.Name == "" {
+		return fmt.Errorf("must specify a 'name' for postannotation")
+	}
+	if !(p.Type == "Float" || p.Type == "Character" || p.Type == "Integer") {
+		return fmt.Errorf("must specify a type for postannotation that is 'Float', 'Integer' or 'Character'")
+	}
+	return nil
 }
 
 func CheckAnno(a *Annotation) error {

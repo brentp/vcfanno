@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -18,6 +17,13 @@ func mean(vals []interface{}) interface{} {
 		s += asfloat32(v)
 	}
 	return s / float32(len(vals))
+}
+
+func div2(vals []interface{}) interface{} {
+	if vals[0] == 0 {
+		return 0
+	}
+	return asfloat32(vals[0]) / asfloat32(vals[1])
 }
 
 func max(vals []interface{}) interface{} {
@@ -148,7 +154,7 @@ func self(vals []interface{}) interface{} {
 		return nil
 	}
 	if len(vals) > 1 {
-		log.Println("found > 1 value in self()", vals)
+		//log.Println("found > 1 value in self()", vals)
 		return _strings(vals, false)
 	}
 	return vals[0]
@@ -175,4 +181,5 @@ var Reducers = map[string]Reducer{
 	"uniq":   Reducer(uniq),
 	"first":  Reducer(first),
 	"flag":   Reducer(vflag),
+	"div2":   Reducer(div2),
 }
