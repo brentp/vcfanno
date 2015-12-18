@@ -60,7 +60,7 @@ function div2(a, b) {
 ```
 and then use:
 ```
-op="js:div2"
+op="js:div2(ac_exac_all, an_exac_all)"
 ```
 
 in the `[[postannotation]]`.
