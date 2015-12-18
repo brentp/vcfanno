@@ -76,7 +76,7 @@ To run a server:
 	for _, r := range config.PostAnnotation {
 		err := CheckPostAnno(&r)
 		if err != nil {
-			log.Fatal(fmt.Sprintf("err in postannotaion section %s err: %s", r.Name, err))
+			log.Fatal(fmt.Sprintf("error in postannotaion section %s err: %s", r.Name, err))
 		}
 	}
 

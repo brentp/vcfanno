@@ -115,8 +115,8 @@ func CheckPostAnno(p *PostAnnotation) error {
 	if p.Name == "" {
 		return fmt.Errorf("must specify a 'name' for postannotation")
 	}
-	if !(p.Type == "Float" || p.Type == "Character" || p.Type == "Integer") {
-		return fmt.Errorf("must specify a type for postannotation that is 'Float', 'Integer' or 'Character'")
+	if !(p.Type == "Float" || p.Type == "Character" || p.Type == "Integer" || p.Type == "Flag") {
+		return fmt.Errorf("must specify a type for postannotation that is 'Flag', 'Float', 'Integer' or 'Character'")
 	}
 	return nil
 }

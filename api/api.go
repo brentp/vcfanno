@@ -380,7 +380,7 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 					vals = append(vals, val)
 				}
 			}
-			if len(vals) == 0 {
+			if len(vals) != len(post.Fields) {
 				continue
 			}
 			post.mu.Lock()
@@ -394,8 +394,18 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 			}
 			val, e := value.ToString()
 			if e == nil {
-				if e := info.Set(post.Name, val); e != nil {
-					err = e
+				if post.Type == "Flag" {
+					if !(strings.ToLower(val) == "false" || val == "0" || val == "") {
+						e := info.Set(post.Name, true)
+						if e != nil {
+							err = e
+						}
+					}
+
+				} else {
+					if e := info.Set(post.Name, val); e != nil {
+						err = e
+					}
 				}
 			} else {
 				err = e
@@ -411,7 +421,7 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 					vals = append(vals, val)
 				}
 			}
-			if len(vals) > 0 {
+			if len(vals) == len(post.Fields) {
 				fn := Reducers[post.Op]
 				info.Set(post.Name, fn(vals))
 			}
