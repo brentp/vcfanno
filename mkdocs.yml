@@ -1,0 +1,9 @@
+site_name: vcfanno
+site_url: https://github.com/brentp/vcfanno
+repo_url: https://github.com/brentp/vcfanno
+pages:
+- Home: index.md
+- Examples:
+    - ClinvarExac: examples/clinvar_exac.md
+theme: simplex
+
