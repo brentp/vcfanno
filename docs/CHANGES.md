@@ -5,6 +5,9 @@ v0.0.9
 + added new op 'self' which should be used for most cases when matching on ref and alt as it
   determines the type from the annotation header and uses that to update the annotated header
   with the correct type.
++ new [documentation site](http://brentp.github.io/vcfanno/)
++ [[postannotation]] allows modifying stuff in the query VCF after annotation (or instead).
+  See examples on the documentation site.
 
 
 v0.0.8

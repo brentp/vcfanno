@@ -2,6 +2,7 @@ vcfanno
 =======
 
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
+[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](http://brentp.github.io/vcfanno/)
 
 vcfanno annotates a VCF with any number of *sorted* and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
