@@ -6,6 +6,7 @@ import (
 
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
+	//"github.com/brentp/vcfanno/api"
 	"github.com/brentp/vcfgo"
 	. "gopkg.in/check.v1"
 )
@@ -121,8 +122,9 @@ func (s *APISuite) SetUpTest(c *C) {
 		Name:   "AC_AFR",
 		Index:  0,
 	}
+	empty := make([]PostAnnotation, 0)
 
-	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true)
+	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true, empty)
 
 }
 
@@ -221,7 +223,8 @@ func (s *APISuite) TestEndsBedQuery(c *C) {
 	b1.AddRelated(b2)
 	b2.AddRelated(b1)
 
-	NewAnnotator([]*Source{&bsrc}, "", true, false)
+	empty := make([]PostAnnotation, 0)
+	NewAnnotator([]*Source{&bsrc}, "", true, false, empty)
 }
 
 func (s *APISuite) TestIdAnno(c *C) {
@@ -237,7 +240,8 @@ func (s *APISuite) TestIdAnno(c *C) {
 	v.AddRelated(v)
 	v.SetSource(1)
 
-	a := NewAnnotator([]*Source{&vsrc}, "", true, true)
+	empty := make([]PostAnnotation, 0)
+	a := NewAnnotator([]*Source{&vsrc}, "", true, true, empty)
 
 	a.AnnotateOne(v, a.Strict)
 	c.Assert(v.Info().String(), Equals, "o_id=rs")

@@ -31,11 +31,12 @@ func benchmarkAnno(b *testing.B) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	empty := make([]api.PostAnnotation, 0)
 	for n := 0; n < b.N; n++ {
 		if err != nil {
 			log.Fatal(err)
 		}
-		a := api.NewAnnotator(srcs, js_string, false, true)
+		a := api.NewAnnotator(srcs, js_string, false, true, empty)
 		qrdr, err := xopen.Ropen("example/query.vcf.gz")
 		if err != nil {
 			log.Fatal(err)

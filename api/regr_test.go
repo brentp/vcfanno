@@ -50,7 +50,8 @@ func (s *RegrSuite) SetUpTest(c *C) {
 
 	s.v1.AddRelated(s.v2)
 
-	s.annotator = NewAnnotator([]*Source{&s.src_disease, &s.src_pmids}, "", true, false)
+	empty := make([]PostAnnotation, 0)
+	s.annotator = NewAnnotator([]*Source{&s.src_disease, &s.src_pmids}, "", true, false, empty)
 
 }
 
