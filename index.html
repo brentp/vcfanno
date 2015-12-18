@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://github.com/brentp/vcfanno/">
+        <link rel="shortcut icon" href="./img/favicon.ico">
+
+	<title>vcfanno</title>
+
+        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/highlight.css">
+        <link href="./css/base.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <!-- Main title -->
+            <a class="navbar-brand" href=".">vcfanno</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            <!-- Main navigation -->
+            <ul class="nav navbar-nav">
+            
+            
+                <li class="active">
+                    <a href=".">Home</a>
+                </li>
+            
+            
+            
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                    
+                        <li >
+                            <a href="examples/clinvar_exac/">ClinvarExac</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+            
+            </ul>
+
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                <li class="disabled">
+                    <a rel="next" >
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li >
+                    <a rel="prev" href="examples/clinvar_exac/">
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="https://github.com/brentp/vcfanno">
+                        
+                            <i class="fa fa-github"></i>
+                        
+                        GitHub
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#vcfanno">vcfanno</a></li>
+        
+    
+        <li class="main "><a href="#usage">Usage</a></li>
+        
+            <li><a href="#example">Example</a></li>
+        
+    
+        <li class="main "><a href="#operations">Operations</a></li>
+        
+    
+        <li class="main "><a href="#binaries">Binaries</a></li>
+        
+    
+        <li class="main "><a href="#preprocessing">Preprocessing</a></li>
+        
+    
+        <li class="main "><a href="#development">Development</a></li>
+        
+    
+        <li class="main "><a href="#additional-usage">Additional Usage</a></li>
+        
+            <li><a href="#-ends">-ends</a></li>
+        
+            <li><a href="#-permissive-overlap">-permissive-overlap</a></li>
+        
+            <li><a href="#-p">-p</a></li>
+        
+            <li><a href="#-js">-js</a></li>
+        
+    
+    </ul>
+</div></div>
+            <div class="col-md-9" role="main">
+
+<h1 id="vcfanno">vcfanno</h1>
+<p><a href="https://travis-ci.org/brentp/vcfanno"><img alt="Build Status" src="https://travis-ci.org/brentp/vcfanno.svg" /></a></p>
+<p>vcfanno annotates a VCF with any number of <em>sorted</em> and tabixed input BED, BAM, and VCF files in parallel.
+It does this by finding overlaps as it streams over the data and applying
+user-defined operations on the overlapping annotations.</p>
+<p>In order to parallelize, work is broken down as follows. A slice (array) of query intervals is accumulated 
+until a specified number is reached (usually ~5K-25K) or a gap cutoff is exceeded; at that point, the
+bounds of the region are used to perform a tabix (or any regional) query on the database files. This is
+all done in <a href="https://github.com/brentp/irelate">irelate</a>. <code>vcfanno</code> then iterates over the streams that
+result from the tabix queries and finds intersections with the query stream. This is a parallel chrom-sweep.
+This method avoids problems with chromosome order.</p>
+<p>For VCF, values are pulled by name from the INFO field.
+For BED, values are pulled from (1-based) column number.
+For BAM, depth (<code>count</code>), "mapq" and "seq" are currently supported.</p>
+<p><code>vcfanno</code> is written in <a href="http://golang.org">go</a>
+It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop.</p>
+<p>We are actively developing <code>vcfanno</code> and appreciate feedback and bug reports.</p>
+<h1 id="usage">Usage</h1>
+<p>After downloading the <a href="https://github.com/brentp/vcfanno/releases/">binary for your system</a> (see section below) usage looks like:</p>
+<pre><code class="Shell">  ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz
+</code></pre>
+
+<p>Where conf.toml looks like:</p>
+<pre><code>[[annotation]]
+file=&quot;ExAC.vcf&quot;
+fields = [&quot;AC_AFR&quot;, &quot;AC_AMR&quot;, &quot;AC_EAS&quot;]
+ops=[&quot;first&quot;, &quot;first&quot;, &quot;min&quot;]
+
+[[annotation]]
+file=&quot;fitcons.bed&quot;
+columns = [4, 4]
+names=[&quot;fitcons_mean&quot;, &quot;js_sum&quot;]
+# note the 2nd op here is javascript that has access to `vals`
+ops=[&quot;mean&quot;, &quot;js:sum=0;for(i=0;i&lt;vals.length;i++){sum+=vals[i]}; vals&quot;]
+
+[[annotation]]
+file=&quot;example/ex.bam&quot;
+names=[&quot;ex_bam_depth&quot;]
+fields=[&quot;depth&quot;, &quot;mapq&quot;, &quot;seq&quot;]
+ops=[&quot;count&quot;, &quot;mean&quot;, &quot;concat&quot;]
+</code></pre>
+
+<p>So from <code>ExAC.vcf</code> we will pull the fields from the info field and apply the corresponding
+<code>operation</code> from the <code>ops</code> array. Users can add as many <code>[[annotation]]</code> blocks to the
+conf file as desired. Files can be local as above, or available via http/https.</p>
+<p>Also see the additional usage section at the bottom for additional details.</p>
+<h2 id="example">Example</h2>
+<p>the example directory contains the data and conf for a full example. To run, either download
+the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a> for your system
+or build with:</p>
+<pre><code class="Shell">go get
+go build -o vcfanno
+</code></pre>
+
+<p>from this directory.
+Then, you can annotate with:</p>
+<pre><code class="Shell">GOMAXPROCS=4 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz &gt; annotated.vcf
+</code></pre>
+
+<p>An example INFO field row before annotation (pos 98683):</p>
+<pre><code>AB=0.282443;ABP=56.8661;AC=11;AF=0.34375;AN=32;AO=45;CIGAR=1X;TYPE=snp
+</code></pre>
+
+<p>and after:</p>
+<pre><code>AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;js_sum=0.061
+</code></pre>
+
+<h1 id="operations">Operations</h1>
+<p>In most cases, we will have a single annotation entry for each entry (variant)
+in the query VCF. However, it is possible that there will be multiple annotations
+from a single annotation file--in this case, the op determines how the many values
+are <code>reduced</code>. Valid operations are:</p>
+<ul>
+<li>js:$javascript // see section below for more details</li>
+<li>mean</li>
+<li>max</li>
+<li>min</li>
+<li>concat // comma delimited list of output</li>
+<li>count  // count the number of overlaps</li>
+<li>uniq</li>
+<li>first </li>
+<li>flag   // presense/absence via vcf flag</li>
+</ul>
+<h1 id="binaries">Binaries</h1>
+<p>binary executables are available <a href="https://github.com/brentp/vcfanno/releases/">here</a>
+for <em>linux</em>, <em>mac</em> (darwin), and <em>windows</em> for <em>32</em> and <em>64</em> bit platforms.</p>
+<h1 id="preprocessing">Preprocessing</h1>
+<p>Annotations will be the most accurate if your query and annotation variants are split (no multiple ALTs) and normalize (left-aligned and
+trimmed). At some point, this will be done internally, but for now, you can get a split and normalized VCF using <a href="https://github.com/atks/vt">vt</a>
+with:</p>
+<pre><code class="Shell">vt decompose -s $VCF | vt normalize -r $REF - &gt; $NORM_VCF
+</code></pre>
+
+<h1 id="development">Development</h1>
+<p>This, and the associated go libraries (<a href="https://github.com/brentp/vcfgo">vcfgo</a>,
+<a href="https://github.com/brentp/irelate">irelate</a>, <a href="https://github.com/brentp/xopen">xopen</a>) are
+under active development. The following are on our radar (most have been completed):</p>
+<ul>
+<li>[x] allow annotating with bam fields, e.g. QUAL and SEQ.</li>
+<li>[ ] decompose, normalize, and get allelic primitives for variants on the fly
+      (we have code to do this, it just needs to be integrated)</li>
+<li>[ ] allow custom golang ops when using api.</li>
+<li>[x] improve test coverage for vcfanno (still need more tests for bam)</li>
+<li>[x] embed otto js engine to allow custom ops.</li>
+<li>[x] support for annotating BED files.</li>
+</ul>
+<h1 id="additional-usage">Additional Usage</h1>
+<h2 id="-ends">-ends</h2>
+<p>For annotating large variants, such as CNVs or structural variants (SVs), it can be useful to
+annotate the <em>ends</em> of the variant in addition to the region itself. To do this, specify the <code>-ends</code>
+flag to <code>vcfanno</code>. e.g.:</p>
+<pre><code class="Shell">vcfanno -ends example/conf.toml example/query.vcf.gz
+</code></pre>
+
+<p>In this case, the names field in the <em>conf</em> file contains, "fitcons_mean". The output will contain
+<code>fitcons\_mean</code> as before along with <code>left\_fitcons\_mean</code> and <code>right\_fitcons\_mean</code> for any variants
+that are longer than 1 base. The <em>left</em> end will be for the single-base at the lowest base of the variant
+and the <em>right</em> end will be for the single base at the higher numbered base of the variant.</p>
+<h2 id="-permissive-overlap">-permissive-overlap</h2>
+<p>By default, when annotating with a variant, in addition to the overlap requirement, the variants must share
+the same position, the same reference allele and at least one alternate allele (this is only used for
+variants, not for BED/BAM annotations). If this flag is specified, only overlap testing is used and shared
+REF/ALT are not required.</p>
+<h2 id="-p">-p</h2>
+<p>Set to the number of processes that <code>vcfanno</code> can use during annotation. <code>vcfanno</code> parallelizes well
+up to 15 or so cores.</p>
+<h2 id="-js">-js</h2>
+<p>custom in ops (javascript). For use when the built-in <code>ops</code> don't supply the needed reduction.</p>
+<p>we embed the javascript engine <a href="https://github.com/robertkrimen/otto">otto</a> so that it's 
+possible to create a custom op if it is not provided. For example if the users wants to</p>
+<pre><code>"js:sum=0;for(i=0;i&lt;vals.length;i++){sum+=vals[i]};sum"
+</code></pre>
+<p>where the last value (in this case sum) is returned as the annotation value. It is encouraged
+to instead define javascript functions in separate <code>.js</code> file and point to it when calling
+<code>vcfanno</code> using the <code>-js</code> flag. So, in an external file, "some.js", instead put:</p>
+<pre><code class="javascript">function sum(vals) {
+    s = 0;
+    for(i=0; i&lt;vals.length; i++){
+        s+=vals[i]
+    }
+    return s
+}
+</code></pre>
+
+<p>And then the above custom op would be: "js:sum(vals)". (note that there's a sum op provided
+by <code>vcfanno</code> which will be faster).</p>
+<p>The variables <code>vals</code>, <code>chrom</code>, <code>start</code>, <code>end</code> from the current variant will all be available
+in the javascript code.</p>
+<p>See <a href="https://github.com/brentp/vcfanno/blob/master/example/conf.toml">example/conf.toml</a>
+and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.js">example/custom.js</a>
+for more examples.</p></div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
+        </footer>
+
+        <script src="./js/jquery-1.10.2.min.js"></script>
+        <script src="./js/bootstrap-3.0.3.min.js"></script>
+        <script src="./js/highlight.pack.js"></script>
+        <script src="./js/base.js"></script>
+        <script src="./examples/clinvar_exac.js"></script>
+    </body>
+</html>
