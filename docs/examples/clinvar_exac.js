@@ -11,8 +11,10 @@ CLINVAR_SIG = {'0': 'uncertain',
 
 function clinvar_sig(vals) {
 	var t = typeof vals
+	 if (t == "string" && vals.length > 2 && vals != "255" && vals.indexOf("|") != -1){
+		vals = [vals]
 	// just a single-value
-	if(t == "string" || t == "number") {
+	} else if(t == "string" || t == "number") {
 		return CLINVAR_SIG[vals]
 	}
 	var ret = []

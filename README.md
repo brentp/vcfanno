@@ -30,7 +30,7 @@ Usage
 After downloading the [binary for your system](https://github.com/brentp/vcfanno/releases/) (see section below) usage looks like:
 
 ```Shell
-  ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz
+  ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz
 ```
 
 Where conf.toml looks like:
@@ -44,9 +44,9 @@ ops=["first", "first", "min"]
 [[annotation]]
 file="fitcons.bed"
 columns = [4, 4]
-names=["fitcons_mean", "js_sum"]
-# note the 2nd op here is javascript that has access to `vals`
-ops=["mean", "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]}; vals"]
+names=["fitcons_mean", "lua_sum"]
+# note the 2nd op here is lua that has access to `vals`
+ops=["mean", "lua:function sum(t) local sum = 0; for i=1,#t do sum = sum + t[i] end return sum / #t end"]
 
 [[annotation]]
 file="example/ex.bam"
@@ -77,7 +77,7 @@ from this directory.
 Then, you can annotate with:
 
 ```Shell
-GOMAXPROCS=4 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz > annotated.vcf
+GOMAXPROCS=4 ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz > annotated.vcf
 ```
 
 An example INFO field row before annotation (pos 98683):
@@ -87,7 +87,7 @@ AB=0.282443;ABP=56.8661;AC=11;AF=0.34375;AN=32;AO=45;CIGAR=1X;TYPE=snp
 
 and after:
 ```
-AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;js_sum=0.061
+AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;lua_sum=0.061
 ```
 
 Operations
@@ -98,7 +98,7 @@ in the query VCF. However, it is possible that there will be multiple annotation
 from a single annotation file--in this case, the op determines how the many values
 are `reduced`. Valid operations are:
 
- + js:$javascript // see section below for more details
+ + lua:$lua // see section below for more details
  + mean
  + max
  + min
@@ -129,17 +129,8 @@ Development
 ===========
 
 This, and the associated go libraries ([vcfgo](https://github.com/brentp/vcfgo),
-[irelate](https://github.com/brentp/irelate), [xopen](https://github.com/brentp/xopen)) are
-under active development. The following are on our radar (most have been completed):
-
-- [x] allow annotating with bam fields, e.g. QUAL and SEQ.
-- [ ] decompose, normalize, and get allelic primitives for variants on the fly
-      (we have code to do this, it just needs to be integrated)
-- [ ] allow custom golang ops when using api.
-- [x] improve test coverage for vcfanno (still need more tests for bam)
-- [x] embed otto js engine to allow custom ops.
-- [x] support for annotating BED files.
-
+[irelate](https://github.com/brentp/irelate), [xopen](https://github.com/brentp/xopen),
+[goluaez](https://github.com/brentp/goluaez) are under active development.
 
 Additional Usage
 ================
@@ -172,38 +163,38 @@ REF/ALT are not required.
 Set to the number of processes that `vcfanno` can use during annotation. `vcfanno` parallelizes well
 up to 15 or so cores.
 
--js
----
+-lua
+----
 
-custom in ops (javascript). For use when the built-in `ops` don't supply the needed reduction.
+custom in ops (lua). For use when the built-in `ops` don't supply the needed reduction.
 
-we embed the javascript engine [otto](https://github.com/robertkrimen/otto) so that it's 
+we embed the lua engine [go-lua](https://github.com/yuin/gopher-lua) so that it's 
 possible to create a custom op if it is not provided. For example if the users wants to
 
-    "js:sum=0;for(i=0;i<vals.length;i++){sum+=vals[i]};sum"
+    "lua:function sum(t) local sum = 0; for i=1,#t do sum = sum + t[i] end return sum end"
 
 where the last value (in this case sum) is returned as the annotation value. It is encouraged
-to instead define javascript functions in separate `.js` file and point to it when calling
-`vcfanno` using the `-js` flag. So, in an external file, "some.js", instead put:
+to instead define lua functions in separate `.lua` file and point to it when calling
+`vcfanno` using the `-lua` flag. So, in an external file, "some.lua", instead put:
 
-```javascript
-function sum(vals) {
- 	s = 0;
-	for(i=0; i<vals.length; i++){
-		s+=vals[i]
-	}
-	return s
-}
+```lua
+function sum(t)
+    local sum = 0
+    for i=1,#t do
+        sum = sum + t[i]
+    end
+    return sum
+end
 ```
 
-And then the above custom op would be: "js:sum(vals)". (note that there's a sum op provided
+And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by `vcfanno` which will be faster).
 
 The variables `vals`, `chrom`, `start`, `end` from the current variant will all be available
-in the javascript code.
+in the lua code.
 
 
 See [example/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
-and [example/custom.js](https://github.com/brentp/vcfanno/blob/master/example/custom.js)
+and [example/custom.lua](https://github.com/brentp/vcfanno/blob/master/example/custom.lua)
 for more examples.
 

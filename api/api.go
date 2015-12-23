@@ -10,10 +10,10 @@ import (
 
 	"github.com/biogo/hts/sam"
 	"github.com/brentp/bix"
+	"github.com/brentp/goluaez"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
 	"github.com/brentp/vcfgo"
-	"github.com/robertkrimen/otto"
 )
 
 const LEFT = "left_"
@@ -42,8 +42,8 @@ type Source struct {
 	// 0-based index of the file order this source is from.
 	Index int
 	mu    sync.Mutex
-	Js    *otto.Script
-	Vm    *otto.Otto
+	code  string
+	Vm    *goluaez.State
 }
 
 // IsNumber indicates that we expect the Source to return a number given the op
@@ -59,26 +59,18 @@ type Annotator struct {
 	PostAnnos []*PostAnnotation
 }
 
-// JsOp uses Otto to run a javascript snippet on a list of values and return a single value.
-// It makes the chrom, start, end, and values available to the js interpreter.
-func (s *Source) JsOp(v interfaces.IVariant, js *otto.Script, vals []interface{}) string {
-	s.mu.Lock()
-	s.Vm.Set("chrom", v.Chrom())
-	s.Vm.Set("start", v.Start())
-	s.Vm.Set("end", v.End())
-	s.Vm.Set("vals", vals)
-	//s.Vm.Set("info", v.Info.String())
-	value, err := s.Vm.Run(js)
+// LuaOp uses go-lua to run a lua snippet on a list of values and return a single value.
+// It makes the chrom, start, end, and values available to the lua interpreter.
+func (s *Source) LuaOp(v interfaces.IVariant, code string, vals []interface{}) string {
+	value, err := s.Vm.Run(code, map[string]interface{}{
+		"chrom": v.Chrom(),
+		"start": v.Start(),
+		"end":   v.End(),
+		"vals":  vals})
 	if err != nil {
-		return fmt.Sprintf("js-error: %s", err)
+		return fmt.Sprintf("lua-error: %s", err)
 	}
-	val, err := value.ToString()
-	s.mu.Unlock()
-	if err != nil {
-		log.Println("js-error:", err)
-		val = fmt.Sprintf("error:%s", err)
-	}
-	return val
+	return fmt.Sprintf("%v", value)
 }
 
 type PostAnnotation struct {
@@ -87,17 +79,17 @@ type PostAnnotation struct {
 	Name   string
 	Type   string
 
-	Js *otto.Script
+	code string
 
 	mu sync.Mutex
-	Vm *otto.Otto
+	Vm *goluaez.State
 }
 
 // NewAnnotator returns an Annotator with the sources, seeded with some javascript.
 // If ends is true, it will annotate the 1 base ends of the interval as well as the
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.
-func NewAnnotator(sources []*Source, js string, ends bool, strict bool, postannos []PostAnnotation) *Annotator {
+func NewAnnotator(sources []*Source, lua string, ends bool, strict bool, postannos []PostAnnotation) *Annotator {
 	for _, s := range sources {
 		if e := checkSource(s); e != nil {
 			log.Fatal(e)
@@ -110,38 +102,29 @@ func NewAnnotator(sources []*Source, js string, ends bool, strict bool, postanno
 		Ends:      ends,
 		PostAnnos: make([]*PostAnnotation, len(postannos)),
 	}
+	var err error
 	for i := range postannos {
-		postannos[i].Vm = otto.New()
-		if strings.HasPrefix(postannos[i].Op, "js:") {
-			var err error
-			postannos[i].Js, err = postannos[i].Vm.Compile(postannos[i].Op, postannos[i].Op[3:])
-			if err != nil {
-				log.Fatalf("error parsing customjs:%s", err)
-			}
+		postannos[i].Vm, err = goluaez.NewState(lua)
+		if err != nil {
+			log.Fatalf("error parsing custom lua:%s", err)
+		}
+		if strings.HasPrefix(postannos[i].Op, "lua:") {
+			postannos[i].code = postannos[i].Op[4:]
 		} else if _, ok := Reducers[postannos[i].Op]; !ok {
 			log.Fatalf("unknown op from %s: %s", postannos[i].Name, postannos[i].Op)
-		}
-		if js != "" {
-			_, err := postannos[i].Vm.Run(js)
-			if err != nil {
-				log.Fatalf("error parsing customjs:%s", err)
-			}
 		}
 		a.PostAnnos[i] = &postannos[i]
 	}
 	for _, src := range a.Sources {
-		src.Vm = otto.New() // create a new vm for each source and lock in the source
-		if strings.HasPrefix(src.Op, "js:") {
+		src.Vm, err = goluaez.NewState(lua) // create a new vm for each source and lock in the source
+		if err != nil {
+			log.Fatalf("error parsing custom lua:%s", err)
+		}
+		if strings.HasPrefix(src.Op, "lua:") {
 			var err error
-			src.Js, err = src.Vm.Compile(src.Op, src.Op[3:])
+			src.code = src.Op[4:]
 			if err != nil {
 				log.Fatalf("error parsing op: %s for file %s", src.Op, src.File)
-			}
-		}
-		if js != "" {
-			_, err := src.Vm.Run(js)
-			if err != nil {
-				log.Fatalf("error parsing customjs:%s", err)
 			}
 		}
 	}
@@ -299,14 +282,14 @@ func (src *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix
 	if len(vals) == 0 {
 		return
 	}
-	if src.Js != nil {
-		jsval := src.JsOp(v, src.Js, vals)
-		if jsval == "true" || jsval == "false" && strings.Contains(src.Op, "_flag(") {
-			if jsval == "true" {
+	if src.code != "" {
+		luaval := src.LuaOp(v, src.code, vals)
+		if luaval == "true" || luaval == "false" && strings.Contains(src.Op, "_flag(") {
+			if luaval == "true" {
 				v.Info().Set(prefix+src.Name, true)
 			}
 		} else {
-			v.Info().Set(prefix+src.Name, jsval)
+			v.Info().Set(prefix+src.Name, luaval)
 		}
 	} else {
 		val := Reducers[src.Op](vals)
@@ -336,7 +319,7 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 			}
 			if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
 				ntype = "Float"
-			} else if src.Js != nil {
+			} else if src.code != "" {
 				if strings.Contains(src.Op, "_flag(") {
 					ntype, number = "Flag", "0"
 				} else {
@@ -372,7 +355,7 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 	for _, post := range a.PostAnnos {
 		// built in function
 		vals = vals[:0]
-		if post.Js != nil {
+		if post.code != "" {
 			for _, field := range post.Fields {
 				val, _ := info.Get(field)
 				// ignore the error as it means the field is not present.
@@ -385,30 +368,26 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 			}
 			post.mu.Lock()
 			for i, val := range vals {
-				post.Vm.Set(post.Fields[i], val)
+				post.Vm.SetGlobal(post.Fields[i], val)
 			}
-			value, e := post.Vm.Run(post.Js)
+			value, e := post.Vm.Run(post.code)
 			post.mu.Unlock()
 			if e != nil {
 				err = e
 			}
-			val, e := value.ToString()
-			if e == nil {
-				if post.Type == "Flag" {
-					if !(strings.ToLower(val) == "false" || val == "0" || val == "") {
-						e := info.Set(post.Name, true)
-						if e != nil {
-							err = e
-						}
-					}
-
-				} else {
-					if e := info.Set(post.Name, val); e != nil {
+			val := fmt.Sprintf("%v", value)
+			if post.Type == "Flag" {
+				if !(strings.ToLower(val) == "false" || val == "0" || val == "") {
+					e := info.Set(post.Name, true)
+					if e != nil {
 						err = e
 					}
 				}
+
 			} else {
-				err = e
+				if e := info.Set(post.Name, val); e != nil {
+					err = e
+				}
 			}
 
 		} else {

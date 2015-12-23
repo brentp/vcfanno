@@ -124,7 +124,21 @@ func (s *APISuite) SetUpTest(c *C) {
 	}
 	empty := make([]PostAnnotation, 0)
 
-	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src}, "function mean(vals) {sum=0; for(i=0;i<vals.length;i++){sum+=vals[i]}; return sum/vals.length}", false, true, empty)
+	code := `
+function sum(t)
+    local sum = 0
+    for i=1,#t do
+        sum = sum + t[i]
+    end
+    return sum
+end
+
+function mean(t)
+    return sum(t) / #t
+end
+`
+
+	s.annotator = NewAnnotator([]*Source{&s.src0, &s.src}, code, false, true, empty)
 
 }
 
@@ -147,15 +161,13 @@ func (s *APISuite) TestSource(c *C) {
 
 }
 
-func (s *APISuite) TestJsSetup(c *C) {
+func (s *APISuite) TestLuaSetup(c *C) {
 	vm := s.annotator.Sources[0].Vm
 
-	vals := []interface{}{0, 1, 2}
-	vm.Set("vals", vals)
+	vm.SetGlobal("vals", []int{0, 1, 2})
 	value, err := vm.Run("mean(vals)")
 	c.Assert(err, IsNil)
-	val, err := value.ToString()
-	c.Assert(err, IsNil)
+	val := fmt.Sprintf("%v", value)
 	c.Assert(val, Equals, "1")
 }
 
@@ -166,16 +178,6 @@ var jstest = []struct {
 	{"chrom", "chr1"},
 	{"start", "233"},
 	{"end", "234"},
-}
-
-func (s *APISuite) TestJsOp(c *C) {
-	vm := s.annotator.Sources[0].Vm
-	for _, jst := range jstest {
-		script, err := vm.Compile("", jst.js)
-		c.Assert(err, IsNil)
-		v := s.annotator.Sources[0].JsOp(s.v1, script, []interface{}{})
-		c.Assert(v, Equals, jst.result)
-	}
 }
 
 func (s *APISuite) TestCollect(c *C) {
