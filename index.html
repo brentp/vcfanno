@@ -135,7 +135,7 @@
         
             <li><a href="#-p">-p</a></li>
         
-            <li><a href="#-js">-js</a></li>
+            <li><a href="#-lua">-lua</a></li>
         
     
     </ul>
@@ -162,7 +162,7 @@ It can annotate more than 8,000 variants per second with 34 annotations from 9 f
 <p>We are actively developing <code>vcfanno</code> and appreciate feedback and bug reports.</p>
 <h1 id="usage">Usage</h1>
 <p>After downloading the <a href="https://github.com/brentp/vcfanno/releases/">binary for your system</a> (see section below) usage looks like:</p>
-<pre><code class="Shell">  ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz
+<pre><code class="Shell">  ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz
 </code></pre>
 
 <p>Where conf.toml looks like:</p>
@@ -174,9 +174,9 @@ ops=[&quot;first&quot;, &quot;first&quot;, &quot;min&quot;]
 [[annotation]]
 file=&quot;fitcons.bed&quot;
 columns = [4, 4]
-names=[&quot;fitcons_mean&quot;, &quot;js_sum&quot;]
-# note the 2nd op here is javascript that has access to `vals`
-ops=[&quot;mean&quot;, &quot;js:sum=0;for(i=0;i&lt;vals.length;i++){sum+=vals[i]}; vals&quot;]
+names=[&quot;fitcons_mean&quot;, &quot;lua_sum&quot;]
+# note the 2nd op here is lua that has access to `vals`
+ops=[&quot;mean&quot;, &quot;lua:function sum(t) local sum = 0; for i=1,#t do sum = sum + t[i] end return sum / #t end&quot;]
 
 [[annotation]]
 file=&quot;example/ex.bam&quot;
@@ -199,7 +199,7 @@ go build -o vcfanno
 
 <p>from this directory.
 Then, you can annotate with:</p>
-<pre><code class="Shell">GOMAXPROCS=4 ./vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz &gt; annotated.vcf
+<pre><code class="Shell">GOMAXPROCS=4 ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz &gt; annotated.vcf
 </code></pre>
 
 <p>An example INFO field row before annotation (pos 98683):</p>
@@ -207,7 +207,7 @@ Then, you can annotate with:</p>
 </code></pre>
 
 <p>and after:</p>
-<pre><code>AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;js_sum=0.061
+<pre><code>AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;lua_sum=0.061
 </code></pre>
 
 <h1 id="operations">Operations</h1>
@@ -216,7 +216,7 @@ in the query VCF. However, it is possible that there will be multiple annotation
 from a single annotation file--in this case, the op determines how the many values
 are <code>reduced</code>. Valid operations are:</p>
 <ul>
-<li>js:$javascript // see section below for more details</li>
+<li>lua:$lua // see section below for more details</li>
 <li>mean</li>
 <li>max</li>
 <li>min</li>
@@ -238,17 +238,8 @@ with:</p>
 
 <h1 id="development">Development</h1>
 <p>This, and the associated go libraries (<a href="https://github.com/brentp/vcfgo">vcfgo</a>,
-<a href="https://github.com/brentp/irelate">irelate</a>, <a href="https://github.com/brentp/xopen">xopen</a>) are
-under active development. The following are on our radar (most have been completed):</p>
-<ul>
-<li>[x] allow annotating with bam fields, e.g. QUAL and SEQ.</li>
-<li>[ ] decompose, normalize, and get allelic primitives for variants on the fly
-      (we have code to do this, it just needs to be integrated)</li>
-<li>[ ] allow custom golang ops when using api.</li>
-<li>[x] improve test coverage for vcfanno (still need more tests for bam)</li>
-<li>[x] embed otto js engine to allow custom ops.</li>
-<li>[x] support for annotating BED files.</li>
-</ul>
+<a href="https://github.com/brentp/irelate">irelate</a>, <a href="https://github.com/brentp/xopen">xopen</a>,
+<a href="https://github.com/brentp/goluaez">goluaez</a> are under active development.</p>
 <h1 id="additional-usage">Additional Usage</h1>
 <h2 id="-ends">-ends</h2>
 <p>For annotating large variants, such as CNVs or structural variants (SVs), it can be useful to
@@ -269,30 +260,30 @@ REF/ALT are not required.</p>
 <h2 id="-p">-p</h2>
 <p>Set to the number of processes that <code>vcfanno</code> can use during annotation. <code>vcfanno</code> parallelizes well
 up to 15 or so cores.</p>
-<h2 id="-js">-js</h2>
-<p>custom in ops (javascript). For use when the built-in <code>ops</code> don't supply the needed reduction.</p>
-<p>we embed the javascript engine <a href="https://github.com/robertkrimen/otto">otto</a> so that it's 
+<h2 id="-lua">-lua</h2>
+<p>custom in ops (lua). For use when the built-in <code>ops</code> don't supply the needed reduction.</p>
+<p>we embed the lua engine <a href="https://github.com/yuin/gopher-lua">go-lua</a> so that it's 
 possible to create a custom op if it is not provided. For example if the users wants to</p>
-<pre><code>"js:sum=0;for(i=0;i&lt;vals.length;i++){sum+=vals[i]};sum"
+<pre><code>"lua:function sum(t) local sum = 0; for i=1,#t do sum = sum + t[i] end return sum end"
 </code></pre>
 <p>where the last value (in this case sum) is returned as the annotation value. It is encouraged
-to instead define javascript functions in separate <code>.js</code> file and point to it when calling
-<code>vcfanno</code> using the <code>-js</code> flag. So, in an external file, "some.js", instead put:</p>
-<pre><code class="javascript">function sum(vals) {
-    s = 0;
-    for(i=0; i&lt;vals.length; i++){
-        s+=vals[i]
-    }
-    return s
-}
+to instead define lua functions in separate <code>.lua</code> file and point to it when calling
+<code>vcfanno</code> using the <code>-lua</code> flag. So, in an external file, "some.lua", instead put:</p>
+<pre><code class="lua">function sum(t)
+    local sum = 0
+    for i=1,#t do
+        sum = sum + t[i]
+    end
+    return sum
+end
 </code></pre>
 
-<p>And then the above custom op would be: "js:sum(vals)". (note that there's a sum op provided
+<p>And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by <code>vcfanno</code> which will be faster).</p>
 <p>The variables <code>vals</code>, <code>chrom</code>, <code>start</code>, <code>end</code> from the current variant will all be available
-in the javascript code.</p>
+in the lua code.</p>
 <p>See <a href="https://github.com/brentp/vcfanno/blob/master/example/conf.toml">example/conf.toml</a>
-and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.js">example/custom.js</a>
+and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.lua">example/custom.lua</a>
 for more examples.</p></div>
         </div>
 
@@ -306,6 +297,5 @@ for more examples.</p></div>
         <script src="./js/bootstrap-3.0.3.min.js"></script>
         <script src="./js/highlight.pack.js"></script>
         <script src="./js/base.js"></script>
-        <script src="./examples/clinvar_exac.js"></script>
     </body>
 </html>
