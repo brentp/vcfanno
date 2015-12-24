@@ -190,7 +190,7 @@ end
 And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by `vcfanno` which will be faster).
 
-The variables `vals`, `chrom`, `start`, `end` from the current variant will all be available
+The variables `vals`, `chrom`, `start`, `stop` from the current variant will all be available
 in the lua code.
 
 

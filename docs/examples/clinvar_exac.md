@@ -29,10 +29,10 @@ ops=["self", "self", "self", "self", "self", "self", "self", "self", "self", "se
 
 
 Note that we can have as many of these sections as we want with vcfanno, but here we are only
-interested in annotating clinvar with a single file. The `fields` section indicates which fields to
-pull from the `ExAC` VCF. The `names` section indicates how those fields will be named as they are
-added to the clinvar VCF. Since we intend to match on REF and ALT, there will only be 1 match so the
-`op` is just "self" for all fields.
+interested in annotating clinvar with the single ExAC file. The `fields` section indicates which
+fields to pull from the `ExAC` VCF. The `names` section indicates how those fields will be named
+as they are added to the clinvar VCF. Since we intend to match on REF and ALT, there will only
+be 1 match so the `op` is just "self" for all fields.
 
 Because we want to know the allele frequency, we will need to divide `AC` by `AN`. This is done in a `[[postannotation]]`
 section that looks like this:
@@ -49,18 +49,18 @@ type="Float"
 ```
 
 We need one of these section for each population, which is onerous, but simple enough to generate with
-a small script. Note that the op `div2` is provided by `vcfanno`, but we could have written this as a
-custom op in javascript as:
+a small script. Note that the op `div` is provided by `vcfanno`, but we could have written this as a
+custom op in lua as:
 
-```javascript
-function div2(a, b) {
+```lua
+function div(a, b)
     if(a == 0){ return 0.0; }
-    return (a / b).toFixed(9)
+    return string.format("%.9f", a / b)
 }
 ```
 and then use:
 ```
-op="js:div2(ac_exac_all, an_exac_all)"
+op="lua:div(ac_exac_all, an_exac_all)"
 ```
 
 in the `[[postannotation]]`.
@@ -85,7 +85,7 @@ Finally, we can flag variants that have a `max_aaf_all` above some cutoff and ar
 ```
 [[postannotation]]
 fields=["clinvar_sig", "max_aaf_all"]
-op="js:check_clinvar_aaf(clinvar_sig, max_aaf_all, 0.005)"
+op="lua:check_clinvar_aaf(clinvar_sig, max_aaf_all, 0.005)"
 name="common_pathogenic"
 type="Flag"
 ```
@@ -96,7 +96,7 @@ will be absent from the INFO field and so this will not be called.
 If we've saved this in a file called `exac-af.conf` then the vcfanno command looks like:
 
 ```
-vcfanno -js clinvar_exac.js -p 4 -base-path $EXAC_DIR clinvar_exac.conf $CLINVAR_VCF > $CLINVAR_ANNOTATED_VCF
+vcfanno -lua clinvar_exac.lua -p 4 -base-path $EXAC_DIR clinvar_exac.conf $CLINVAR_VCF > $CLINVAR_ANNOTATED_VCF
 ```
 
 This command finishes in about 2 minutes on a good laptop with a core i7 processor.
@@ -112,11 +112,12 @@ With our ExAC fields appearing at the end:
 ```
 ac_exac_all=10114;an_exac_all=121354;ac_exac_afr=3093;an_exac_afr=10402;ac_exac_amr=449;an_exac_amr=11572;ac_exac_eas=867;an_exac_eas=8638;ac_exac_fin=210;an_exac_fin=6612;ac_exac_nfe=2836;an_exac_nfe=66712;ac_exac_oth=62;an_exac_oth=906;ac_exac_sas=2597;an_exac_sas=16512;af_exac_all=0.0833;af_exac_afr=0.2973;af_exac_amr=0.0388;af_exac_eas=0.1004;af_exac_nfe=0.0425;af_exac_oth=0.0684;af_exac_sas=0.1573;max_aaf_all=0.2973;clinvar_sig=pathogenic;common_pathogenic
 ```
-So this variant was classified as pathogenic, but has a `max_aaf_all` of 0.2973.
+So this variant was classified as pathogenic, but has a `max_aaf_all` of 0.2973 and so it received the 'common_pathogenic' flag as did 566 other clinvar variants.
 
 While the config file used to generate this final dataset was fairly involved, each step is very simple and it shows the power in vcfanno.
-However, note that for most analyses, it will be sufficient to specify a config file that pulls the 
+However, note that for most analyses, it will be sufficient to specify a config file that pulls the fields of
+interest.
 
 Supporting Files
 ----------------
-The full config and javascript files used to run this analysis are available [here](https://github.com/brentp/vcfanno/tree/master/docs/examples/).
+The full config and lua files used to run this analysis are available [here](https://github.com/brentp/vcfanno/tree/master/docs/examples/).
