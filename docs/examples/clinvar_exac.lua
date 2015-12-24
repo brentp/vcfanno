@@ -23,19 +23,22 @@ function intotbl(ud)
 end
 
 -- from lua-users wiki
+--[[
 function split(str, sep)
         local sep, fields = sep or ":", {}
         local pattern = string.format("([^%s]+)", sep)
         str:gsub(pattern, function(c) fields[#fields+1] = c end)
         return fields
 end
+--]]
+split = gosplit
 
 function clinvar_sig(vals)
     local t = type(vals)
     -- just a single-value
     if(t == "string" or t == "number") and not contains(vals, "|") then
         return CLINVAR_SIG[vals]
-    else
+    elseif t ~= "table" then
 		if not contains(t, "userdata") then
 			vals = {vals}
 		else
@@ -58,16 +61,7 @@ function clinvar_sig(vals)
     return join(ret, ",")
 end
 
-function join(tbl, sep)
-	if type(tbl) ~= "table" then
-		local otbl = {}
-		for j = 1,#tbl do
-			otbl[j] = tbl[j]
-		end
-		tbl = otbl
-	end
-    return table.concat(tbl, sep)
-end
+join = table.concat
 
 function check_clinvar_aaf(clinvar_sig, max_aaf_all, aaf_cutoff)
 	if type(clinvar_sig) ~= "string" then
