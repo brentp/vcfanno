@@ -23,9 +23,9 @@ func benchmarkAnno(b *testing.B) {
 	}
 
 	out := bufio.NewWriter(ioutil.Discard)
-	Js, _ := xopen.Ropen("example/custom.js")
-	jbytes, _ := ioutil.ReadAll(Js)
-	js_string := string(jbytes)
+	Lua, _ := xopen.Ropen("example/custom.lua")
+	lbytes, _ := ioutil.ReadAll(Lua)
+	l_string := string(lbytes)
 
 	srcs, err := configs.Sources()
 	if err != nil {
@@ -36,7 +36,7 @@ func benchmarkAnno(b *testing.B) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		a := api.NewAnnotator(srcs, js_string, false, true, empty)
+		a := api.NewAnnotator(srcs, l_string, false, true, empty)
 		qrdr, err := xopen.Ropen("example/query.vcf.gz")
 		if err != nil {
 			log.Fatal(err)

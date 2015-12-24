@@ -65,7 +65,7 @@ func (s *Source) LuaOp(v interfaces.IVariant, code string, vals []interface{}) s
 	value, err := s.Vm.Run(code, map[string]interface{}{
 		"chrom": v.Chrom(),
 		"start": v.Start(),
-		"end":   v.End(),
+		"stop":  v.End(),
 		"vals":  vals})
 	if err != nil {
 		return fmt.Sprintf("lua-error: %s", err)

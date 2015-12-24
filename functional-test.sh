@@ -20,17 +20,17 @@ show() {
 	echo -n "<## TEST.$_N ##>" $1
 }
 
-vcfanno -js example/custom.js example/conf.toml example/query.vcf.gz > obs 2>err
+vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz > obs 2>err
 show "annotated vcf"
 check $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# obs)
 
 show "checking that header is updated"
-check "6" $(grep ^# obs | grep -c otto)
+check "5" $(grep ^# obs | grep -c lua)
 
 show "check warning message for missing chrom 2 in annotation dbs"
 check "3" $(grep -c "not found in" err)
 
-vcfanno -ends -js example/custom.js example/conf.toml example/query.vcf.gz > obs 2>err
+vcfanno -ends -lua example/custom.lua example/conf.toml example/query.vcf.gz > obs 2>err
 show "checking that ends works"
 n=$(grep -v ^# obs | grep -c right_)
 check $( (( $n > 0 )) ) true

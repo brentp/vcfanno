@@ -65,8 +65,8 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 	n := len(a.Ops)
 	sources := make([]*Source, n)
 	for i := 0; i < n; i++ {
-		isjs := strings.HasPrefix(a.Ops[i], "js:")
-		if !isjs {
+		isLua := strings.HasPrefix(a.Ops[i], "lua:")
+		if !isLua {
 			if _, ok := Reducers[a.Ops[i]]; !ok {
 				return nil, fmt.Errorf("requested op not found: %s for %s\n", a.Ops[i], a.File)
 			}
@@ -160,20 +160,20 @@ func CheckAnno(a *Annotation) error {
 	return nil
 }
 
-func ReadJs(js string) string {
-	var jsString string
-	if js != "" {
-		jsReader, err := xopen.Ropen(js)
+func ReadLua(lua string) string {
+	var luaString string
+	if lua != "" {
+		luaReader, err := xopen.Ropen(lua)
 		if err != nil {
 			log.Fatal(err)
 		}
-		jsBytes, err := ioutil.ReadAll(jsReader)
+		luaBytes, err := ioutil.ReadAll(luaReader)
 		if err != nil {
 			log.Fatal(err)
 		}
-		jsString = string(jsBytes)
+		luaString = string(luaBytes)
 	} else {
-		jsString = ""
+		luaString = ""
 	}
-	return jsString
+	return luaString
 }

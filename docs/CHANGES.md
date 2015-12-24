@@ -8,6 +8,7 @@ v0.0.9
 + new [documentation site](http://brentp.github.io/vcfanno/)
 + [[postannotation]] allows modifying stuff in the query VCF after annotation (or instead).
   See examples on the documentation site.
++ convert scripting engine to lua from javascript
 
 
 v0.0.8

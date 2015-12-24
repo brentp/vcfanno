@@ -38,7 +38,7 @@ see: https://github.com/brentp/vcfanno
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
 	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
 		" share the same ref and alt alleles. Default is to require exact match between variants.")
-	js := flag.String("js", "", "optional path to a file containing custom javascript functions to be used as ops")
+	lua := flag.String("lua", "", "optional path to a file containing custom javascript functions to be used as ops")
 	base := flag.String("base-path", "", "optional base-path to prepend to annotation files in the config")
 	procs := flag.Int("p", 2, "number of processes to use. default is 2")
 	flag.Parse()
@@ -92,9 +92,9 @@ To run a server:
 		}()
 	*/
 
-	jsString := ReadJs(*js)
+	luaString := ReadLua(*lua)
 	strict := !*notstrict
-	var a = NewAnnotator(sources, jsString, *ends, strict, config.PostAnnotation)
+	var a = NewAnnotator(sources, luaString, *ends, strict, config.PostAnnotation)
 
 	var out io.Writer = os.Stdout
 	defer os.Stdout.Close()
