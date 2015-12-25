@@ -108,6 +108,28 @@ are `reduced`. Valid operations are:
  + first 
  + flag   // presense/absence via vcf flag
 
+PostAnnotation
+==============
+One of the most powerful features of `vcfanno` is the embedded scripting language, lua, combined with *postannotation*.
+`[[postannotation]]` blocks occur after all the annotations have been applied. They are similar, but in the fields
+column, they request a number of columns from the query file (including the new columns added in annotation). For example
+if we have AC and AN columns indicating the alternate count and the number of chromosomes, respectively, we could create
+a new allele frequency column, *AF* with this block:
+
+```
+[[postannotation]]
+fields=["AC", "AN"]
+op="lua:AC / AN"
+name="AF"
+type="Float"
+```
+
+where the type field is one of the types accepted in VCF format, the `name` is the name of the field that is created, the *fields*
+indicate the fields (from the INFO) that will be available to the op, and the *op* indicates the action to perform. This can be quite
+powerful. For an extensive example that demonstrates the utility of this type of approach, see
+[docs/examples/clinvar_exac.md](http://brentp.github.io/vcfanno/examples/clinvar_exac/).
+
+
 Binaries
 ========
 
