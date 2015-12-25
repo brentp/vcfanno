@@ -117,13 +117,14 @@ for *linux*, *mac* (darwin), and *windows* for *32* and *64* bit platforms.
 Preprocessing
 =============
 
-Annotations will be the most accurate if your query and annotation variants are split (no multiple ALTs) and normalize (left-aligned and
-trimmed). At some point, this will be done internally, but for now, you can get a split and normalized VCF using [vt](https://github.com/atks/vt)
+Annotations will be the most accurate if your query and annotation variants are split (no multiple ALTs) and normalized (left-aligned and trimmed). At some point, this will be done internally, but for now, you can get a split and normalized VCF using [vt](https://github.com/atks/vt)
 with:
 
 ```Shell
 vt decompose -s $VCF | vt normalize -r $REF - > $NORM_VCF
 ```
+
+`vcfanno` will check all alternates that are present in both the query and the annotations but the decomposition (splitting alts) will allow for better normalization.
 
 Development
 ===========
@@ -190,7 +191,7 @@ end
 And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by `vcfanno` which will be faster).
 
-The variables `vals`, `chrom`, `start`, `end` from the current variant will all be available
+The variables `vals`, `chrom`, `start`, `stop` from the current variant will all be available
 in the lua code.
 
 
