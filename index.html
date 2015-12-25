@@ -230,12 +230,12 @@ are <code>reduced</code>. Valid operations are:</p>
 <p>binary executables are available <a href="https://github.com/brentp/vcfanno/releases/">here</a>
 for <em>linux</em>, <em>mac</em> (darwin), and <em>windows</em> for <em>32</em> and <em>64</em> bit platforms.</p>
 <h1 id="preprocessing">Preprocessing</h1>
-<p>Annotations will be the most accurate if your query and annotation variants are split (no multiple ALTs) and normalize (left-aligned and
-trimmed). At some point, this will be done internally, but for now, you can get a split and normalized VCF using <a href="https://github.com/atks/vt">vt</a>
+<p>Annotations will be the most accurate if your query and annotation variants are split (no multiple ALTs) and normalized (left-aligned and trimmed). At some point, this will be done internally, but for now, you can get a split and normalized VCF using <a href="https://github.com/atks/vt">vt</a>
 with:</p>
 <pre><code class="Shell">vt decompose -s $VCF | vt normalize -r $REF - &gt; $NORM_VCF
 </code></pre>
 
+<p><code>vcfanno</code> will check all alternates that are present in both the query and the annotations but the decomposition (splitting alts) will allow for better normalization.</p>
 <h1 id="development">Development</h1>
 <p>This, and the associated go libraries (<a href="https://github.com/brentp/vcfgo">vcfgo</a>,
 <a href="https://github.com/brentp/irelate">irelate</a>, <a href="https://github.com/brentp/xopen">xopen</a>,
@@ -280,7 +280,7 @@ end
 
 <p>And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by <code>vcfanno</code> which will be faster).</p>
-<p>The variables <code>vals</code>, <code>chrom</code>, <code>start</code>, <code>end</code> from the current variant will all be available
+<p>The variables <code>vals</code>, <code>chrom</code>, <code>start</code>, <code>stop</code> from the current variant will all be available
 in the lua code.</p>
 <p>See <a href="https://github.com/brentp/vcfanno/blob/master/example/conf.toml">example/conf.toml</a>
 and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.lua">example/custom.lua</a>
