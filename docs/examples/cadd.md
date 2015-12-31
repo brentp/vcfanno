@@ -10,7 +10,7 @@ Setup
 -----
 
 In order to use CADD with `vcfanno`, we must convert the tsv format provided by CADD to VCF. We can do this with [a
-python script](https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py). After downloading the *All possible SNVs of GRCh37/hg19* filre from the [CADD website](http://krishna.gs.washington.edu/download/) we can run as:
+python script](https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py). After downloading the *All possible SNVs of GRCh37/hg19* filre from the [CADD website](http://cadd.gs.washington.edu/download) we can run as:
 
 ```
 python cadd2vcf.py whole_genome_SNVs.tsv.gz | bgzip -c > cadd_v1.3.vcf.gz
