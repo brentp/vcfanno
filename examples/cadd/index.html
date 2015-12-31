@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        <link rel="canonical" href="https://github.com/brentp/vcfanno/examples/cadd/">
+        <link rel="shortcut icon" href="../../img/favicon.ico">
+
+	<title>CADD - vcfanno</title>
+
+        <link href="../../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link rel="stylesheet" href="../../css/highlight.css">
+        <link href="../../css/base.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+
+            <!-- Main title -->
+            <a class="navbar-brand" href="../..">vcfanno</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            <!-- Main navigation -->
+            <ul class="nav navbar-nav">
+            
+            
+                <li >
+                    <a href="../..">Home</a>
+                </li>
+            
+            
+            
+                <li >
+                    <a href="../../performance_tips/">Performance</a>
+                </li>
+            
+            
+            
+                <li >
+                    <a href="../../CHANGES/">Changes</a>
+                </li>
+            
+            
+            
+                <li class="dropdown active">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                    
+                        <li >
+                            <a href="../clinvar_exac/">ClinvarExac</a>
+                        </li>
+                    
+                        <li class="active">
+                            <a href="./">CADD</a>
+                        </li>
+                    
+                    </ul>
+                </li>
+            
+            
+            </ul>
+
+            <!-- Search, Navigation and Repo links -->
+            <ul class="nav navbar-nav navbar-right">
+                <li >
+                    <a rel="next" href="../clinvar_exac/">
+                        <i class="fa fa-arrow-left"></i> Previous
+                    </a>
+                </li>
+                <li class="disabled">
+                    <a rel="prev" >
+                        Next <i class="fa fa-arrow-right"></i>
+                    </a>
+                </li>
+                
+                <li>
+                    <a href="https://github.com/brentp/vcfanno">
+                        
+                            <i class="fa fa-github"></i>
+                        
+                        GitHub
+                    </a>
+                </li>
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+        <li class="main active"><a href="#annotate-with-cadd">Annotate with CADD</a></li>
+        
+            <li><a href="#setup">Setup</a></li>
+        
+            <li><a href="#config">Config</a></li>
+        
+            <li><a href="#annotation">Annotation</a></li>
+        
+            <li><a href="#note">Note</a></li>
+        
+    
+    </ul>
+</div></div>
+            <div class="col-md-9" role="main">
+
+<h1 id="annotate-with-cadd">Annotate with CADD</h1>
+<p>This documents how to use <code>vcfanno</code> to annotate a VCF with CADD scores.</p>
+<p><em>"CADD is a tool for scoring the deleteriousness of single nucleotide variants as well as insertion/deletions variants in the human genome."</em>
+Users of CADD should refer to the <a href="http://cadd.gs.washington.edu/info">web page</a> for citation and use requirements.</p>
+<h2 id="setup">Setup</h2>
+<p>In order to use CADD with <code>vcfanno</code>, we must convert the tsv format provided by CADD to VCF. We can do this with <a href="https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py">a
+python script</a>. After downloading the <em>All possible SNVs of GRCh37/hg19</em> filre from the <a href="http://krishna.gs.washington.edu/download/">CADD website</a> we can run as:</p>
+<pre><code>python cadd2vcf.py whole_genome_SNVs.tsv.gz | bgzip -c &gt; cadd_v1.3.vcf.gz
+</code></pre>
+
+<p>This will create a 50GB vcf.gz from the 80GB tsv.gz. 
+The entirety of the INFO field for a given record will look like: "raw=0.34;phred=6.05"</p>
+<h2 id="config">Config</h2>
+<p>From here, we can specify a conf file:</p>
+<pre><code>[[annotation]]
+file=&quot;cadd_v1.3.vcf.gz&quot;
+names=[&quot;cadd_phred&quot;, &quot;cadd_raw&quot;]
+ops=[&quot;mean&quot;, &quot;mean&quot;]
+fields=[&quot;phred&quot;, &quot;raw&quot;]
+</code></pre>
+
+<h2 id="annotation">Annotation</h2>
+<p>And we can run <code>vcfanno</code> as:</p>
+<pre><code>vcfanno -p 12 cadd.conf query.vcf &gt; query.anno.vcf
+</code></pre>
+
+<p>As an extreme case, we can run this on the ExAC VCF:</p>
+<pre><code class="Shell">vcfanno -p 18 cadd.conf ExAC.r0.3.sites.vep.tidy.vcf.gz | bgzip -c &gt; /tmp/exac-cadd.vcf.gz
+</code></pre>
+
+<p>This takes about 88 minutes on a good server. This time will improve in future versions but it
+is due to the large number of lines that must be parsed from the CADD VCF, even with the algorithm
+that allows it to avoid parsing annotation intervals that fall in large gaps in the query. By
+comparison, <code>bedtools intersect -sorted</code> takes 92 minutes for this same overlap before giving an
+error that the CADD file contains <em>GL000191.1</em> but the query does not.</p>
+<h2 id="note">Note</h2>
+<p>This will only work for single-nucleotide variants since the default for VCF is to match on REF and ALT.</p></div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
+        </footer>
+
+        <script src="../../js/jquery-1.10.2.min.js"></script>
+        <script src="../../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../../js/highlight.pack.js"></script>
+        <script src="../../js/base.js"></script>
+    </body>
+</html>

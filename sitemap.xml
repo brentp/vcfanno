@@ -33,6 +33,12 @@
      <changefreq>daily</changefreq>
     </url>
         
+    <url>
+     <loc>https://github.com/brentp/vcfanno/examples/cadd/</loc>
+     <lastmod>2015-12-31</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
     
 
 </urlset>
