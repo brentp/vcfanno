@@ -3,6 +3,7 @@ site_url: https://github.com/brentp/vcfanno
 repo_url: https://github.com/brentp/vcfanno
 pages:
 - Home: index.md
+- Performance: performance_tips.md
 - Changes: CHANGES.md
 - Examples:
     - ClinvarExac: examples/clinvar_exac.md

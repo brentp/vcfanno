@@ -19,8 +19,8 @@ For VCF, values are pulled by name from the INFO field.
 For BED, values are pulled from (1-based) column number.
 For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 
-`vcfanno` is written in [go](http://golang.org)
-It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop.
+`vcfanno` is written in [go](http://golang.org) and it supports custom user-scripts written in lua.
+It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop and over 30K variants per second using 12 processes on a server.
 
 We are actively developing `vcfanno` and appreciate feedback and bug reports.
 
@@ -77,7 +77,7 @@ from this directory.
 Then, you can annotate with:
 
 ```Shell
-GOMAXPROCS=4 ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz > annotated.vcf
+./vcfanno -p 4 -lua example/custom.lua example/conf.toml example/query.vcf.gz > annotated.vcf
 ```
 
 An example INFO field row before annotation (pos 98683):
