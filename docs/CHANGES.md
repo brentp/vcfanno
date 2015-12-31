@@ -9,6 +9,7 @@ v0.0.9
 + [[postannotation]] allows modifying stuff in the query VCF after annotation (or instead).
   See examples on the documentation site.
 + convert scripting engine to lua from javascript
++ add CADD conversion script and example
 
 
 v0.0.8

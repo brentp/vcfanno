@@ -7,5 +7,6 @@ pages:
 - Changes: CHANGES.md
 - Examples:
     - ClinvarExac: examples/clinvar_exac.md
+    - CADD: examples/cadd.md
 theme: simplex
 
