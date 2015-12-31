@@ -14,6 +14,7 @@ python script](https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py
 
 ```
 python cadd2vcf.py whole_genome_SNVs.tsv.gz | bgzip -c > cadd_v1.3.vcf.gz
+tabix cadd_v1.3.vcf.gz
 ```
 
 This will create a 50GB vcf.gz from the 80GB tsv.gz. 
