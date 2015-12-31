@@ -140,6 +140,7 @@ Users of CADD should refer to the <a href="http://cadd.gs.washington.edu/info">w
 <p>In order to use CADD with <code>vcfanno</code>, we must convert the tsv format provided by CADD to VCF. We can do this with <a href="https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py">a
 python script</a>. After downloading the <em>All possible SNVs of GRCh37/hg19</em> filre from the <a href="http://cadd.gs.washington.edu/download">CADD website</a> we can run as:</p>
 <pre><code>python cadd2vcf.py whole_genome_SNVs.tsv.gz | bgzip -c &gt; cadd_v1.3.vcf.gz
+tabix cadd_v1.3.vcf.gz
 </code></pre>
 
 <p>This will create a 50GB vcf.gz from the 80GB tsv.gz. 
