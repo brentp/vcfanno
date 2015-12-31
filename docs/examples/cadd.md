@@ -50,8 +50,7 @@ vcfanno -p 18 cadd.conf ExAC.r0.3.sites.vep.tidy.vcf.gz | bgzip -c > /tmp/exac-c
 This takes about 88 minutes on a good server. This time will improve in future versions but it
 is due to the large number of lines that must be parsed from the CADD VCF, even with the algorithm
 that allows it to avoid parsing annotation intervals that fall in large gaps in the query. By
-comparison, `bedtools intersect -sorted` takes 92 minutes for this same overlap before giving an
-error that the CADD file contains *GL000191.1* but the query does not.
+comparison, `bedtools intersect -sorted` takes 92 minutes for this same overlap.
 
 Note
 ----
