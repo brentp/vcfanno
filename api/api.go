@@ -352,7 +352,8 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 	var err error
 	vals := make([]interface{}, 0, 2)
-	for _, post := range a.PostAnnos {
+	for i := range a.PostAnnos {
+		post := a.PostAnnos[i]
 		// built in function
 		vals = vals[:0]
 		if post.code != "" {

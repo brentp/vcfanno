@@ -30,3 +30,9 @@ ops=["lua:start", "lua:stop", "lua:#vals", "lua:mean(vals)", "lua:loc(chrom, sta
 # it is also possible to define some javascript functions that will be
 # available. This is specified as a .lua file to the vcfanno executable as
 # ./vcfanno -lua some.lua ... see example/custom.lua for an example.
+#
+[[postannotation]]
+fields=["lua_start"]
+op="lua:lua_start - 2"
+name="lua_start_minus_2"
+type="Integer"
