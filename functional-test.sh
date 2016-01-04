@@ -28,7 +28,7 @@ show "checking that header is updated"
 check "5" $(grep ^# obs | grep -c lua)
 
 show "check warning message for missing chrom 2 in annotation dbs"
-check "3" $(grep -c "not found in" err)
+check "2" $(grep -c "not found in" err)
 
 vcfanno -ends -lua example/custom.lua example/conf.toml example/query.vcf.gz > obs 2>err
 show "checking that ends works"

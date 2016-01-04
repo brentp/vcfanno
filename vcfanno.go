@@ -73,7 +73,8 @@ To run a server:
 			log.Fatal("CheckAnno err:", err)
 		}
 	}
-	for _, r := range config.PostAnnotation {
+	for i := range config.PostAnnotation {
+		r := config.PostAnnotation[i]
 		err := CheckPostAnno(&r)
 		if err != nil {
 			log.Fatal(fmt.Sprintf("error in postannotaion section %s err: %s", r.Name, err))
@@ -102,11 +103,11 @@ To run a server:
 	var err error
 	qrdr, err := xopen.Ropen(queryFile)
 	if err != nil {
-		log.Fatal(fmt.Errorf("error opening query file %s", queryFile, err))
+		log.Fatal(fmt.Errorf("error opening query file %s: %s", queryFile, err))
 	}
 	qstream, query, err := parsers.VCFIterator(qrdr)
 	if err != nil {
-		log.Fatal(fmt.Errorf("error parsing VCF query file %s", queryFile, err))
+		log.Fatal(fmt.Errorf("error parsing VCF query file %s: %s", queryFile, err))
 	}
 
 	queryables, err := a.Setup(query)
