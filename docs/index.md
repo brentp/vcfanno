@@ -4,6 +4,8 @@ vcfanno
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
 [![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](http://brentp.github.io/vcfanno/)
 
+[Mailing List](https://groups.google.com/forum/#!forum/vcfanno)[![Mailing List](http://www.google.com/images/icons/product/groups-32.png)](https://groups.google.com/forum/#!forum/vcfanno)
+
 vcfanno annotates a VCF with any number of *sorted* and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
 user-defined operations on the overlapping annotations.
@@ -19,8 +21,8 @@ For VCF, values are pulled by name from the INFO field.
 For BED, values are pulled from (1-based) column number.
 For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 
-`vcfanno` is written in [go](http://golang.org)
-It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop.
+`vcfanno` is written in [go](http://golang.org) and it supports custom user-scripts written in lua.
+It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop and over 30K variants per second using 12 processes on a server.
 
 We are actively developing `vcfanno` and appreciate feedback and bug reports.
 
@@ -77,7 +79,7 @@ from this directory.
 Then, you can annotate with:
 
 ```Shell
-GOMAXPROCS=4 ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz > annotated.vcf
+./vcfanno -p 4 -lua example/custom.lua example/conf.toml example/query.vcf.gz > annotated.vcf
 ```
 
 An example INFO field row before annotation (pos 98683):
