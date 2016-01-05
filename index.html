@@ -158,6 +158,7 @@
 <h1 id="vcfanno">vcfanno</h1>
 <p><a href="https://travis-ci.org/brentp/vcfanno"><img alt="Build Status" src="https://travis-ci.org/brentp/vcfanno.svg" /></a>
 <a href="http://brentp.github.io/vcfanno/"><img alt="Docs" src="https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat" /></a></p>
+<p><a href="https://groups.google.com/forum/#!forum/vcfanno">Mailing List</a><a href="https://groups.google.com/forum/#!forum/vcfanno"><img alt="Mailing List" src="http://www.google.com/images/icons/product/groups-32.png" /></a></p>
 <p>vcfanno annotates a VCF with any number of <em>sorted</em> and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
 user-defined operations on the overlapping annotations.</p>
@@ -170,8 +171,8 @@ This method avoids problems with chromosome order.</p>
 <p>For VCF, values are pulled by name from the INFO field.
 For BED, values are pulled from (1-based) column number.
 For BAM, depth (<code>count</code>), "mapq" and "seq" are currently supported.</p>
-<p><code>vcfanno</code> is written in <a href="http://golang.org">go</a>
-It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop.</p>
+<p><code>vcfanno</code> is written in <a href="http://golang.org">go</a> and it supports custom user-scripts written in lua.
+It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop and over 30K variants per second using 12 processes on a server.</p>
 <p>We are actively developing <code>vcfanno</code> and appreciate feedback and bug reports.</p>
 <h1 id="usage">Usage</h1>
 <p>After downloading the <a href="https://github.com/brentp/vcfanno/releases/">binary for your system</a> (see section below) usage looks like:</p>
@@ -212,7 +213,7 @@ go build -o vcfanno
 
 <p>from this directory.
 Then, you can annotate with:</p>
-<pre><code class="Shell">GOMAXPROCS=4 ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz &gt; annotated.vcf
+<pre><code class="Shell">./vcfanno -p 4 -lua example/custom.lua example/conf.toml example/query.vcf.gz &gt; annotated.vcf
 </code></pre>
 
 <p>An example INFO field row before annotation (pos 98683):</p>
