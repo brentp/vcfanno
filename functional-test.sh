@@ -25,7 +25,7 @@ show "annotated vcf"
 check $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# obs)
 
 show "checking that header is updated"
-check "5" $(grep ^# obs | grep -c lua)
+check "6" $(grep ^# obs | grep -c lua)
 
 show "check warning message for missing chrom 2 in annotation dbs"
 check "2" $(grep -c "not found in" err)
