@@ -47,11 +47,7 @@ see: https://github.com/brentp/vcfanno
 		fmt.Printf(`Usage:
 %s config.toml intput.vcf > annotated.vcf
 
-To run a server:
-
-%s server
-
-`, os.Args[0], os.Args[0])
+`, os.Args[0])
 		flag.PrintDefaults()
 		return
 	}

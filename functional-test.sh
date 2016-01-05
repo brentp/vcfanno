@@ -11,7 +11,7 @@ check() {
 	echo ""
 }
   
-go install -race
+go install -race -a
 
 _N=0
 show() {
