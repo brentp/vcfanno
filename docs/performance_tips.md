@@ -27,7 +27,8 @@ Max Gap Size
 ------------
 
 The parallel chrom-sweep algorithm has a gap size parameter that determines
-when a chunk of the query is sent to be annotated. If a gap of a certain
+when a chunk of records from the the query file is sent to be annotated. If
+a gap of a certain
 size is encountered, a new chunk is sent off. Given a (number of) dense
 annotation file(s), it might be good to reduce the gap size so that `vcfanno`
 will need to parse fewer unneeded records. However, given sparse annotation

@@ -24,7 +24,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-const VERSION = "0.0.9a"
+const VERSION = "0.0.10a"
 
 func main() {
 	fmt.Fprintf(os.Stderr, `
@@ -133,7 +133,7 @@ see: https://github.com/brentp/vcfanno
 		}
 	}
 
-	stream := irelate.PIRelate(6000, maxGap, qstream, *ends, fn, queryables...)
+	stream := irelate.PIRelate(8000, maxGap, qstream, *ends, fn, queryables...)
 
 	// make a new writer from the string header.
 	out, err = vcfgo.NewWriter(out, query.Header)
