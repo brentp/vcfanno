@@ -353,16 +353,23 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 	var err error
 	vals := make([]interface{}, 0, 2)
+	fields := make([]string, 0, 2)
+	missing := make([]string, 0, 2)
 	for i := range a.PostAnnos {
 		post := a.PostAnnos[i]
-		// built in function
 		vals = vals[:0]
+		fields = fields[:0]
+		missing = missing[:0]
+		// lua code
 		if post.code != "" {
 			for _, field := range post.Fields {
 				val, _ := info.Get(field)
 				// ignore the error as it means the field is not present.
 				if val != nil {
 					vals = append(vals, val)
+					fields = append(fields, field)
+				} else {
+					missing = append(missing, field)
 				}
 			}
 			// we need to try even if it didn't get all values.
@@ -371,7 +378,12 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 			}
 			post.mu.Lock()
 			for i, val := range vals {
-				post.Vm.SetGlobal(post.Fields[i], val)
+				post.Vm.SetGlobal(fields[i], val)
+			}
+			// need to unset missing values so we don't use those
+			// from previous run.
+			for _, miss := range missing {
+				post.Vm.SetGlobal(miss, nil)
 			}
 			value, e := post.Vm.Run(post.code)
 			post.mu.Unlock()
