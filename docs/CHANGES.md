@@ -1,3 +1,7 @@
+v0.0.10 (dev)
+-------------
++ allow using postannotation even if not all requested fields were found for a given variant.
+
 v0.0.9
 ------
 + restore ability to take query file from STDIN (no tabix required).

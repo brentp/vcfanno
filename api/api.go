@@ -68,7 +68,8 @@ func (s *Source) LuaOp(v interfaces.IVariant, code string, vals []interface{}) s
 		"stop":  v.End(),
 		"vals":  vals})
 	if err != nil {
-		return fmt.Sprintf("lua-error: %s", err)
+		log.Printf("lua-error @ %s:%d: %s\n", v.Chrom(), v.Start()+1, err)
+		return fmt.Sprintf("err:%v", value)
 	}
 	return fmt.Sprintf("%v", value)
 }
@@ -364,7 +365,8 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 					vals = append(vals, val)
 				}
 			}
-			if len(vals) != len(post.Fields) {
+			// we need to try even if it didn't get all values.
+			if len(vals) == 0 {
 				continue
 			}
 			post.mu.Lock()
@@ -401,7 +403,8 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 					vals = append(vals, val)
 				}
 			}
-			if len(vals) == len(post.Fields) {
+			// run this as long as we found any of the values.
+			if len(vals) != 0 {
 				fn := Reducers[post.Op]
 				info.Set(post.Name, fn(vals))
 			}
