@@ -149,7 +149,11 @@ ops=[&quot;self&quot;,&quot;self&quot;,&quot;self&quot;,&quot;self&quot;,&quot;s
 names=[&quot;nonpsych_AC_AFR&quot;,&quot;nonpsych_AN_AFR&quot;,&quot;nonpsych_Hom_AFR&quot;,&quot;nonpsych_Het_AFR&quot;,&quot;nonpsych_AC_AMR&quot;,&quot;nonpsych_AN_AMR&quot;,&quot;nonpsych_Hom_AMR&quot;,&quot;nonpsych_Het_AMR&quot;,&quot;nonpsych_AC_Adj&quot;,&quot;nonpsych_AN_Adj&quot;,&quot;nonpsych_AC_EAS&quot;,&quot;nonpsych_AN_EAS&quot;,&quot;nonpsych_Hom_EAS&quot;,&quot;nonpsych_Het_EAS&quot;,&quot;nonpsych_AC_FIN&quot;,&quot;nonpsych_AN_FIN&quot;,&quot;nonpsych_Hom_FIN&quot;,&quot;nonpsych_Het_FIN&quot;,&quot;nonpsych_AC_NFE&quot;,&quot;nonpsych_AN_NFE&quot;,&quot;nonpsych_Hom_NFE&quot;,&quot;nonpsych_Het_NFE&quot;,&quot;nonpsych_AC_OTH&quot;,&quot;nonpsych_AN_OTH&quot;,&quot;nonpsych_Hom_OTH&quot;,&quot;nonpsych_Het_OTH&quot;,&quot;nonpsych_AC_SAS&quot;,&quot;nonpsych_AN_SAS&quot;,&quot;nonpsych_Hom_SAS&quot;,&quot;nonpsych_Het_SAS&quot;]
 </code></pre>
 
-<p>And a similar one for <code>nonTCGA</code>. Then, we create a section like this:</p>
+<p>And a similar one for <code>nonTCGA</code>. 
+In <code>vcfanno</code>, <em>[[postannotation]]</em> sections occur after any <em>[[annotation]]</em> sections and operate on the fields that are then in the 
+INFO of the query. Given multiple <em>[[postannotation]]</em> sections, they will operate in the order that they appear in the file so later
+sections have access to fields created by earlier sections.</p>
+<p>With that in mind, we create a section like this:</p>
 <pre><code>[[postannotation]]
 fields=[&quot;nonpsych_AC_NFE&quot;, &quot;nonpsych_AN_NFE&quot;]
 name=&quot;nonpsych_af_NFE&quot;
