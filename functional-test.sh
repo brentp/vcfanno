@@ -1,49 +1,25 @@
-set -e
-check() {
-	a=$1
-	b=$2
-	if [[ "$a" -ne "$b" ]]; then
-		echo " <ERROR!>" "$a != $b"
-		exit 4
-	else
-		echo " <OK!>"
-	fi
-	echo ""
-}
-  
+test -e ssshtest || wget -q https://raw.githubusercontent.com/ryanlayer/ssshtest/master/ssshtest
+
+. ssshtest
+
 go install -race -a
 
-_N=0
-show() {
-	_N=$(($_N+1))
-	echo "===================================================================="
-	echo -n "<## TEST.$_N ##>" $1
-}
+run check_example vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz
+assert_equal $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# obs) $LINENO
+assert_equal 6 $(grep ^# $STDOUT_FILE | grep -c lua) $LINENO
+assert_equal 2 $(grep -c "not found in" $STDERR_FILE) $LINENO
 
-vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz > obs 2>err
-show "annotated vcf"
-check $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# obs)
+run check_ends vcfanno -ends -lua example/custom.lua example/conf.toml example/query.vcf.gz
+n=$(grep -v ^# $STDOUT_FILE | grep -c right_)
+assert_equal $(( $n > 0 )) 1 $LINENO
 
-show "checking that header is updated"
-check "6" $(grep ^# obs | grep -c lua)
+n=$(grep -v ^# $STDOUT_FILE | grep -c left_)
+assert_equal $(( $n > 0 )) 1 $LINENO
 
-show "check warning message for missing chrom 2 in annotation dbs"
-check "2" $(grep -c "not found in" err)
+n=$(grep  ^"#CHROM" obs | cut -f 10- | wc -w) 
+assert_equal $n 3 $LINENO
 
-vcfanno -ends -lua example/custom.lua example/conf.toml example/query.vcf.gz > obs 2>err
-show "checking that ends works"
-n=$(grep -v ^# obs | grep -c right_)
-check $( (( $n > 0 )) ) true
-n=$(grep -v ^# obs | grep -c left_)
-check $( (( $n > 0 )) ) true
 
-show "checking that samples are retained"
-n=$(grep  ^"#CHROM" obs | cut -f 10- | wc -w)
-check $n 3
-
-show "checking that all non-header lines have same number of columns"
+# checking that all non-header lines have same number of columns
 n=$(grep  -v "^##" obs | awk 'BEGIN{FS="\t"}{ print NF}' | uniq)
-check $n 12
-
-echo "PASSED ALL TESTS"
-exit 0
+assert_equal $n 12 $LINENO
