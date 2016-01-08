@@ -39,6 +39,12 @@
      <changefreq>daily</changefreq>
     </url>
         
+    <url>
+     <loc>https://github.com/brentp/vcfanno/examples/exac_combine/exac_combine/</loc>
+     <lastmod>2016-01-07</lastmod>
+     <changefreq>daily</changefreq>
+    </url>
+        
     
 
 </urlset>
