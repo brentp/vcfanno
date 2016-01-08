@@ -25,7 +25,12 @@ ops=["self","self","self","self","self","self","self","self","self","self","self
 names=["nonpsych_AC_AFR","nonpsych_AN_AFR","nonpsych_Hom_AFR","nonpsych_Het_AFR","nonpsych_AC_AMR","nonpsych_AN_AMR","nonpsych_Hom_AMR","nonpsych_Het_AMR","nonpsych_AC_Adj","nonpsych_AN_Adj","nonpsych_AC_EAS","nonpsych_AN_EAS","nonpsych_Hom_EAS","nonpsych_Het_EAS","nonpsych_AC_FIN","nonpsych_AN_FIN","nonpsych_Hom_FIN","nonpsych_Het_FIN","nonpsych_AC_NFE","nonpsych_AN_NFE","nonpsych_Hom_NFE","nonpsych_Het_NFE","nonpsych_AC_OTH","nonpsych_AN_OTH","nonpsych_Hom_OTH","nonpsych_Het_OTH","nonpsych_AC_SAS","nonpsych_AN_SAS","nonpsych_Hom_SAS","nonpsych_Het_SAS"]
 ```
 
-And a similar one for `nonTCGA`. Then, we create a section like this:
+And a similar one for `nonTCGA`. 
+In `vcfanno`, *[[postannotation]]* sections occur after any *[[annotation]]* sections and operate on the fields that are then in the 
+INFO of the query. Given multiple *[[postannotation]]* sections, they will operate in the order that they appear in the file so later
+sections have access to fields created by earlier sections.
+
+With that in mind, we create a section like this:
 
 ```
 [[postannotation]]
