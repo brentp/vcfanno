@@ -24,7 +24,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-const VERSION = "0.0.10a"
+var VERSION = "0.0.10b"
 
 func main() {
 	fmt.Fprintf(os.Stderr, `

@@ -14,4 +14,6 @@ run clinvar_common_pathogenic vcfanno -lua docs/examples/clinvar_exac.lua -p 4 -
 assert_equal 567 $(zgrep -wc common_pathogenic $STDOUT_FILE)
 assert_equal $(zgrep -cv ^# $STDOUT_FILE) $(zgrep -cv ^# $BASE/clinvar_20150305.tidy.vcf.gz)
 
+tail -1 $STDERR_FILE
+
 #run exac_combine vcfanno -base-path $BASE $BASE/ExAC.r0.3.sites.vep.tidy.vcf.gz docs/examples/exac_combine/exac_combine.conf

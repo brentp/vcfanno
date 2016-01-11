@@ -1,8 +1,12 @@
 vcfanno
 =======
+<!--
+build:
+ VERSION=0.0.10c; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
+-->
 
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
-[![Docs](https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat)](http://brentp.github.io/vcfanno/)
+[![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
 [Mailing List](https://groups.google.com/forum/#!forum/vcfanno)[![Mailing List](http://www.google.com/images/icons/product/groups-32.png)](https://groups.google.com/forum/#!forum/vcfanno)
 
