@@ -82,8 +82,9 @@ type PostAnnotation struct {
 
 	code string
 
-	mu sync.Mutex
-	Vm *goluaez.State
+	// use 8 of these to avoid contention in parallel contexts.
+	mus [8]chan int
+	Vms [8]*goluaez.State
 }
 
 // NewAnnotator returns an Annotator with the sources, seeded with some javascript.
@@ -105,7 +106,11 @@ func NewAnnotator(sources []*Source, lua string, ends bool, strict bool, postann
 	}
 	var err error
 	for i := range postannos {
-		postannos[i].Vm, err = goluaez.NewState(lua)
+		for k := 0; k < len(postannos[i].Vms); k++ {
+			postannos[i].Vms[k], err = goluaez.NewState(lua)
+			postannos[i].mus[k] = make(chan int, 1)
+			postannos[i].mus[k] <- k
+		}
 		if err != nil {
 			log.Fatalf("error parsing custom lua:%s", err)
 		}
@@ -376,17 +381,41 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 			if len(vals) == 0 {
 				continue
 			}
-			post.mu.Lock()
+
+			k := 0
+		out:
+			for {
+				select {
+				case k = <-post.mus[0]:
+					break out
+				case k = <-post.mus[1]:
+					break out
+				case k = <-post.mus[2]:
+					break out
+				case k = <-post.mus[3]:
+					break out
+				case k = <-post.mus[4]:
+					break out
+				case k = <-post.mus[5]:
+					break out
+				case k = <-post.mus[6]:
+					break out
+				case k = <-post.mus[7]:
+					break out
+				default:
+				}
+			}
+
 			for i, val := range vals {
-				post.Vm.SetGlobal(fields[i], val)
+				post.Vms[k].SetGlobal(fields[i], val)
 			}
 			// need to unset missing values so we don't use those
 			// from previous run.
 			for _, miss := range missing {
-				post.Vm.SetGlobal(miss, nil)
+				post.Vms[k].SetGlobal(miss, nil)
 			}
-			value, e := post.Vm.Run(post.code)
-			post.mu.Unlock()
+			value, e := post.Vms[k].Run(post.code)
+			post.mus[k] <- k
 			if e != nil {
 				err = e
 			}
