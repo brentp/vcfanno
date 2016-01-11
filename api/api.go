@@ -384,6 +384,8 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 
 			k := 0
 		out:
+			// could also use fanIn where all channels send to a single
+			// channel and I pull from that.
 			for {
 				select {
 				case k = <-post.mus[0]:
