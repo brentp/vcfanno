@@ -160,8 +160,13 @@
             <div class="col-md-9" role="main">
 
 <h1 id="vcfanno">vcfanno</h1>
+<!--
+build:
+ VERSION=0.0.10c; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
+-->
+
 <p><a href="https://travis-ci.org/brentp/vcfanno"><img alt="Build Status" src="https://travis-ci.org/brentp/vcfanno.svg" /></a>
-<a href="http://brentp.github.io/vcfanno/"><img alt="Docs" src="https://img.shields.io/badge/docs-latest-brightgreen.svg?style=flat" /></a></p>
+<a href="http://brentp.github.io/vcfanno/"><img alt="Docs" src="https://img.shields.io/badge/docs-latest-blue.svg" /></a></p>
 <p><a href="https://groups.google.com/forum/#!forum/vcfanno">Mailing List</a><a href="https://groups.google.com/forum/#!forum/vcfanno"><img alt="Mailing List" src="http://www.google.com/images/icons/product/groups-32.png" /></a></p>
 <p>vcfanno annotates a VCF with any number of <em>sorted</em> and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
