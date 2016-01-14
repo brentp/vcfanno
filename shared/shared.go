@@ -107,7 +107,7 @@ func (c Config) Sources() ([]*Source, error) {
 
 func CheckPostAnno(p *PostAnnotation) error {
 	if len(p.Fields) == 0 {
-		return fmt.Errorf("must specify 'fields' for postannotation")
+		log.Println("warning: no specified 'fields' for postannotation:", p.Name)
 	}
 	if p.Op == "" {
 		return fmt.Errorf("must specify an 'op' for postannotation")
@@ -115,8 +115,8 @@ func CheckPostAnno(p *PostAnnotation) error {
 	if p.Name == "" {
 		return fmt.Errorf("must specify a 'name' for postannotation")
 	}
-	if !(p.Type == "Float" || p.Type == "Character" || p.Type == "Integer" || p.Type == "Flag") {
-		return fmt.Errorf("must specify a type for postannotation that is 'Flag', 'Float', 'Integer' or 'Character'")
+	if !(p.Type == "Float" || p.Type == "String" || p.Type == "Integer" || p.Type == "Flag") {
+		return fmt.Errorf("must specify a type for postannotation that is 'Flag', 'Float', 'Integer' or 'String'")
 	}
 	return nil
 }

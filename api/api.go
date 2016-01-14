@@ -107,6 +107,7 @@ func NewAnnotator(sources []*Source, lua string, ends bool, strict bool, postann
 	var err error
 	for i := range postannos {
 		for k := 0; k < len(postannos[i].Vms); k++ {
+			//postannos[i].Vms[k], err = goluaez.NewState(lua)
 			postannos[i].Vms[k], err = goluaez.NewState(lua)
 			postannos[i].mus[k] = make(chan int, 1)
 			postannos[i].mus[k] <- k
@@ -305,7 +306,7 @@ func (src *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix
 
 //func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
 func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
-	ntype, number := "Character", "1"
+	ntype, number := "String", "1"
 	var desc string
 	// for 'self' and 'first', we can get the type from the header of the annotation file.
 	if htype != "" && (src.Op == "self" || src.Op == "first") {
@@ -329,7 +330,7 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 				if strings.Contains(src.Op, "_flag(") {
 					ntype, number = "Flag", "0"
 				} else {
-					ntype = "Character"
+					ntype = "String"
 				}
 			}
 		}
@@ -355,7 +356,7 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 	}
 }
 
-func (a *Annotator) PostAnnotate(info interfaces.Info) error {
+func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfaces.Info, prefix string) error {
 	var err error
 	vals := make([]interface{}, 0, 2)
 	fields := make([]string, 0, 2)
@@ -378,7 +379,7 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 				}
 			}
 			// we need to try even if it didn't get all values.
-			if len(vals) == 0 {
+			if len(vals) == 0 && len(post.Fields) > 0 {
 				continue
 			}
 
@@ -411,6 +412,10 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 			for i, val := range vals {
 				post.Vms[k].SetGlobal(fields[i], val)
 			}
+			post.Vms[k].SetGlobal("chrom", chrom)
+			post.Vms[k].SetGlobal("start", start)
+			post.Vms[k].SetGlobal("stop", end)
+
 			// need to unset missing values so we don't use those
 			// from previous run.
 			for _, miss := range missing {
@@ -418,6 +423,12 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 			}
 			value, e := post.Vms[k].Run(post.code)
 			post.mus[k] <- k
+			if value == nil {
+				if e != nil {
+					log.Println("lua error in postannotation", post.Name, e)
+				}
+				continue
+			}
 			if e != nil {
 				err = e
 			}
@@ -431,7 +442,7 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 				}
 
 			} else {
-				if e := info.Set(post.Name, val); e != nil {
+				if e := info.Set(prefix+post.Name, val); e != nil {
 					err = e
 				}
 			}
@@ -449,7 +460,7 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 			// run this as long as we found any of the values.
 			if len(vals) != 0 {
 				fn := Reducers[post.Op]
-				info.Set(post.Name, fn(vals))
+				info.Set(prefix+post.Name, fn(vals))
 			}
 		}
 
@@ -458,21 +469,46 @@ func (a *Annotator) PostAnnotate(info interfaces.Info) error {
 }
 
 func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
-	queryables := make([]interfaces.Queryable, 0)
+	//queryables := make([]interfaces.Queryable, 0)
 	files, fmap, err := a.setupStreams()
 	if err != nil {
 		return nil, err
 	}
-	for _, file := range files {
-		q, err := bix.New(file, 1)
-		if err != nil {
-			return nil, err
-		}
-		queryables = append(queryables, q)
+	var wg sync.WaitGroup
+	wg.Add(len(files))
+
+	queryables := make([]interfaces.Queryable, len(files))
+	for i, file := range files {
+		go func(idx int, file string) {
+			q, err := bix.New(file, 1)
+			if err != nil {
+				log.Fatal(err)
+			}
+			queryables[idx] = q
+			wg.Done()
+		}(i, file)
+
+	}
+	wg.Wait()
+
+	for i, file := range files {
+		q := queryables[i].(*bix.Bix)
 		for _, src := range fmap[file] {
 			src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field))
 		}
 	}
+
+	/*
+		for _, file := range files {
+			q, err := bix.New(file, 1)
+			if err != nil {
+				return nil, err
+			}
+			queryables = append(queryables, q)
+			for _, src := range fmap[file] {
+				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field))
+			}
+		}*/
 	for _, post := range a.PostAnnos {
 		query.AddInfoToHeader(post.Name, ".", post.Type, fmt.Sprintf("calculated field: %s", post.Name))
 	}
@@ -508,6 +544,10 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 			log.Println(e)
 			return e
 		}
+		if e := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), ""); e != nil {
+			log.Println(e)
+			return e
+		}
 		if e := a.AnnotateEnds(v, LEFT); e != nil {
 			log.Println(e)
 			return e
@@ -516,11 +556,10 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 			log.Println(e)
 			return e
 		}
-		return a.PostAnnotate(v.(interfaces.IVariant).Info())
 	}
 	if ends == INTERVAL {
 		err := a.AnnotateOne(v, a.Strict)
-		err2 := a.PostAnnotate(v.(interfaces.IVariant).Info())
+		err2 := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), "")
 		if err != nil {
 			return err
 		}
@@ -560,7 +599,10 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 			val, err = v2.Info().Get(key)
 			variant.Info().Set(key, val)
 		}
+		err2 := a.PostAnnotate(v.Chrom(), int(l), int(r), variant.Info(), ends)
+		if err2 != nil {
+			err = err2
+		}
 	}
-	//err2 := a.PostAnnotate(v.(interfaces.IVariant).Info())
 	return err
 }
