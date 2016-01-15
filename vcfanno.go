@@ -132,8 +132,18 @@ see: https://github.com/brentp/vcfanno
 			log.Printf("using maxGap of %d\n", maxGap)
 		}
 	}
+	smaxChunk := os.Getenv("IRELATE_MAX_CHUNK")
+	maxChunk := 8000
+	if smaxChunk != "" {
+		maxChunk, err = strconv.Atoi(smaxChunk)
+		if err != nil {
+			log.Printf("couldn't parse %s using %d\n", smaxChunk, maxChunk)
+		} else {
+			log.Printf("using maxChunk of %d\n", maxChunk)
+		}
+	}
 
-	stream := irelate.PIRelate(8000, maxGap, qstream, *ends, fn, queryables...)
+	stream := irelate.PIRelate(maxChunk, maxGap, qstream, *ends, fn, queryables...)
 
 	// make a new writer from the string header.
 	out, err = vcfgo.NewWriter(out, query.Header)
