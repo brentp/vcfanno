@@ -189,6 +189,9 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				val, err = o.Info().Get(src.Field)
 				if err != nil {
 					log.Println(err)
+					if val == "" {
+						continue
+					}
 				}
 			}
 			if arr, ok := val.([]interface{}); ok {
@@ -369,12 +372,14 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 		// lua code
 		if post.code != "" {
 			for _, field := range post.Fields {
-				val, _ := info.Get(field)
-				// ignore the error as it means the field is not present.
+				val, err := info.Get(field)
 				if val != nil {
 					vals = append(vals, val)
 					fields = append(fields, field)
 				} else {
+					if err != nil {
+						log.Println(err)
+					}
 					missing = append(missing, field)
 				}
 			}
@@ -452,9 +457,13 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 			// re-use vals
 			for _, field := range post.Fields {
 				// ignore error when field isnt found. we expect that to occur a lot.
-				val, _ := info.Get(field)
+				val, err := info.Get(field)
 				if val != nil {
 					vals = append(vals, val)
+				} else {
+					if err != nil {
+						log.Println(err)
+					}
 				}
 			}
 			// run this as long as we found any of the values.

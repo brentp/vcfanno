@@ -16,7 +16,7 @@ ops=["first", "first", "first", "first"]
 file="example/fitcons.bed.gz"
 names=["lua_start", "lua_end", "lua_len", "lua_mean", "lua_loc"]
 columns=[4, 4, 4, 4, 4]
-# when a custom value is needed, specify arbitrary javascript after "lua:"
+# when a custom value is needed, specify arbitrary lua after "lua:"
 # the variable available will be:
 # + vals: the list of values from this annotation
 # + chrom: the chrom of the variant being annotated
@@ -27,7 +27,7 @@ columns=[4, 4, 4, 4, 4]
 ops=["lua:start", "lua:stop", "lua:#vals", "lua:mean(vals)", "lua:loc(chrom, start, stop)"]
 # note the last 2 use functions declared in lua above.
 
-# it is also possible to define some javascript functions that will be
+# it is also possible to define some lua functions that will be
 # available. This is specified as a .lua file to the vcfanno executable as
 # ./vcfanno -lua some.lua ... see example/custom.lua for an example.
 #
