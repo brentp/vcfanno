@@ -23,22 +23,27 @@ default value is 100. For example:
 GOGC=2000 vcfanno -p 12 a.conf a.vcf
 ```
 
-Max Gap Size
-------------
+Max Gap / Chunk Size
+--------------------
 
 The parallel chrom-sweep algorithm has a gap size parameter that determines
-when a chunk of records from the the query file is sent to be annotated. If
-a gap of a certain
-size is encountered, a new chunk is sent off. Given a (number of) dense
+when a chunk of records from the the query file is sent to be annotated and 
+a maximum chunk size with the same function.
+If a gap of a certain size is encountered or a number of records equally
+the requested chunk size, a new chunk is sent off. Given a (number of) dense
 annotation file(s), it might be good to reduce the gap size so that `vcfanno`
 will need to parse fewer unneeded records. However, given sparse annotation
 sets, it is best to have this value be large so that each annotation worker
 gets enough work to keep it busy.
 
 The default gap size is `20000` bases. Users can alter this using the
-environment variable `IRELATE_MAX_GAP` e.g.:
+environment variable `IRELATE_MAX_GAP`.
+
+The default chunk size is `8000` bases. Users can alter this using the
+environment variable `IRELATE_MAX_CHUNK`.
+
+
 
 ```
-IRELATE_MAX_GAP=5000 vcfanno -p 12 a.conf a.vcf
+IRELATE_MAX_CHUNK=12000 IRELATE_MAX_GAP=5000 vcfanno -p 12 a.conf a.vcf
 ```
-

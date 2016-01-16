@@ -26,3 +26,9 @@ assert_equal $n 3
 
 n=$(grep  -v "^##" $STDOUT_FILE | awk 'BEGIN{FS="\t"}{ print NF}' | uniq)
 assert_equal $n 12
+
+run check_lua_required vcfanno example/conf.toml example/query.vcf.gz
+assert_exit_code 1
+assert_in_stderr ERROR
+assert_in_stderr lua
+assert_no_stdout

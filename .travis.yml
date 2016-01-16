@@ -13,5 +13,5 @@ before_install:
   - if ! go get code.google.com/p/go.tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
     - $HOME/gopath/bin/goveralls -service=travis-ci
-    - ./functional-test.sh
+    - ./tests/functional-test.sh
 
