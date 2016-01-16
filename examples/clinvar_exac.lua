@@ -22,17 +22,6 @@ function intotbl(ud)
 	return tbl
 end
 
--- from lua-users wiki
---[[
-function split(str, sep)
-        local sep, fields = sep or ":", {}
-        local pattern = string.format("([^%s]+)", sep)
-        str:gsub(pattern, function(c) fields[#fields+1] = c end)
-        return fields
-end
---]]
-split = gosplit
-
 function clinvar_sig(vals)
     local t = type(vals)
     -- just a single-value
@@ -50,7 +39,7 @@ function clinvar_sig(vals)
         if not contains(vals[i], "|") then
             ret[#ret+1] = CLINVAR_SIG[vals[i]]
         else
-            local invals = split(vals[i], "|")
+            local invals = vals[i]:split("|")
             local inret = {}
             for j=1,#invals do
                 inret[#inret+1] = CLINVAR_SIG[invals[j]]
