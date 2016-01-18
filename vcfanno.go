@@ -26,6 +26,20 @@ import (
 
 var VERSION = "0.0.10b"
 
+func envGet(name string, vdefault int) int {
+	sval := os.Getenv(name)
+	var err error
+	if sval != "" {
+		vdefault, err = strconv.Atoi(sval)
+		if err != nil {
+			log.Printf("couldn't parse %s using %d\n", name, vdefault)
+		} else {
+			log.Printf("using %s of %d\n", name, vdefault)
+		}
+	}
+	return vdefault
+}
+
 func main() {
 	fmt.Fprintf(os.Stderr, `
 =============================================
@@ -130,26 +144,8 @@ see: https://github.com/brentp/vcfanno
 		}
 	}
 
-	smaxGap := os.Getenv("IRELATE_MAX_GAP")
-	maxGap := 20000
-	if smaxGap != "" {
-		maxGap, err = strconv.Atoi(smaxGap)
-		if err != nil {
-			log.Printf("couldn't parse %s using %d\n", smaxGap, maxGap)
-		} else {
-			log.Printf("using maxGap of %d\n", maxGap)
-		}
-	}
-	smaxChunk := os.Getenv("IRELATE_MAX_CHUNK")
-	maxChunk := 8000
-	if smaxChunk != "" {
-		maxChunk, err = strconv.Atoi(smaxChunk)
-		if err != nil {
-			log.Printf("couldn't parse %s using %d\n", smaxChunk, maxChunk)
-		} else {
-			log.Printf("using maxChunk of %d\n", maxChunk)
-		}
-	}
+	maxGap := envGet("IRELATE_MAX_GAP", 20000)
+	maxChunk := envGet("IRELATE_MAX_CHUNK", 8000)
 
 	stream := irelate.PIRelate(maxChunk, maxGap, qstream, *ends, fn, queryables...)
 

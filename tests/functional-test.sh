@@ -6,7 +6,7 @@ test -e ssshtest || wget -q https://raw.githubusercontent.com/ryanlayer/ssshtest
 
 set -o nounset
 
-#go install -race -a
+go install -race -a
 
 run check_example vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz
 assert_equal $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# $STDOUT_FILE)
