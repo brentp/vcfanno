@@ -4,12 +4,12 @@ file="example/exac.vcf.gz"
 fields = ["AC_AFR", "AC_AMR", "AC_EAS", "ID"]
 ops=["first", "first", "first", "first"]
 
-#[[annotation]]
+[[annotation]]
 # count is for alignments that are mapped (-F4) with mapq > 0
-#file="example/ex.bam"
-#names=["map", "coverage"] # map, coverage, and seq are special values for bam annotations
-#fields=["mapq", "coverage"]
-#ops=["mean", "count"]
+file="example/ex.bam"
+names=["mapq", "coverage"] # map, coverage, and seq are special values for bam annotations
+fields=["mapq", "coverage"]
+ops=["mean", "count"]
 
 
 [[annotation]]

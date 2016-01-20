@@ -489,7 +489,13 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	queryables := make([]interfaces.Queryable, len(files))
 	for i, file := range files {
 		go func(idx int, file string) {
-			q, err := bix.New(file, 1)
+			var q interfaces.Queryable
+			var err error
+			if strings.HasSuffix(file, ".bam") {
+				q, err = parsers.NewBamQueryable(file, 2)
+			} else {
+				q, err = bix.New(file, 1)
+			}
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -501,23 +507,23 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	wg.Wait()
 
 	for i, file := range files {
-		q := queryables[i].(*bix.Bix)
-		for _, src := range fmap[file] {
-			src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field))
-		}
-	}
-
-	/*
-		for _, file := range files {
-			q, err := bix.New(file, 1)
-			if err != nil {
-				return nil, err
-			}
-			queryables = append(queryables, q)
+		if q, ok := queryables[i].(*bix.Bix); ok {
 			for _, src := range fmap[file] {
 				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field))
 			}
-		}*/
+		} else if _, ok := queryables[i].(*parsers.BamQueryable); ok {
+			for _, src := range fmap[file] {
+				htype := "String"
+				if src.IsNumber() {
+					htype = "Float"
+				}
+				src.UpdateHeader(query, a.Ends, htype)
+			}
+		} else {
+			log.Printf("type not known: %T\n", queryables[i])
+		}
+	}
+
 	for _, post := range a.PostAnnos {
 		query.AddInfoToHeader(post.Name, ".", post.Type, fmt.Sprintf("calculated field: %s", post.Name))
 	}

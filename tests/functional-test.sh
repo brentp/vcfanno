@@ -26,6 +26,10 @@ assert_equal $(( $n > 0 )) 1
 n=$(grep  ^"#CHROM" $STDOUT_FILE | cut -f 10- | wc -w) 
 assert_equal $n 3
 
+# test bam stuff
+n=$(grep -w 10712 $STDOUT_FILE | grep -c "coverage=11;")
+assert_equal $n 1
+
 
 n=$(grep  -v "^##" $STDOUT_FILE | awk 'BEGIN{FS="\t"}{ print NF}' | uniq)
 assert_equal $n 12

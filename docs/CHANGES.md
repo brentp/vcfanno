@@ -1,6 +1,7 @@
 v0.0.10 (dev)
 -------------
 + allow using postannotation even if not all requested fields were found for a given variant.
++ restore ability to have bams as annotation files. Can pull mapq and coverage. See `examples/conf.toml`
 
 v0.0.9
 ------
