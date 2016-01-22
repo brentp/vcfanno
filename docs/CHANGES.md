@@ -2,6 +2,9 @@ v0.0.10 (dev)
 -------------
 + allow using postannotation even if not all requested fields were found for a given variant.
 + restore ability to have bams as annotation files. Can pull mapq and coverage. See `examples/conf.toml`
++ fix regression where output was not in sorted order.
++ fix regression that resulted in "too many open files" error.
++ expand test-suite.
 
 v0.0.9
 ------
