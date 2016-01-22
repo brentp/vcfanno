@@ -360,10 +360,11 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
 }
 
 func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfaces.Info, prefix string) error {
-	var err error
+	var e, err error
 	vals := make([]interface{}, 0, 2)
 	fields := make([]string, 0, 2)
 	missing := make([]string, 0, 2)
+	var val interface{}
 	for i := range a.PostAnnos {
 		post := a.PostAnnos[i]
 		vals = vals[:0]
@@ -372,15 +373,15 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 		// lua code
 		if post.code != "" {
 			for _, field := range post.Fields {
-				val, err := info.Get(field)
+				val, e = info.Get(field)
 				if val != nil {
 					vals = append(vals, val)
 					fields = append(fields, field)
 				} else {
-					if err != nil {
-						log.Println(err)
-					}
 					missing = append(missing, field)
+				}
+				if e != nil {
+					err = e
 				}
 			}
 			// we need to try even if it didn't get all values.
@@ -455,14 +456,15 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 		} else {
 			// built in function.
 			// re-use vals
+			var e error
 			for _, field := range post.Fields {
 				// ignore error when field isnt found. we expect that to occur a lot.
-				val, err := info.Get(field)
+				val, e = info.Get(field)
 				if val != nil {
 					vals = append(vals, val)
 				} else {
-					if err != nil {
-						log.Println(err)
+					if e != nil {
+						err = e
 					}
 				}
 			}
@@ -556,20 +558,16 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 	// if Both, call the interval, left, and right version to annotate.
 	if ends == BOTH {
 		if e := a.AnnotateOne(v, a.Strict); e != nil {
-			log.Println(e)
-			return e
+			err = e
 		}
 		if e := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), ""); e != nil {
-			log.Println(e)
-			return e
+			err = e
 		}
 		if e := a.AnnotateEnds(v, LEFT); e != nil {
-			log.Println(e)
-			return e
+			err = e
 		}
 		if e := a.AnnotateEnds(v, RIGHT); e != nil {
-			log.Println(e)
-			return e
+			err = e
 		}
 	}
 	if ends == INTERVAL {
@@ -603,9 +601,6 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 			Reference: "A", Alternate: []string{"<DEL>"}, Info_: m}, v.Source(), v.Related())
 
 		err = a.AnnotateOne(v2, false, ends)
-		if err != nil {
-			log.Println(err)
-		}
 		var val interface{}
 		for _, key := range v2.Info().Keys() {
 			if key == "SVLEN" || key == "END" {

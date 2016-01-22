@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strconv"
+	"sync"
 
 	"time"
 
@@ -136,11 +137,23 @@ see: https://github.com/brentp/vcfanno
 	if *ends {
 		aends = BOTH
 	}
+	lastMsg := ""
+
+	var mu sync.RWMutex
 
 	fn := func(v interfaces.Relatable) {
 		e := a.AnnotateEnds(v, aends)
 		if e != nil {
-			log.Println(e)
+			mu.RLock()
+			if e.Error() != lastMsg {
+				mu.RUnlock()
+				log.Println(e, ">> this error may occur many times. reporting once here...")
+				mu.Lock()
+				lastMsg = e.Error()
+				mu.Unlock()
+			} else {
+				mu.RUnlock()
+			}
 		}
 	}
 
