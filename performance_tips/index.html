@@ -159,9 +159,9 @@ annotation file(s), it might be good to reduce the gap size so that <code>vcfann
 will need to parse fewer unneeded records. However, given sparse annotation
 sets, it is best to have this value be large so that each annotation worker
 gets enough work to keep it busy.</p>
-<p>The default gap size is <code>20000</code> bases. Users can alter this using the
+<p>The default gap size is <code>5000</code> bases. Users can alter this using the
 environment variable <code>IRELATE_MAX_GAP</code>.</p>
-<p>The default chunk size is <code>8000</code> bases. Users can alter this using the
+<p>The default chunk size is <code>8000</code> query intervals. Users can alter this using the
 environment variable <code>IRELATE_MAX_CHUNK</code>.</p>
 <pre><code>IRELATE_MAX_CHUNK=12000 IRELATE_MAX_GAP=5000 vcfanno -p 12 a.conf a.vcf
 </code></pre></div>
