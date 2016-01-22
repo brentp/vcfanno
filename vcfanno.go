@@ -25,7 +25,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.0.10g"
+var VERSION = "0.0.10-rc1"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
@@ -170,7 +170,7 @@ see: https://github.com/brentp/vcfanno
 		}
 	}
 
-	maxGap := envGet("IRELATE_MAX_GAP", 20000)
+	maxGap := envGet("IRELATE_MAX_GAP", 5000)
 	maxChunk := envGet("IRELATE_MAX_CHUNK", 8000)
 
 	stream := irelate.PIRelate(maxChunk, maxGap, qstream, *ends, fn, queryables...)

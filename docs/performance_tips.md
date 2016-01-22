@@ -36,10 +36,10 @@ will need to parse fewer unneeded records. However, given sparse annotation
 sets, it is best to have this value be large so that each annotation worker
 gets enough work to keep it busy.
 
-The default gap size is `20000` bases. Users can alter this using the
+The default gap size is `5000` bases. Users can alter this using the
 environment variable `IRELATE_MAX_GAP`.
 
-The default chunk size is `8000` bases. Users can alter this using the
+The default chunk size is `8000` query intervals. Users can alter this using the
 environment variable `IRELATE_MAX_CHUNK`.
 
 
