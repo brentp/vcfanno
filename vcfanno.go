@@ -25,7 +25,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.0.10b"
+var VERSION = "0.0.10g"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
@@ -39,6 +39,10 @@ func envGet(name string, vdefault int) int {
 		}
 	}
 	return vdefault
+}
+
+func init() {
+	log.SetFlags(log.Lshortfile)
 }
 
 func main() {
@@ -137,22 +141,31 @@ see: https://github.com/brentp/vcfanno
 	if *ends {
 		aends = BOTH
 	}
-	lastMsg := ""
 
-	var mu sync.RWMutex
+	lastMsg := struct {
+		sync.RWMutex
+		s [3]string
+		i int
+	}{}
 
 	fn := func(v interfaces.Relatable) {
 		e := a.AnnotateEnds(v, aends)
 		if e != nil {
-			mu.RLock()
-			if e.Error() != lastMsg {
-				mu.RUnlock()
+			lastMsg.RLock()
+			em := e.Error()
+			if em != lastMsg.s[0] && em != lastMsg.s[1] && em != lastMsg.s[2] {
+				lastMsg.RUnlock()
 				log.Println(e, ">> this error may occur many times. reporting once here...")
-				mu.Lock()
-				lastMsg = e.Error()
-				mu.Unlock()
+				lastMsg.Lock()
+				lastMsg.s[lastMsg.i] = em
+				if lastMsg.i == len(lastMsg.s)-1 {
+					lastMsg.i = -1
+				}
+				lastMsg.i++
+
+				lastMsg.Unlock()
 			} else {
-				mu.RUnlock()
+				lastMsg.RUnlock()
 			}
 		}
 	}
