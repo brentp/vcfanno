@@ -88,7 +88,7 @@ see: https://github.com/brentp/vcfanno
 			log.Fatal("CheckAnno err:", err)
 		}
 		for _, op := range a.Ops {
-			if op[:4] == "lua:" && *lua == "" {
+			if len(op) > 4 && op[:4] == "lua:" && *lua == "" {
 				log.Fatal("ERROR: requested lua op without specifying -lua flag")
 			}
 		}

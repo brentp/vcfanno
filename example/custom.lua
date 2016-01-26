@@ -67,12 +67,23 @@ function contains(str, tok)
     return string.find(str, tok) ~= nil
 end
 
+
+function div2(a, b)
+    if(a == 0) then return "0.0" end
+    return string.format("%.9f", (a + 0) / b)
+end
+function ratio(vals)
+	vals = vals[1] -- get 2 values per element. ref and alt counts.
+	if vals[2] == 0 then return "0.0" end
+	return string.format("%.9f", vals[2] / (vals[1] + vals[2]))
+end
+
 function clinvar_sig(vals)
     local t = type(vals)
     -- just a single-value
     if(t == "string" or t == "number") and not contains(vals, "|") then
         return CLINVAR_SIG[vals]
-    else
+    elseif t ~= "table" then
         if not contains(t, "userdata") then
             vals = {vals}
         else
@@ -84,7 +95,7 @@ function clinvar_sig(vals)
         if not contains(vals[i], "|") then
             ret[#ret+1] = CLINVAR_SIG[vals[i]]
         else
-            local invals = split(vals[i], "|")
+            local invals = vals[i]:split("|")
             local inret = {}
             for j=1,#invals do
                 inret[#inret+1] = CLINVAR_SIG[invals[j]]
@@ -95,12 +106,16 @@ function clinvar_sig(vals)
     return join(ret, ",")
 end
 
-function div2(a, b)
-    if(a == 0) then return "0.0" end
-    return string.format("%.9f", (a + 0) / b)
+join = table.concat
+
+function check_clinvar_aaf(clinvar_sig, max_aaf_all, aaf_cutoff)
+    -- didn't find an aaf for this so can't be common
+    if max_aaf_all == nil then
+        return false
+    end
+    if type(clinvar_sig) ~= "string" then
+        clinvar_sig = join(clinvar_sig, ",")
+    end
+    return contains(clinvar_sig, "pathogenic") and max_aaf_all > aaf_cutoff
 end
-function ratio(vals)
-	vals = vals[1] -- get 2 values per element. ref and alt counts.
-	if vals[2] == 0 then return "0.0" end
-	return string.format("%.9f", vals[2] / (vals[1] + vals[2]))
-end
+
