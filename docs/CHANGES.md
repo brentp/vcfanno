@@ -5,6 +5,7 @@ v0.0.10 (dev)
 + fix regression where output was not in sorted order.
 + fix regression that resulted in "too many open files" error.
 + expand test-suite.
++ fix bug found when using max() op
 
 v0.0.9
 ------
