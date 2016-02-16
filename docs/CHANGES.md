@@ -1,5 +1,5 @@
-v0.0.10 (dev)
--------------
+v0.0.10
+-------
 + allow using postannotation even if not all requested fields were found for a given variant.
 + restore ability to have bams as annotation files. Can pull mapq and coverage. See `examples/conf.toml`
 + fix regression where output was not in sorted order.
