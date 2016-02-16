@@ -1,0 +1,54 @@
+
+[[annotation]]
+file="ESP6500SI.all.snps_indels.tidy.v2.vcf.gz"
+names=['esp_ea', 'esp_aa']
+ops=['first', 'first']
+fields=['EA_AC', 'AA_AC']
+
+[[annotation]]
+file="ExAC.r0.3.sites.vep.tidy.vcf.gz"
+names=['exac_AC_Adj', 'exac_AC_Het', 'exac_AC_Hom', 'exac_AC_NFE']
+ops=['first', 'first', 'first', 'first']
+fields=['AC_Adj', 'AC_Het', 'AC_Hom', 'AC_NFE']
+
+[[annotation]]
+file="hg19_fitcons_fc-i6-0_V1-01.bed.gz"
+names=['fitcons_mean']
+ops=['mean']
+columns=[4]
+
+[[annotation]]
+file="ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz"
+names=['1kg_eas_af', '1kg_amr_af']
+ops=['first', 'first']
+fields=['EAS_AF', 'AMR_AF']
+
+[[annotation]]
+file="GRCh37-gms-mappability.vcf.gz"
+names=['gms_mappapility']
+ops=['first']
+fields=['GMS_illumina']
+
+[[annotation]]
+file="clinvar_20150305.tidy.vcf.gz"
+names=['clinvar_hgvs']
+ops=['first']
+fields=['CLNHGVS']
+
+[[annotation]]
+file="cosmic-v68-GRCh37.tidy.vcf.gz"
+names=['cosmic_id']
+ops=['concat']
+fields=['ID']
+
+[[annotation]]
+file="dbsnp.b141.20140813.hg19.tidy.vcf.gz"
+names=['dbsnp_id']
+ops=['concat']
+fields=['RS']
+
+[[annotation]]
+file="hg19.gerp.elements.bed.gz"
+names=['gerp']
+ops=['mean']
+columns=[4]
