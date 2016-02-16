@@ -25,7 +25,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.0.10-rc2"
+var VERSION = "0.0.10"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
@@ -154,8 +154,8 @@ see: https://github.com/brentp/vcfanno
 			lastMsg.RLock()
 			em := e.Error()
 			if em != lastMsg.s[0] && em != lastMsg.s[1] && em != lastMsg.s[2] {
-				lastMsg.RUnlock()
 				log.Println(e, ">> this error may occur many times. reporting once here...")
+				lastMsg.RUnlock()
 				lastMsg.Lock()
 				lastMsg.s[lastMsg.i] = em
 				if lastMsg.i == len(lastMsg.s)-1 {
@@ -170,7 +170,7 @@ see: https://github.com/brentp/vcfanno
 		}
 	}
 
-	maxGap := envGet("IRELATE_MAX_GAP", 5000)
+	maxGap := envGet("IRELATE_MAX_GAP", 20000)
 	maxChunk := envGet("IRELATE_MAX_CHUNK", 8000)
 
 	stream := irelate.PIRelate(maxChunk, maxGap, qstream, *ends, fn, queryables...)

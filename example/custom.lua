@@ -110,7 +110,7 @@ join = table.concat
 
 function check_clinvar_aaf(clinvar_sig, max_aaf_all, aaf_cutoff)
     -- didn't find an aaf for this so can't be common
-    if max_aaf_all == nil then
+    if max_aaf_all == nil or clinvar_sig == nil then
         return false
     end
     if type(clinvar_sig) ~= "string" then
