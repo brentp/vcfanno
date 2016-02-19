@@ -55,6 +55,19 @@ files = [
              c="CHROM,FROM,TO,GERP"),
         ]
 
+def get():
+    base = "http://s3.amazonaws.com/gemini-annotations/"
+    try:
+        os.mkdir("data")
+    except OSError:
+        pass
+    for f in files:
+        f = f['file']
+        if not (os.path.exists(f) and os.path.exists(f + ".tbi")):
+            cmd = ("|wget -O tmp.tt.gz {base}{f} && ./vcfsort.sh tmp.tt.gz | bgzip -c > data/{f} && tabix -f data/{f}; rm -f tmp.tt.gz".format(**locals()))
+            list(ts.nopen(cmd))
+
+get()
 
 def asanno(d):
     c = "fields={fields}" if "fields" in d else "columns={columns}"
@@ -83,22 +96,17 @@ with open(toml, "w") as fh:
     for d in files:
         fh.write(asanno(d))
 
-DATA = '/usr/local/src/gemini_install/data/gemini_data/'
-DATA= '/data2/gemini_install/data/gemini/data/'
-
-QUERY = "/usr/local/src/gocode/src/github.com/brentp/vcfanno/t.vcf.gz"
-QUERY = "{DATA}/ExAC.r0.3.sites.vep.tidy.vcf.gz".format(DATA=DATA)
-DATA_SORTED = "/data2/brentp/gemini_sorted/" # TODO: bedtools requires all to be sorted in same way and
+DATA = 'data'
+QUERY = "data/ExAC.r0.3.sites.vep.tidy.vcf.gz"
 
 for f in files:
     f['DATA'] = DATA
-    f['DATA_SORTED'] = DATA_SORTED
     f['QUERY'] = QUERY
 
 commands = [asbcf(f) for f in files]
 
 query = QUERY.format(DATA=DATA)
-fnames = [f['DATA_SORTED'] + "/" + f['file'] for f in files]
+fnames = [f['DATA'] + "/" + f['file'] for f in files]
 bedtools_cmd = ("bedtools intersect -sorted -sortout -wao -a {query} -b " + " -b ".join(fnames)).format(query=query)
 
 # TODO: send to file to match bcftools and vcfanno
