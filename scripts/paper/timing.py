@@ -63,8 +63,8 @@ def get():
         pass
     for f in files:
         f = f['file']
-        if not (os.path.exists(f) and os.path.exists(f + ".tbi")):
-            cmd = ("|wget -O tmp.tt.gz {base}{f} && ./vcfsort.sh tmp.tt.gz | bgzip -c > data/{f} && tabix -f data/{f}; rm -f tmp.tt.gz".format(**locals()))
+        if not (os.path.exists("data/" + f) and os.path.exists("data/" + f + ".tbi")):
+            cmd = ("|wget -O tmp.tt.gz {base}{f} && sleep 2 && ./vcfsort.sh tmp.tt.gz | bgzip -c > data/{f} && sleep 2 && tabix -f data/{f}; rm -f tmp.tt.gz".format(**locals()))
             list(ts.nopen(cmd))
 
 get()
@@ -110,10 +110,11 @@ fnames = [f['DATA'] + "/" + f['file'] for f in files]
 bedtools_cmd = ("bedtools intersect -sorted -sortout -wao -a {query} -b " + " -b ".join(fnames)).format(query=query)
 
 # TODO: send to file to match bcftools and vcfanno
-print "method\ti\tseconds\tprocs"
+fh = open("timing.txt", "w")
+print >>fh, "method\ti\tseconds\tprocs"
 t = time.time()
 list(ts.nopen("|%s | bgzip -c > /tmp/trash.gz" % bedtools_cmd))
-print "bedtools\t%d\t%.2f\t1" % (len(commands), time.time() - t)
+print >>fh, "bedtools\t%d\t%.2f\t1" % (len(commands), time.time() - t)
 
 for procs in (1, 4, 8, 12):
 
@@ -135,7 +136,7 @@ for procs in (1, 4, 8, 12):
 
             t1 = time.time()
             tottime += t1 - t
-        print "bcftools\t%d\t%.2f\t1" % (i+1, tottime)
+        print >>fh, "bcftools\t%d\t%.2f\t1" % (i+1, tottime)
         sys.stdout.flush()
 
     vcmd = "vcfanno -p {procs} -base-path {DATA} {toml} {QUERY} | bgzip -c > /dev/null".format(
@@ -146,6 +147,6 @@ for procs in (1, 4, 8, 12):
 
     res = list(ts.nopen("|%s" % vcmd))
     t1 = time.time()
-    print "vcfanno\t%d\t%.2f\t%d" % (i+1, t1 - t, procs)
+    print >>fh, "vcfanno\t%d\t%.2f\t%d" % (i+1, t1 - t, procs)
 
 
