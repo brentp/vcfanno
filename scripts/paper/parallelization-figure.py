@@ -18,7 +18,6 @@ var	13	1051.26 seconds	ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.s
 var	12	1126.58 seconds	ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites
 """
 for d in ts.reader(1):
-    if d['method'] != 'var': continue
     time = float(d['time'].split()[0])
     key = lookup[d['query']]
     data[key].append(time)
