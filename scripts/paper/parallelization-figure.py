@@ -62,6 +62,6 @@ for item in ax.get_legend().get_texts():
 plt.xlim(xmin=1, xmax=N+0.16)
 plt.ylim(ymin=1, ymax=8)
 sns.despine(left=True, bottom=True)
-plt.savefig('vcfanno-par.png')
+plt.savefig('figure-4.pdf')
 plt.show()
 

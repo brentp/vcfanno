@@ -56,7 +56,7 @@ for i, f in enumerate(sys.argv[1:3]):
 
 sns.despine()
 plt.legend(ncol=2, markerfirst=False, title="Chunk size",
-        loc=(axes[0].get_position().x1-0.34, axes[0].get_position().y1 - 0.085))
+        loc=(axes[0].get_position().x1-0.45, axes[0].get_position().y1 - 0.085))
 
 ax = plt.gca()
 for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
@@ -66,4 +66,5 @@ for item in ax.get_legend().get_texts():
     item.set_fontsize(5)
 
 
+plt.savefig('figure-5.pdf')
 plt.show()
