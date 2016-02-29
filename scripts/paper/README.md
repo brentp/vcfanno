@@ -7,3 +7,9 @@ python parallelization-figure.py
 
 # Figure 5A. (gap-size vs chunk-size)
 python chunk-gap-plot.py  1kg.times-tails.fmt.txt exac.times-tails.txt
+
+# Supplemental File 1 is `gem.conf`
+
+# Supplemental Table 1 is `par-times.txt`
+
+# Supplemental File 2 is `afci.lua`
