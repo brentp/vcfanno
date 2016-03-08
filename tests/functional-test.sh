@@ -8,6 +8,10 @@ set -o nounset
 
 go install -race -a
 
+run check_self_number vcfanno -base-path tests/data/ -lua example/custom.lua tests/data/number.conf tests/data/number-input.vcf
+assert_equal 0 $(grep -c "lua error in postannotation" $STDERR_FILE)
+cat $STDERR_FILE
+
 run check_example vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz
 assert_equal $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# $STDOUT_FILE)
 assert_equal 6 $(grep ^# $STDOUT_FILE | grep -c lua)

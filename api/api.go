@@ -27,6 +27,7 @@ type HeaderUpdater interface {
 
 type HeaderTyped interface {
 	GetHeaderType(field string) string
+	GetHeaderNumber(field string) string
 }
 
 // Source holds the information for a single annotation to be added to a query.
@@ -308,8 +309,8 @@ func (src *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix
 }
 
 //func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
-func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string) {
-	ntype, number := "String", "1"
+func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number string) {
+	ntype := "String"
 	var desc string
 	// for 'self' and 'first', we can get the type from the header of the annotation file.
 	if htype != "" && (src.Op == "self" || src.Op == "first") {
@@ -511,7 +512,7 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	for i, file := range files {
 		if q, ok := queryables[i].(*bix.Bix); ok {
 			for _, src := range fmap[file] {
-				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field))
+				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field), q.GetHeaderNumber(src.Field))
 			}
 		} else if _, ok := queryables[i].(*parsers.BamQueryable); ok {
 			for _, src := range fmap[file] {
@@ -519,7 +520,7 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 				if src.IsNumber() {
 					htype = "Float"
 				}
-				src.UpdateHeader(query, a.Ends, htype)
+				src.UpdateHeader(query, a.Ends, htype, "1")
 			}
 		} else {
 			log.Printf("type not known: %T\n", queryables[i])
