@@ -1,3 +1,8 @@
+v0.0.11 (dev)
+-------------
++ when op=self, pull Number from the annotation file (previously Number was always 1)
++ when op=concat or op=uniq user Number=. 
+
 v0.0.10
 -------
 + allow using postannotation even if not all requested fields were found for a given variant.
