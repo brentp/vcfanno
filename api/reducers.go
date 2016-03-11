@@ -135,11 +135,11 @@ func _strings(vals []interface{}, uniq bool) []string {
 }
 
 func uniq(vals []interface{}) interface{} {
-	return strings.Join(_strings(vals, true), "|")
+	return strings.Join(_strings(vals, true), ",")
 }
 
 func concat(vals []interface{}) interface{} {
-	return strings.Join(_strings(vals, false), "|")
+	return strings.Join(_strings(vals, false), ",")
 }
 
 func first(vals []interface{}) interface{} {

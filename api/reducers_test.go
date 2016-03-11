@@ -35,7 +35,7 @@ func (s *ReducerSuite) SetUpTest(c *C) {
 func (s *ReducerSuite) TestFloats(c *C) {
 
 	u := uniq(s.floats)
-	toks := strings.Split(u.(string), "|")
+	toks := strings.Split(u.(string), ",")
 	c.Assert(len(toks), Equals, len(s.floats))
 
 	cnt := count(s.floats)
@@ -51,7 +51,7 @@ func (s *ReducerSuite) TestFloats(c *C) {
 	c.Assert(m, Equals, float32(7.7))
 
 	cc := concat(s.floats)
-	c.Assert(cc, Equals, "1.3|2.3|3.3|4.4|5.5|6.6|7.7")
+	c.Assert(cc, Equals, "1.3,2.3,3.3,4.4,5.5,6.6,7.7")
 
 }
 
@@ -75,7 +75,7 @@ func (s *ReducerSuite) TestFloat(c *C) {
 
 func (s *ReducerSuite) TestInts(c *C) {
 	u := uniq(s.ints)
-	c.Assert(u, Equals, "1|2|3|4|5|6|7")
+	c.Assert(u, Equals, "1,2,3,4,5,6,7")
 
 	cnt := count(s.ints)
 	c.Assert(cnt, Equals, 7)
@@ -84,7 +84,7 @@ func (s *ReducerSuite) TestInts(c *C) {
 
 func (s *ReducerSuite) TestStrings(c *C) {
 	cc := concat(s.strings)
-	c.Assert(cc, Equals, "aa|bb|cc|dd|ee|ff|gg|hh")
+	c.Assert(cc, Equals, "aa,bb,cc,dd,ee,ff,gg,hh")
 
 	f := vflag(s.strings)
 	c.Assert(f, Equals, true)

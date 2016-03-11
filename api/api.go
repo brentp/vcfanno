@@ -338,6 +338,10 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number
 				}
 			}
 		}
+		// use Number="." for stringy ops.
+		if src.Op == "uniq" || src.Op == "concat" {
+			number = "."
+		}
 	}
 	if (src.Op == "first" || src.Op == "self") && htype == ntype {
 		desc = fmt.Sprintf("transfered from matched variants in %s", src.File)
