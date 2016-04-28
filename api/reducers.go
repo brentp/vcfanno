@@ -60,6 +60,11 @@ func asfloat32(i interface{}) float32 {
 		if len(v) == 1 {
 			return asfloat32(v[0])
 		}
+	case []string:
+		v := i.([]string)
+		if len(v) == 1 {
+			return asfloat32(v[0])
+		}
 	case []float32:
 		v := i.([]float32)
 		if len(v) == 1 {
@@ -67,7 +72,6 @@ func asfloat32(i interface{}) float32 {
 		}
 
 	}
-
 	return i.(float32)
 }
 
