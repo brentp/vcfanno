@@ -318,11 +318,14 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number
 	} else {
 		if src.Op == "mean" || src.Op == "max" {
 			ntype, number = "Float", "1"
-		} else if strings.HasSuffix(src.Field, "_float") {
+		} else if strings.HasSuffix(src.Name, "_float") {
+			src.Name = src.Name[:len(src.Name)-6]
 			ntype, number = "Float", "1"
-		} else if strings.HasSuffix(src.Field, "_int") {
+		} else if strings.HasSuffix(src.Name, "_int") {
+			src.Name = src.Name[:len(src.Name)-4]
 			ntype, number = "Integer", "1"
-		} else if strings.HasSuffix(src.Field, "_flag") || strings.Contains(src.Field, "flag(") {
+		} else if strings.HasSuffix(src.Name, "_flag") || strings.Contains(src.Op, "flag(") {
+			src.Name = src.Name[:len(src.Name)-5]
 			ntype, number = "Flag", "0"
 		} else {
 			if src.Op == "flag" {

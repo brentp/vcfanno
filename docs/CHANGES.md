@@ -2,6 +2,14 @@ v0.0.11 (dev)
 -------------
 + when op=self, pull Number from the annotation file (previously Number was always 1)
 + when op=concat or op=uniq user Number=. 
++ when name ends with '\_float' '\_int' or '\_flag' that is used to determine the Type in the output and that is then stripped from the name. So, e.g. with
+``
+names=["af_esp_aa_float"]
+``
+The resulting header will be:
+```
+##INFO=<ID=af_esp_aa,Number=1,Type=Float,Description=...
+```
 
 v0.0.10
 -------

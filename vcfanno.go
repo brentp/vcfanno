@@ -12,7 +12,6 @@ import (
 	"runtime/pprof"
 	"strconv"
 	"sync"
-
 	"time"
 
 	"github.com/BurntSushi/toml"

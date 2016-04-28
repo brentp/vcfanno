@@ -8,7 +8,7 @@ test -e ssshtest || wget -q https://raw.githubusercontent.com/ryanlayer/ssshtest
 
 set -o nounset
 
-BASE=/usr/local/src/gemini_install//data/gemini_data/
+BASE=/media/brentp/transcend/gemini_install/data/gemini_data/
 
 V=vcfanno
 
