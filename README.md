@@ -15,7 +15,7 @@ Mailing List
 
 Overview
 ========
-![overview](https://github.com/brentp/vcfanno/blob/master/docs/img/vcfanno-overview-final.pdf "overview")
+![overview](https://github.com/brentp/vcfanno/blob/master/docs/img/vcfanno-overview-final.png "overview")
 
 
 vcfanno annotates a VCF with any number of *sorted* and tabixed input BED, BAM, and VCF files in parallel.
