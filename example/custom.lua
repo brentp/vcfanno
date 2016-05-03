@@ -85,7 +85,11 @@ function clinvar_sig(vals)
         return CLINVAR_SIG[vals]
     elseif t ~= "table" then
         if not contains(t, "userdata") then
-            vals = {vals}
+            if t == "string" then
+                vals = split(vals, ",")
+            else
+                vals = {vals}
+            end
         else
             vals = intotbl(vals)
         end
@@ -95,7 +99,7 @@ function clinvar_sig(vals)
         if not contains(vals[i], "|") then
             ret[#ret+1] = CLINVAR_SIG[vals[i]]
         else
-            local invals = vals[i]:split("|")
+            local invals = split(vals[i], "|")
             local inret = {}
             for j=1,#invals do
                 inret[#inret+1] = CLINVAR_SIG[invals[j]]

@@ -18,7 +18,7 @@ assert_equal $(zgrep -cv ^# $STDOUT_FILE) $(zgrep -cv ^# $BASE/clinvar_20160203.
 
 tail -1 $STDERR_FILE
 
-run exac_combine vcfanno -base-path $BASE $BASE/ExAC.r0.3.sites.vep.tidy.vcf.gz docs/examples/exac_combine/exac_combine.conf
+run exac_combine vcfanno -base-path docs/exac_combine/exac_combine/exac_combine.conf $BASE $BASE/ExAC.r0.3.sites.vep.tidy.vcf.gz 
 
 orun() {
 $V -lua example/custom.lua -p 4 -base-path $BASE example/gem.conf $BASE/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz | head -100000 | python tests/find-out-of-order.py
