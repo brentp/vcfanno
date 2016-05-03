@@ -63,7 +63,7 @@ see: https://github.com/brentp/vcfanno
 	inFiles := flag.Args()
 	if len(inFiles) != 2 {
 		fmt.Printf(`Usage:
-%s config.toml intput.vcf > annotated.vcf
+%s config.toml input.vcf > annotated.vcf
 
 `, os.Args[0])
 		flag.PrintDefaults()
