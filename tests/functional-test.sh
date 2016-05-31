@@ -74,3 +74,12 @@ run check_postannotation_field_warning vcfanno -lua example/custom.lua __t.conf 
 assert_exit_code 0
 assert_in_stderr "xxx not found in header"
 
+
+
+run check_cipos vcfanno -base-path tests/citest/ tests/citest/conf.toml  tests/citest/test.vcf  | grep -v ^#
+assert_exit_code 0
+assert_equal 1 $(grep -c "END=97;ExonGene=GeneY" $STDOUT_FILE)
+
+run check_cipos_ends vcfanno -ends -base-path tests/citest/ tests/citest/conf.toml  tests/citest/test.vcf  | grep -v ^#
+assert_exit_code 0
+assert_equal 2 $(grep -c "left_ExonGene=GeneY" $STDOUT_FILE)
