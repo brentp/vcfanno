@@ -83,3 +83,4 @@ assert_equal 1 $(grep -c "END=97;ExonGene=GeneY" $STDOUT_FILE)
 run check_cipos_ends vcfanno -ends -base-path tests/citest/ tests/citest/conf.toml  tests/citest/test.vcf  | grep -v ^#
 assert_exit_code 0
 assert_equal 2 $(grep -c "left_ExonGene=GeneY" $STDOUT_FILE)
+assert_equal 0 $(grep -c "GeneY,GeneY" $STDOUT_FILE)

@@ -2,4 +2,4 @@
 file="dummyexons.bed.gz"
 names=["ExonGene"]
 columns=[4]
-ops=["concat"]
+ops=["uniq"]

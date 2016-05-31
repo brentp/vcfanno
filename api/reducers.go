@@ -105,6 +105,7 @@ func _strings(vals []interface{}, uniq bool) []string {
 				s = append(s, str)
 			} else if _, ok := m[str]; !ok {
 				s = append(s, str)
+				m[str] = true
 			}
 
 		} else if arr, ok := v.([]interface{}); ok {
@@ -116,6 +117,7 @@ func _strings(vals []interface{}, uniq bool) []string {
 			if !uniq {
 				s = append(s, str)
 			} else if _, ok := m[str]; !ok {
+				m[str] = true
 				s = append(s, str)
 			}
 		} else if arr, ok := v.([]string); ok {
@@ -123,6 +125,7 @@ func _strings(vals []interface{}, uniq bool) []string {
 			if !uniq {
 				s = append(s, str)
 			} else if _, ok := m[str]; !ok {
+				m[str] = true
 				s = append(s, str)
 			}
 
@@ -131,6 +134,7 @@ func _strings(vals []interface{}, uniq bool) []string {
 			if !uniq {
 				s = append(s, str)
 			} else if _, ok := m[str]; !ok {
+				m[str] = true
 				s = append(s, str)
 			}
 		}

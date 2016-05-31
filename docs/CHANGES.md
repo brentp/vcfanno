@@ -11,6 +11,7 @@ The resulting header will be:
 ##INFO=<ID=af_esp_aa,Number=1,Type=Float,Description=...
 ```
 + fix regression with CIPOS/CIEND when using `-ends` with structural variants. (Thanks to Liron for reporting)
++ fix bug with uniq not uniq-ing (Thank Liron for reporting)
 
 v0.0.10
 -------
