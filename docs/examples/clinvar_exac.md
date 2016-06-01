@@ -60,10 +60,12 @@ function div(a, b)
 ```
 and then use:
 ```
-op="lua:div(ac_exac_all, an_exac_all)"
+op="lua:div(ac_exac_all[1], an_exac_all)"
 ```
 
-in the `[[postannotation]]`.
+in the `[[postannotation]]`. Note that we need to use `[1]` for `ac_exac_all` because it has Number=A in the header
+of the VCF so it might be a table. Here we take only the first value. We could instead modify the `lua:div()` function
+to return a comma-delimited list if len(a) > 1.
 
 These `postannotation` sections are executed in the order they are specified so we can specify a final section that
 takes the maximum of all of the allele frequencies. This is informative as a truly pathogenic variant should have a
