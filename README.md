@@ -78,16 +78,9 @@ Also see the additional usage section at the bottom for additional details.
 Example
 -------
 
-the example directory contains the data and conf for a full example. To run, either download
+the example directory contains the data and conf for a full example. To run, download
 the [appropriate binary](https://github.com/brentp/vcfanno/releases/) for your system
-or build with:
 
-```Shell
-go get
-go build -o vcfanno
-```
-
-from this directory.
 Then, you can annotate with:
 
 ```Shell
