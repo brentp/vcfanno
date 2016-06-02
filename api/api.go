@@ -69,7 +69,7 @@ func (s *Source) LuaOp(v interfaces.IVariant, code string, vals []interface{}) s
 		"stop":  v.End(),
 		"vals":  vals})
 	if err != nil {
-		log.Printf("lua-error @ %s:%d: %s\n", v.Chrom(), v.Start()+1, err)
+		log.Printf("ERROR in at %s:%d. %s\nvals:%+v", v.Chrom(), v.Start()+1, err, vals)
 		return fmt.Sprintf("err:%v", value)
 	}
 	return fmt.Sprintf("%v", value)
@@ -400,7 +400,7 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 			k := 0
 		out:
 			// could also use fanIn where all channels send to a single
-			// channel and I pull from that.
+			// channel and pull from that.
 			for {
 				select {
 				case k = <-post.mus[0]:
@@ -439,7 +439,11 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 			post.mus[k] <- k
 			if value == nil {
 				if e != nil {
-					log.Println("lua error in postannotation", post.Name, e)
+					code := post.code
+					if len(code) > 40 {
+						code = code[:37] + "..."
+					}
+					log.Printf("ERROR: in lua postannotation at %s:%d for %s.\n%s\nempty values were: %+v\nvalues were: %+v\ncode is: %s", chrom, start+1, post.Name, e, missing, vals, code)
 				}
 				continue
 			}
