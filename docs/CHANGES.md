@@ -13,6 +13,9 @@ The resulting header will be:
 + fix regression with CIPOS/CIEND when using `-ends` with structural variants. (Thanks to Liron for reporting)
 + fix bug with uniq not uniq-ing (Thanks Liron for reporting)
 + improve error messages from lua (Thanks Komal Rathi for the test-case provoking this change).
++ improve handling of multiple values (usually due to multiple alts) for `max` and `min`. Now, if we have, e.g. var1:SAS=0.22,0.33
+  and var2:SAS=0.25 then `max` will give 0.33. This change makes max and min recursive so they'll call themselves on nested slices.
+  Thanks @snashraf for reporting. 
 
 v0.0.10
 -------
