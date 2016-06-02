@@ -84,3 +84,9 @@ run check_cipos_ends vcfanno -ends -base-path tests/citest/ tests/citest/conf.to
 assert_exit_code 0
 assert_equal 2 $(grep -c "left_ExonGene=GeneY" $STDOUT_FILE)
 assert_equal 0 $(grep -c "GeneY,GeneY" $STDOUT_FILE)
+
+
+run check_multiple_alts vcfanno tests/data/multiple-alts.conf tests/data/multiple-alts.vcf.gz
+assert_exit_code 0
+# there should be 0 non-header lines without 'max_maf' since we are annotating self.
+assert_equal 0 $(grep -v max_maf $STDOUT_FILE | grep -cv ^#)

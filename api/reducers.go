@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"log"
+	"math"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -27,9 +30,9 @@ func div2(vals []interface{}) interface{} {
 }
 
 func max(vals []interface{}) interface{} {
-	imax := float32(-999999999999999.0)
+	imax := float32(-math.MaxFloat32)
 	for _, v := range vals {
-		vv := asfloat32(v)
+		vv := asfloat32(v, max)
 		if vv > imax {
 			imax = vv
 		}
@@ -37,7 +40,10 @@ func max(vals []interface{}) interface{} {
 	return imax
 }
 
-func asfloat32(i interface{}) float32 {
+// asfloat32 returns a float32 from a single value. If there is
+// more than 1 value then it calls reducer_func(vals).
+func asfloat32(i interface{}, reducer_func ...Reducer) float32 {
+	l_arr := -1
 	switch i.(type) {
 	case uint32:
 		return float32(i.(uint32))
@@ -60,25 +66,52 @@ func asfloat32(i interface{}) float32 {
 		if len(v) == 1 {
 			return asfloat32(v[0])
 		}
+		l_arr = len(v)
 	case []string:
 		v := i.([]string)
 		if len(v) == 1 {
 			return asfloat32(v[0])
 		}
+		l_arr = len(v)
 	case []float32:
 		v := i.([]float32)
 		if len(v) == 1 {
 			return v[0]
 		}
+		l_arr = len(v)
+		if l_arr == 2 && len(reducer_func) == 1 {
+			fn := reducer_func[0]
+			return fn([]interface{}{v[0], v[1]}).(float32)
+		}
 
 	}
+
+	if l_arr > 0 && len(reducer_func) == 1 {
+		fn := reducer_func[0]
+		return fn(to_interface_slice(i)).(float32)
+	}
+
+	log.Fatalf("FATAL: tried to call asfloat32('%+v'). This usually means you have multiple alts and need to decompose or call max() or min() ", i)
 	return i.(float32)
 }
 
+func to_interface_slice(a interface{}) []interface{} {
+	s := reflect.ValueOf(a)
+	if s.Kind() != reflect.Slice {
+		panic("InterfaceSlice() given a non-slice type")
+	}
+
+	b := make([]interface{}, s.Len())
+	for i := range b {
+		b[i] = s.Index(i).Interface()
+	}
+	return b
+}
+
 func min(vals []interface{}) interface{} {
-	imin := float32(999999999999999.0)
+	imin := float32(math.MaxFloat32)
 	for _, v := range vals {
-		vv := asfloat32(v)
+		vv := asfloat32(v, min)
 		if vv < imin {
 			imin = vv
 		}
