@@ -599,9 +599,9 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 		var l, r uint32
 		var ok bool
 		if ends == LEFT {
-			l, r, ok = variant.(interfaces.CIFace).CIPos()
+			l, r, ok = variant.CIPos()
 		} else {
-			l, r, ok = variant.(interfaces.CIFace).CIEnd()
+			l, r, ok = variant.CIEnd()
 		}
 		// dont reannotate same interval
 		if !ok && (l == v.Start() && r == v.End()) {
