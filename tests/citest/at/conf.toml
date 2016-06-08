@@ -1,0 +1,5 @@
+[[annotation]]
+file="testexon.bed.gz"
+names=["ExonTranscript"]
+columns=[4]
+ops=["uniq"]
