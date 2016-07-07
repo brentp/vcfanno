@@ -2,7 +2,7 @@ vcfanno
 =======
 <!--
 build:
- VERSION=0.0.10c; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
+ VERSION=0.0.11; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
 -->
 
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
@@ -108,12 +108,16 @@ are `reduced`. Valid operations are:
  + lua:$lua // see section below for more details
  + mean
  + max
+ + sum
+ + div2
  + min
  + concat // comma delimited list of output
  + count  // count the number of overlaps
  + uniq
  + first 
  + flag   // presense/absence via vcf flag
+
+Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.
 
 PostAnnotation
 ==============

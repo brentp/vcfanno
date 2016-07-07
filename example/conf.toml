@@ -7,9 +7,9 @@ ops=["first", "first", "first", "first"]
 [[annotation]]
 # count is for alignments that are mapped (-F4) with mapq > 0
 file="example/ex.bam"
-names=["mapq", "coverage"] # map, coverage, and seq are special values for bam annotations
-fields=["mapq", "coverage"]
-ops=["mean", "count"]
+names=["mapq", "coverage", "xdp2"] # map, coverage, and seq are special values for bam annotations
+fields=["mapq", "coverage", "DP2"]
+ops=["mean", "sum", "DP2"] # op can be anything for DP2 field.
 
 
 [[annotation]]

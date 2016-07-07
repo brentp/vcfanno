@@ -1,5 +1,12 @@
-v0.0.11 (dev)
--------------
+v0.1.0 (development)
+--------------------
++ add field=['DP2'] for bam files which reports number of forward and reverse reads overlapping a variant.
+  value returned can be replicated with: `samtools mpileup -A -x -Q 1 -q 1 -r chrom:pos-pos $bam`
++ add op=sum
+
+
+v0.0.11
+-------
 + when op=self, pull Number from the annotation file (previously Number was always 1)
 + when op=concat or op=uniq user Number=. 
 + when name ends with '\_float' '\_int' or '\_flag' that is used to determine the Type in the output and that is then stripped from the name. So, e.g. with

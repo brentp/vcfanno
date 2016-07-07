@@ -16,15 +16,24 @@ import (
 	"github.com/brentp/vcfgo"
 )
 
+// LEFT prefix
 const LEFT = "left_"
+
+// RIGHT prefix
 const RIGHT = "right_"
+
+// BOTH prefix
 const BOTH = "both_"
+
+// INTERVAL prefix
 const INTERVAL = ""
 
+// HeaderUpdater allows adding an info to a Header
 type HeaderUpdater interface {
 	AddInfoToHeader(id string, itype string, number string, description string)
 }
 
+// HeaderTyped allows getting the type and Number of a (VCF) field
 type HeaderTyped interface {
 	GetHeaderType(field string) string
 	GetHeaderNumber(field string) string
@@ -49,7 +58,7 @@ type Source struct {
 
 // IsNumber indicates that we expect the Source to return a number given the op
 func (s *Source) IsNumber() bool {
-	return s.Op == "mean" || s.Op == "max" || s.Op == "min" || s.Op == "count" || s.Op == "median"
+	return s.Op == "mean" || s.Op == "max" || s.Op == "min" || s.Op == "count" || s.Op == "median" || s.Op == "sum"
 }
 
 // Annotator holds the information to annotate a file.
@@ -75,6 +84,7 @@ func (s *Source) LuaOp(v interfaces.IVariant, code string, vals []interface{}) s
 	return fmt.Sprintf("%v", value)
 }
 
+// PostAnnotation is created from the conf file
 type PostAnnotation struct {
 	Fields []string
 	Op     string
@@ -152,7 +162,7 @@ func checkSource(s *Source) error {
 
 // partition separates the relateds for a relatable so it reduces running over the data multiple times for each file.
 func (a *Annotator) partition(r interfaces.Relatable) [][]interfaces.Relatable {
-	parted := make([][]interfaces.Relatable, 0)
+	parted := make([][]interfaces.Relatable, 0, 0)
 	for _, o := range r.Related() {
 		s := int(o.Source()) - 1
 		for len(parted) <= s {
@@ -223,22 +233,39 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				coll = append(coll, strings.Replace(sval, ";", ",", -1))
 			}
 		} else if bam, ok := other.(*parsers.Bam); ok {
-			if bam.MapQ() < 1 || (bam.Flags&sam.Unmapped != 0) {
+			if bam.MapQ() < 1 || (bam.Flags&(sam.QCFail|sam.Unmapped|sam.Duplicate|sam.Secondary) != 0) {
 				continue
 			}
 			if src.Field == "" {
-				coll = append(coll, 1)
+				// for coverage, we just sum the values.
+				if len(coll) == 0 {
+					coll = append(coll, 1)
+				} else {
+					coll[0] = coll[0].(int) + 1
+				}
 			} else {
 				switch src.Field {
 				case "mapq":
 					coll = append(coll, bam.MapQ())
 				case "seq":
 					coll = append(coll, string(bam.Seq.Expand()))
+				case "DP2":
+					coll = append(coll, (bam.Flags&sam.Reverse) != 0)
 				default:
-					if src.Op != "count" {
-						log.Fatalf("unknown field %s specifed for bam: %s\n", src.Field, src.File)
+					if src.Op != "sum" {
+						if src.Op == "count" {
+							// backwards compat.
+							src.Op = "sum"
+						} else {
+							log.Fatalf("unknown field %s specifed for bam: %s with op: %s\n", src.Field, src.File, src.Op)
+						}
 					}
-					coll = append(coll, 1)
+					// for coverage, we just sum the values.
+					if len(coll) == 0 {
+						coll = append(coll, 1)
+					} else {
+						coll[0] = coll[0].(int) + 1
+					}
 				}
 			}
 		} else {
@@ -289,52 +316,53 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	return nil
 }
 
-func (src *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix string) {
+// AnnotateOne annotates a single variant with the vals
+func (s *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix string) {
 	if len(vals) == 0 {
 		return
 	}
-	if src.code != "" {
-		luaval := src.LuaOp(v, src.code, vals)
-		if luaval == "true" || luaval == "false" && strings.Contains(src.Op, "_flag(") {
+	if s.code != "" {
+		luaval := s.LuaOp(v, s.code, vals)
+		if luaval == "true" || luaval == "false" && strings.Contains(s.Op, "_flag(") {
 			if luaval == "true" {
-				v.Info().Set(prefix+src.Name, true)
+				v.Info().Set(prefix+s.Name, true)
 			}
 		} else {
-			v.Info().Set(prefix+src.Name, luaval)
+			v.Info().Set(prefix+s.Name, luaval)
 		}
 	} else {
-		val := Reducers[src.Op](vals)
-		v.Info().Set(prefix+src.Name, val)
+		val := Reducers[s.Op](vals)
+		v.Info().Set(prefix+s.Name, val)
 	}
 }
 
-//func (src *Source) UpdateHeader(h HeaderUpdater, ends bool) {
-func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number string) {
+// UpdateHeader does what it suggests but handles left and right ends for svs
+func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number string) {
 	ntype := "String"
 	var desc string
 	// for 'self' and 'first', we can get the type from the header of the annotation file.
-	if htype != "" && (src.Op == "self" || src.Op == "first") {
+	if htype != "" && (s.Op == "self" || s.Op == "first") {
 		ntype = htype
 	} else {
-		if src.Op == "mean" || src.Op == "max" {
+		if s.Op == "mean" || s.Op == "max" {
 			ntype, number = "Float", "1"
-		} else if strings.HasSuffix(src.Name, "_float") {
-			src.Name = src.Name[:len(src.Name)-6]
+		} else if strings.HasSuffix(s.Name, "_float") {
+			s.Name = s.Name[:len(s.Name)-6]
 			ntype, number = "Float", "1"
-		} else if strings.HasSuffix(src.Name, "_int") {
-			src.Name = src.Name[:len(src.Name)-4]
+		} else if strings.HasSuffix(s.Name, "_int") {
+			s.Name = s.Name[:len(s.Name)-4]
 			ntype, number = "Integer", "1"
-		} else if strings.HasSuffix(src.Name, "_flag") || strings.Contains(src.Op, "flag(") {
-			src.Name = src.Name[:len(src.Name)-5]
+		} else if strings.HasSuffix(s.Name, "_flag") || strings.Contains(s.Op, "flag(") {
+			s.Name = s.Name[:len(s.Name)-5]
 			ntype, number = "Flag", "0"
 		} else {
-			if src.Op == "flag" {
+			if s.Op == "flag" {
 				ntype, number = "Flag", "0"
 			}
-			if (strings.HasSuffix(src.File, ".bam") && src.Field == "") || src.IsNumber() {
+			if (strings.HasSuffix(s.File, ".bam") && s.Field == "") || s.IsNumber() {
 				ntype = "Float"
-			} else if src.code != "" {
-				if strings.Contains(src.Op, "_flag(") {
+			} else if s.code != "" {
+				if strings.Contains(s.Op, "_flag(") {
 					ntype, number = "Flag", "0"
 				} else {
 					ntype = "String"
@@ -342,31 +370,36 @@ func (src *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number
 			}
 		}
 		// use Number="." for stringy ops.
-		if src.Op == "uniq" || src.Op == "concat" {
+		if s.Op == "uniq" || s.Op == "concat" {
 			number = "."
 		}
 	}
-	if (src.Op == "first" || src.Op == "self") && htype == ntype {
-		desc = fmt.Sprintf("transfered from matched variants in %s", src.File)
-	} else if strings.HasSuffix(src.File, ".bam") && src.Field == "" {
-		desc = fmt.Sprintf("calculated by coverage from %s", src.File)
-	} else if src.Field != "" {
-		desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", src.Op, src.Field, src.File)
+	if (s.Op == "first" || s.Op == "self") && htype == ntype {
+		desc = fmt.Sprintf("transfered from matched variants in %s", s.File)
+	} else if strings.HasSuffix(s.File, ".bam") && s.Field == "" {
+		desc = fmt.Sprintf("calculated by coverage from %s", s.File)
+	} else if s.Field == "DP2" {
+		desc = fmt.Sprintf("calculated by coverage from %s values are numbers of forward,reverse reads", s.File)
+		number = "2"
+		ntype = "Integer"
+	} else if s.Field != "" {
+		desc = fmt.Sprintf("calculated by %s of overlapping values in field %s from %s", s.Op, s.Field, s.File)
 	} else {
-		desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", src.Op, src.Column, src.File)
+		desc = fmt.Sprintf("calculated by %s of overlapping values in column %d from %s", s.Op, s.Column, s.File)
 	}
-	r.AddInfoToHeader(src.Name, number, ntype, desc)
+	r.AddInfoToHeader(s.Name, number, ntype, desc)
 	if ends {
-		if src.Op == "self" {
+		if s.Op == "self" {
 			// what to do here?
 		}
 		for _, end := range []string{LEFT, RIGHT} {
 			d := fmt.Sprintf("%s at end %s", desc, strings.TrimSuffix(end, "_"))
-			r.AddInfoToHeader(end+src.Name, number, ntype, d)
+			r.AddInfoToHeader(end+s.Name, number, ntype, d)
 		}
 	}
 }
 
+// PostAnnotate happens after everything is done.
 func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfaces.Info, prefix string) error {
 	var e, err error
 	vals := make([]interface{}, 0, 2)
@@ -491,8 +524,8 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 	return err
 }
 
+// Setup reads all the tabix indexes and setups up the Queryables
 func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
-	//queryables := make([]interfaces.Queryable, 0)
 	files, fmap, err := a.setupStreams()
 	if err != nil {
 		return nil, err
@@ -548,7 +581,7 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 func (a *Annotator) setupStreams() ([]string, map[string][]*Source, error) {
 
 	lookup := make(map[string][]*Source, len(a.Sources))
-	files := make([]string, 0)
+	files := make([]string, 0, 4)
 	for _, src := range a.Sources {
 		// have expanded so there are many sources per file.
 		// use seen to just grab the file the first time it is seen and start a stream
@@ -561,7 +594,7 @@ func (a *Annotator) setupStreams() ([]string, map[string][]*Source, error) {
 	return files, lookup, nil
 }
 
-// AnnotatedEnds makes a new 1-base interval for the left and one for the right end
+// AnnotateEnds makes a new 1-base interval for the left and one for the right end
 // so that it can use the same machinery to annotate the ends and the entire interval.
 // Output into the info field is prefixed with "left_" or "right_".
 func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {

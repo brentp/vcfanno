@@ -22,6 +22,26 @@ func mean(vals []interface{}) interface{} {
 	return s / float32(len(vals))
 }
 
+func dp2(vals []interface{}) interface{} {
+	ret := make([]int, 2)
+	for _, v := range vals {
+		if v.(bool) {
+			ret[1]++
+		} else {
+			ret[0]++
+		}
+	}
+	return ret
+}
+
+func sum(vals []interface{}) interface{} {
+	s := float32(0.0)
+	for _, v := range vals {
+		s += asfloat32(v, sum)
+	}
+	return s
+}
+
 func div2(vals []interface{}) interface{} {
 	if vals[0] == 0 {
 		return 0
@@ -215,6 +235,7 @@ func overlap(a, b interfaces.IPosition) bool {
 var Reducers = map[string]Reducer{
 	"self":   Reducer(self),
 	"mean":   Reducer(mean),
+	"sum":    Reducer(sum),
 	"max":    Reducer(max),
 	"min":    Reducer(min),
 	"concat": Reducer(concat),
@@ -223,4 +244,5 @@ var Reducers = map[string]Reducer{
 	"first":  Reducer(first),
 	"flag":   Reducer(vflag),
 	"div2":   Reducer(div2),
+	"DP2":    Reducer(dp2),
 }

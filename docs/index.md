@@ -107,12 +107,17 @@ are `reduced`. Valid operations are:
  + lua:$lua // see section below for more details
  + mean
  + max
+ + sum
  + min
  + concat // comma delimited list of output
  + count  // count the number of overlaps
  + uniq
  + first 
  + flag   // presense/absence via vcf flag
+ + div2
+
+Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.
+
 
 PostAnnotation
 ==============

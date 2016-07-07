@@ -24,7 +24,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.0.11"
+var VERSION = "0.1.0-dev"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
@@ -172,10 +172,10 @@ see: https://github.com/brentp/vcfanno
 	maxGap := envGet("IRELATE_MAX_GAP", 20000)
 	maxChunk := envGet("IRELATE_MAX_CHUNK", 8000)
 
-	stream := irelate.PIRelate(maxChunk, maxGap, qstream, *ends, fn, queryables...)
-
 	// make a new writer from the string header.
 	out, err = vcfgo.NewWriter(out, query.Header)
+
+	stream := irelate.PIRelate(maxChunk, maxGap, qstream, *ends, fn, queryables...)
 
 	if err != nil {
 		log.Fatal(err)

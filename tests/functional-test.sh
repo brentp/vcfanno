@@ -32,7 +32,10 @@ n=$(grep  ^"#CHROM" $STDOUT_FILE | cut -f 10- | wc -w)
 assert_equal $n 3
 
 # test bam stuff
-n=$(grep -w 10712 $STDOUT_FILE | grep -c "coverage=11;")
+ret=$(grep -w 10712 $STDOUT_FILE)
+n=$(echo $ret | grep -c "coverage=9;")
+assert_equal $n 1
+n=$(echo $ret | grep -c "xdp2=0,9;")
 assert_equal $n 1
 
 

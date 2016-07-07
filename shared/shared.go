@@ -38,14 +38,14 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 		// auto-fill bam to count.
 		a.Ops = make([]string, len(a.Names))
 		for i := range a.Names {
-			a.Ops[i] = "count"
+			a.Ops[i] = "sum"
 		}
 	}
 	if len(a.Columns) == 0 && len(a.Fields) == 0 {
 		if !strings.HasSuffix(a.File, ".bam") {
 			return nil, fmt.Errorf("no columns or fields specified for %s\n", a.File)
 		}
-		// auto-fill bam to count.
+
 		if len(a.Fields) == 0 {
 			a.Columns = make([]int, len(a.Names))
 			for i := range a.Names {
@@ -67,6 +67,13 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 	for i := 0; i < n; i++ {
 		isLua := strings.HasPrefix(a.Ops[i], "lua:")
 		if !isLua {
+			if len(a.Fields) > i && a.Fields[i] == "DP2" {
+				if !strings.HasSuffix(a.File, ".bam") {
+					log.Fatal("DP2 only valid for bams")
+				}
+				// always set Op to DP2 whne Field is DP2
+				a.Ops[i] = "DP2"
+			}
 			if _, ok := Reducers[a.Ops[i]]; !ok {
 				return nil, fmt.Errorf("requested op not found: %s for %s\n", a.Ops[i], a.File)
 			}
