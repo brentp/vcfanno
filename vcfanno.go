@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -78,6 +79,9 @@ see: https://github.com/brentp/vcfanno
 
 	var config Config
 	if _, err := toml.DecodeFile(inFiles[0], &config); err != nil {
+		if strings.Contains(err.Error(), "Expected value but found") {
+			fmt.Fprintln(os.Stderr, "\nNOTE: you must quote values in the conf file, e.g. fields=['AC', 'AN'] instead of fields=[AC, AN]\n")
+		}
 		panic(err)
 	}
 	config.Base = *base
