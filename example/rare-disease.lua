@@ -8,6 +8,14 @@ function contains(str, tok)
     return string.find(str, tok) ~= nil
 end
 
+function split(str, sep)
+        local sep, fields = sep or ":", {}
+        local pattern = string.format("([^%s]+)", sep)
+        str:gsub(pattern, function(c) fields[#fields+1] = c end)
+        return fields
+end
+
+
 CLINVAR_SIG = {}
 CLINVAR_SIG['0'] = 'uncertain'
 CLINVAR_SIG['1'] = 'not-provided'
@@ -43,8 +51,7 @@ function clinvar_sig(vals)
         else
             local invals = split(vals[i], "|")
             local inret = {}
-            for j=1,#invals do
-                inret[#inret+1] = CLINVAR_SIG[invals[j]]
+            for j=1,#invals do inret[#inret+1] = CLINVAR_SIG[invals[j]]
             end
             ret[#ret+1] = table.concat(inret, "|")
         end
