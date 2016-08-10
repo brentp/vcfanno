@@ -76,6 +76,8 @@ func (s *Source) LuaOp(v interfaces.IVariant, code string, vals []interface{}) s
 		"chrom": v.Chrom(),
 		"start": v.Start(),
 		"stop":  v.End(),
+		"ref":   v.Ref(),
+		"alt":   v.Alt(),
 		"vals":  vals})
 	if err != nil {
 		log.Printf("ERROR in at %s:%d. %s\nvals:%+v", v.Chrom(), v.Start()+1, err, vals)

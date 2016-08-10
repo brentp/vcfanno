@@ -3,6 +3,7 @@ v0.1.0 (development)
 + add field=['DP2'] for bam files which reports number of forward and reverse reads overlapping a variant.
   value returned can be replicated with: `samtools mpileup -A -x -Q 1 -q 1 -r chrom:pos-pos $bam`
 + add op=sum
++ expose ref and alt to lua.
 
 
 v0.0.11

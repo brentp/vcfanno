@@ -95,7 +95,10 @@ assert_exit_code 0
 # there should be 0 non-header lines without 'max_maf' since we are annotating self.
 assert_equal 0 $(grep -v max_maf $STDOUT_FILE | grep -cv ^#)
 
-run check_ends_overlap vcfanno -base-path tests/citest/at/ -ends tests/citest/at/conf.toml tests/citest/at/test.vcf | grep -v ^#
+touch e.lua
+run check_ends_overlap vcfanno -lua e.lua -base-path tests/citest/at/ -ends tests/citest/at/conf.toml tests/citest/at/test.vcf | grep -v ^#
 assert_exit_code 0
 assert_equal 2 $(grep -c ";left_ExonTranscript=" $STDOUT_FILE)
 assert_equal 3 $(grep -c ";right_ExonTranscript=" $STDOUT_FILE)
+assert_equal 3 $(grep -c ";right_ref_alt=A" $STDOUT_FILE)
+rm e.lua

@@ -1,5 +1,5 @@
 [[annotation]]
 file="testexon.bed.gz"
-names=["ExonTranscript"]
-columns=[4]
-ops=["uniq"]
+names=["ExonTranscript", "ref_alt"]
+columns=[4, 2]
+ops=["uniq", "lua:ref ..'/'..alt[1]"]
