@@ -54,6 +54,7 @@ type Source struct {
 	mu    sync.Mutex
 	code  string
 	Vm    *goluaez.State
+	Desc  string
 }
 
 // IsNumber indicates that we expect the Source to return a number given the op
@@ -376,7 +377,9 @@ func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number s
 			number = "."
 		}
 	}
-	if (s.Op == "first" || s.Op == "self") && htype == ntype {
+	if (s.Desc != "") {
+	   desc = s.Desc
+	} else if (s.Op == "first" || s.Op == "self") && htype == ntype {
 		desc = fmt.Sprintf("transfered from matched variants in %s", s.File)
 	} else if strings.HasSuffix(s.File, ".bam") && s.Field == "" {
 		desc = fmt.Sprintf("calculated by coverage from %s", s.File)

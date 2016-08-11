@@ -25,6 +25,7 @@ type Annotation struct {
 	Columns []int
 	// the names in the output.
 	Names []string
+	Desc string
 }
 
 // Flatten turns an annotation into a slice of Sources. Pass in the index of the file.
@@ -82,7 +83,7 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 		if len(a.Names) == 0 {
 			a.Names = a.Fields
 		}
-		sources[i] = &Source{File: a.File, Op: op, Name: a.Names[i], Index: index}
+		sources[i] = &Source{File: a.File, Op: op, Name: a.Names[i], Index: index, Desc: a.Desc}
 		if nil != a.Fields {
 			sources[i].Field = a.Fields[i]
 			sources[i].Column = -1
