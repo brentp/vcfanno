@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"io"
 	"log"
-	_ "net/http/pprof"
+	//_ "net/http/pprof"
 	"os"
 	"runtime"
-	"runtime/pprof"
 	"strconv"
 	"strings"
 	"sync"
@@ -147,7 +146,7 @@ see: https://github.com/brentp/vcfanno
 
 	lastMsg := struct {
 		sync.RWMutex
-		s [3]string
+		s [10]string
 		i int
 	}{}
 
@@ -156,8 +155,15 @@ see: https://github.com/brentp/vcfanno
 		if e != nil {
 			lastMsg.RLock()
 			em := e.Error()
-			if em != lastMsg.s[0] && em != lastMsg.s[1] && em != lastMsg.s[2] {
-				log.Println(e, ">> this error may occur many times. reporting once here...")
+			found := false
+			for i := len(lastMsg.s) - 1; i >= 0; i-- {
+				if em == lastMsg.s[i] {
+					found = true
+					break
+				}
+			}
+			if !found {
+				log.Println(e, ">> this error/warning may occur many times. reporting once here...")
 				lastMsg.RUnlock()
 				lastMsg.Lock()
 				lastMsg.s[lastMsg.i] = em
@@ -188,15 +194,17 @@ see: https://github.com/brentp/vcfanno
 	start := time.Now()
 	n := 0
 
-	if os.Getenv("IRELATE_PROFILE") == "TRUE" {
-		log.Println("profiling to: irelate.pprof")
-		f, err := os.Create("irelate.pprof")
-		if err != nil {
-			panic(err)
+	/*
+		if os.Getenv("IRELATE_PROFILE") == "TRUE" {
+			log.Println("profiling to: irelate.pprof")
+			f, err := os.Create("irelate.pprof")
+			if err != nil {
+				panic(err)
+			}
+			pprof.StartCPUProfile(f)
+			defer pprof.StopCPUProfile()
 		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
+	*/
 
 	for interval := range stream {
 		//log.Printf("%v\n", interval)

@@ -176,9 +176,10 @@ func (a *Annotator) partition(r interfaces.Relatable) [][]interfaces.Relatable {
 }
 
 // collect applies the reduction (op) specified in src on the rels.
-func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, strict bool) []interface{} {
+func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, strict bool) ([]interface{}, error) {
 	coll := make([]interface{}, 0, len(rels))
 	var val interface{}
+	var finalerr error
 	for _, other := range rels {
 		if int(other.Source())-1 != src.Index {
 			log.Fatalf("got source %d with related %d", src.Index, other.Source())
@@ -201,7 +202,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				var err error
 				val, err = o.Info().Get(src.Field)
 				if err != nil {
-					log.Println(err)
+					finalerr = err
 					if val == "" {
 						continue
 					}
@@ -228,7 +229,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 
 				v, e := strconv.ParseFloat(sval, 32)
 				if e != nil {
-					log.Println(e)
+					finalerr = e
 				}
 				coll = append(coll, v)
 			} else {
@@ -276,7 +277,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			coll = []interface{}{msg}
 		}
 	}
-	return coll
+	return coll, finalerr
 }
 
 // AnnotateOne annotates a relatable with the Sources in an Annotator.
@@ -302,6 +303,7 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	}
 
 	var src *Source
+	var e error
 	for i := range a.Sources {
 		src = a.Sources[i]
 		if len(parted) <= src.Index {
@@ -312,10 +314,13 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 		if len(related) == 0 {
 			continue
 		}
-		vals := collect(v, related, src, strict)
+		vals, err := collect(v, related, src, strict)
+		if err != nil {
+			e = err
+		}
 		src.AnnotateOne(v, vals, prefix)
 	}
-	return nil
+	return e
 }
 
 // AnnotateOne annotates a single variant with the vals
