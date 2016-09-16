@@ -135,6 +135,12 @@
         <li class="main active"><a href="#vcfanno">vcfanno</a></li>
         
     
+        <li class="main "><a href="#mailing-list">Mailing List</a></li>
+        
+    
+        <li class="main "><a href="#overview">Overview</a></li>
+        
+    
         <li class="main "><a href="#usage">Usage</a></li>
         
             <li><a href="#example">Example</a></li>
@@ -173,12 +179,15 @@
 <h1 id="vcfanno">vcfanno</h1>
 <!--
 build:
- VERSION=0.0.10c; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
+ VERSION=0.1.0; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
 -->
 
 <p><a href="https://travis-ci.org/brentp/vcfanno"><img alt="Build Status" src="https://travis-ci.org/brentp/vcfanno.svg" /></a>
 <a href="http://brentp.github.io/vcfanno/"><img alt="Docs" src="https://img.shields.io/badge/docs-latest-blue.svg" /></a></p>
+<h1 id="mailing-list">Mailing List</h1>
 <p><a href="https://groups.google.com/forum/#!forum/vcfanno">Mailing List</a><a href="https://groups.google.com/forum/#!forum/vcfanno"><img alt="Mailing List" src="http://www.google.com/images/icons/product/groups-32.png" /></a></p>
+<h1 id="overview">Overview</h1>
+<p><img alt="overview" src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" title="overview" /></p>
 <p>vcfanno annotates a VCF with any number of <em>sorted</em> and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
 user-defined operations on the overlapping annotations.</p>
@@ -224,15 +233,9 @@ ops=[&quot;count&quot;, &quot;mean&quot;, &quot;concat&quot;]
 conf file as desired. Files can be local as above, or available via http/https.</p>
 <p>Also see the additional usage section at the bottom for additional details.</p>
 <h2 id="example">Example</h2>
-<p>the example directory contains the data and conf for a full example. To run, either download
-the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a> for your system
-or build with:</p>
-<pre><code class="Shell">go get
-go build -o vcfanno
-</code></pre>
-
-<p>from this directory.
-Then, you can annotate with:</p>
+<p>the example directory contains the data and conf for a full example. To run, download
+the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a> for your system</p>
+<p>Then, you can annotate with:</p>
 <pre><code class="Shell">./vcfanno -p 4 -lua example/custom.lua example/conf.toml example/query.vcf.gz &gt; annotated.vcf
 </code></pre>
 
@@ -254,13 +257,13 @@ are <code>reduced</code>. Valid operations are:</p>
 <li>mean</li>
 <li>max</li>
 <li>sum</li>
+<li>div2</li>
 <li>min</li>
 <li>concat // comma delimited list of output</li>
 <li>count  // count the number of overlaps</li>
 <li>uniq</li>
 <li>first </li>
 <li>flag   // presense/absence via vcf flag</li>
-<li>div2</li>
 </ul>
 <p>Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.</p>
 <h1 id="postannotation">PostAnnotation</h1>
@@ -334,8 +337,12 @@ end
 
 <p>And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by <code>vcfanno</code> which will be faster).</p>
-<p>The variables <code>vals</code>, <code>chrom</code>, <code>start</code>, <code>stop</code> from the current variant will all be available
-in the lua code.</p>
+<p>The variables <code>vals</code>, <code>chrom</code>, <code>start</code>, <code>stop</code>, <code>ref</code>, <code>alt</code> from the currently
+variant will all be available in the lua code. <code>alt</code> will be a table with length
+equal to the number of alternate alleles. Example usage could be:</p>
+<pre><code>op=&quot;lua:ref .. '/' .. alt[1]&quot;
+</code></pre>
+
 <p>See <a href="https://github.com/brentp/vcfanno/blob/master/example/conf.toml">example/conf.toml</a>
 and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.lua">example/custom.lua</a>
 for more examples.</p></div>
