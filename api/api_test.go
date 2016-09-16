@@ -182,7 +182,8 @@ var jstest = []struct {
 
 func (s *APISuite) TestCollect(c *C) {
 	parted := s.annotator.partition(s.v1)
-	r := collect(s.v1, parted[0], &s.src0, false)
+	r, err := collect(s.v1, parted[0], &s.src0, false)
+	c.Assert(err, ErrorMatches, ".* not found in INFO")
 	c.Assert(len(r), Equals, 1)
 	c.Assert(r[0], Equals, float64(33))
 }
