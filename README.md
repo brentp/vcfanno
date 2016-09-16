@@ -224,8 +224,12 @@ end
 And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by `vcfanno` which will be faster).
 
-The variables `vals`, `chrom`, `start`, `stop` from the current variant will all be available
-in the lua code.
+The variables `vals`, `chrom`, `start`, `stop`, `ref`, `alt` from the currently
+variant will all be available in the lua code. `alt` will be a table with length
+equal to the number of alternate alleles. Example usage could be:
+```
+op="lua:ref .. '/' .. alt[1]"
+```
 
 
 See [example/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)

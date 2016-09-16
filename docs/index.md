@@ -2,13 +2,21 @@ vcfanno
 =======
 <!--
 build:
- VERSION=0.0.10c; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
+ VERSION=0.1.0; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
 -->
 
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
+
+Mailing List
+============
 [Mailing List](https://groups.google.com/forum/#!forum/vcfanno)[![Mailing List](http://www.google.com/images/icons/product/groups-32.png)](https://groups.google.com/forum/#!forum/vcfanno)
+
+Overview
+========
+![overview](https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png "overview")
+
 
 vcfanno annotates a VCF with any number of *sorted* and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
@@ -70,16 +78,9 @@ Also see the additional usage section at the bottom for additional details.
 Example
 -------
 
-the example directory contains the data and conf for a full example. To run, either download
+the example directory contains the data and conf for a full example. To run, download
 the [appropriate binary](https://github.com/brentp/vcfanno/releases/) for your system
-or build with:
 
-```Shell
-go get
-go build -o vcfanno
-```
-
-from this directory.
 Then, you can annotate with:
 
 ```Shell
@@ -108,16 +109,15 @@ are `reduced`. Valid operations are:
  + mean
  + max
  + sum
+ + div2
  + min
  + concat // comma delimited list of output
  + count  // count the number of overlaps
  + uniq
  + first 
  + flag   // presense/absence via vcf flag
- + div2
 
 Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.
-
 
 PostAnnotation
 ==============
@@ -224,8 +224,12 @@ end
 And then the above custom op would be: "lua:sum(vals)". (note that there's a sum op provided
 by `vcfanno` which will be faster).
 
-The variables `vals`, `chrom`, `start`, `stop` from the current variant will all be available
-in the lua code.
+The variables `vals`, `chrom`, `start`, `stop`, `ref`, `alt` from the currently
+variant will all be available in the lua code. `alt` will be a table with length
+equal to the number of alternate alleles. Example usage could be:
+```
+op="lua:ref .. '/' .. alt[1]"
+```
 
 
 See [example/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
