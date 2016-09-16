@@ -72,17 +72,23 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                     
-                        <li >
-                            <a href="examples/clinvar_exac/">ClinvarExac</a>
-                        </li>
+                        
+<li >
+    <a href="examples/clinvar_exac/">ClinvarExac</a>
+</li>
+
                     
-                        <li >
-                            <a href="examples/cadd/">CADD</a>
-                        </li>
+                        
+<li >
+    <a href="examples/cadd/">CADD</a>
+</li>
+
                     
-                        <li >
-                            <a href="examples/exac_combine/exac_combine/">ExAC-Combine</a>
-                        </li>
+                        
+<li >
+    <a href="examples/exac_combine/exac_combine/">ExAC-Combine</a>
+</li>
+
                     
                     </ul>
                 </li>
@@ -247,13 +253,16 @@ are <code>reduced</code>. Valid operations are:</p>
 <li>lua:$lua // see section below for more details</li>
 <li>mean</li>
 <li>max</li>
+<li>sum</li>
 <li>min</li>
 <li>concat // comma delimited list of output</li>
 <li>count  // count the number of overlaps</li>
 <li>uniq</li>
 <li>first </li>
 <li>flag   // presense/absence via vcf flag</li>
+<li>div2</li>
 </ul>
+<p>Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.</p>
 <h1 id="postannotation">PostAnnotation</h1>
 <p>One of the most powerful features of <code>vcfanno</code> is the embedded scripting language, lua, combined with <em>postannotation</em>.
 <code>[[postannotation]]</code> blocks occur after all the annotations have been applied. They are similar, but in the fields

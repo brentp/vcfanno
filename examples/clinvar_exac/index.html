@@ -72,17 +72,23 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                     
-                        <li class="active">
-                            <a href="./">ClinvarExac</a>
-                        </li>
+                        
+<li class="active">
+    <a href="./">ClinvarExac</a>
+</li>
+
                     
-                        <li >
-                            <a href="../cadd/">CADD</a>
-                        </li>
+                        
+<li >
+    <a href="../cadd/">CADD</a>
+</li>
+
                     
-                        <li >
-                            <a href="../exac_combine/exac_combine/">ExAC-Combine</a>
-                        </li>
+                        
+<li >
+    <a href="../exac_combine/exac_combine/">ExAC-Combine</a>
+</li>
+
                     
                     </ul>
                 </li>
@@ -187,10 +193,12 @@ custom op in lua as:</p>
 </code></pre>
 
 <p>and then use:</p>
-<pre><code>op=&quot;lua:div(ac_exac_all, an_exac_all)&quot;
+<pre><code>op=&quot;lua:div(ac_exac_all[1], an_exac_all)&quot;
 </code></pre>
 
-<p>in the <code>[[postannotation]]</code>.</p>
+<p>in the <code>[[postannotation]]</code>. Note that we need to use <code>[1]</code> for <code>ac_exac_all</code> because it has Number=A in the header
+of the VCF so it might be a table. Here we take only the first value. We could instead modify the <code>lua:div()</code> function
+to return a comma-delimited list if len(a) &gt; 1.</p>
 <p>These <code>postannotation</code> sections are executed in the order they are specified so we can specify a final section that
 takes the maximum of all of the allele frequencies. This is informative as a truly pathogenic variant should have a
 low allele frequency in all populations. Here is the section to take the maximum AF of all the populations which

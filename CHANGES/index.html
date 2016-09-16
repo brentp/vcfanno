@@ -72,17 +72,23 @@
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                     
-                        <li >
-                            <a href="../examples/clinvar_exac/">ClinvarExac</a>
-                        </li>
+                        
+<li >
+    <a href="../examples/clinvar_exac/">ClinvarExac</a>
+</li>
+
                     
-                        <li >
-                            <a href="../examples/cadd/">CADD</a>
-                        </li>
+                        
+<li >
+    <a href="../examples/cadd/">CADD</a>
+</li>
+
                     
-                        <li >
-                            <a href="../examples/exac_combine/exac_combine/">ExAC-Combine</a>
-                        </li>
+                        
+<li >
+    <a href="../examples/exac_combine/exac_combine/">ExAC-Combine</a>
+</li>
+
                     
                     </ul>
                 </li>
@@ -126,7 +132,13 @@
             <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#v0010">v0.0.10</a></li>
+        <li class="main active"><a href="#v010">v0.1.0</a></li>
+        
+    
+        <li class="main "><a href="#v0011">v0.0.11</a></li>
+        
+    
+        <li class="main "><a href="#v0010">v0.0.10</a></li>
         
     
         <li class="main "><a href="#v009">v0.0.9</a></li>
@@ -154,6 +166,33 @@
 </div></div>
             <div class="col-md-9" role="main">
 
+<h2 id="v010">v0.1.0</h2>
+<ul>
+<li>drastically reduce the warning message output.</li>
+<li>add field=['DP2'] for bam files which reports number of forward and reverse reads overlapping a variant.
+  value returned can be replicated with: <code>samtools mpileup -A -x -Q 1 -q 1 -r chrom:pos-pos $bam</code></li>
+<li>add op=sum</li>
+<li>expose ref and alt to lua.</li>
+</ul>
+<h2 id="v0011">v0.0.11</h2>
+<ul>
+<li>when op=self, pull Number from the annotation file (previously Number was always 1)</li>
+<li>when op=concat or op=uniq user Number=. </li>
+<li>when name ends with '_float' '_int' or '_flag' that is used to determine the Type in the output and that is then stripped from the name. So, e.g. with
+<code>names=["af_esp_aa_float"]</code>
+The resulting header will be:</li>
+</ul>
+<pre><code>##INFO=&lt;ID=af_esp_aa,Number=1,Type=Float,Description=...
+</code></pre>
+
+<ul>
+<li>fix regression with CIPOS/CIEND when using <code>-ends</code> with structural variants. (Thanks to Liron for reporting)</li>
+<li>fix bug with uniq not uniq-ing (Thanks Liron for reporting)</li>
+<li>improve error messages from lua (Thanks Komal Rathi for the test-case provoking this change).</li>
+<li>improve handling of multiple values (usually due to multiple alts) for <code>max</code> and <code>min</code>. Now, if we have, e.g. var1:SAS=0.22,0.33
+  and var2:SAS=0.25 then <code>max</code> will give 0.33. This change makes max and min recursive so they'll call themselves on nested slices.
+  Thanks @snashraf for reporting. </li>
+</ul>
 <h2 id="v0010">v0.0.10</h2>
 <ul>
 <li>allow using postannotation even if not all requested fields were found for a given variant.</li>
