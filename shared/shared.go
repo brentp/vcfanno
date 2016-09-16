@@ -17,7 +17,7 @@ type Config struct {
 	Base string
 }
 
-// annotation holds information about the annotation files parsed from the toml config.
+// Annotation holds information about the annotation files parsed from the toml config.
 type Annotation struct {
 	File    string
 	Ops     []string
@@ -101,7 +101,7 @@ func (c Config) Sources() ([]*Source, error) {
 			annos[i] = a
 		}
 	}
-	s := make([]*Source, 0)
+	var s []*Source
 	for i, a := range annos {
 		flats, err := a.Flatten(i, c.Base)
 		if err != nil {

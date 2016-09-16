@@ -1,5 +1,5 @@
-v0.1.0 (development)
---------------------
+v0.1.0
+------
 + drastically reduce the warning message output.
 + add field=['DP2'] for bam files which reports number of forward and reverse reads overlapping a variant.
   value returned can be replicated with: `samtools mpileup -A -x -Q 1 -q 1 -r chrom:pos-pos $bam`
