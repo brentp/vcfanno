@@ -1,5 +1,9 @@
+from __future__ import print_function
+
 import toolshed as ts
 def main(precision, path):
+
+    header = ["chrom", 
 
     tmpl = "{Chrom}\t{Pos}\t.\t{Ref}\t{Alt}\t1\tPASS\traw={RawScore:.%if};phred={PHRED:.%if}" % (precision, precision)
 
@@ -12,7 +16,7 @@ def main(precision, path):
 
     for i, line in enumerate(ts.nopen(path)):
         if i == 0:
-            print hdr.format(comment=line.strip("# ").strip())
+            print(hdr.format(comment=line.strip("# ").strip()))
             continue
         if line.startswith("#Chrom"):
             header = line[1:].rstrip().split("\t")
@@ -20,7 +24,7 @@ def main(precision, path):
         d = dict(zip(header, line.rstrip().split("\t")))
         d['PHRED'] = float(d['PHRED'])
         d['RawScore'] = float(d['RawScore'])
-        print tmpl.format(**d)
+        print(tmpl.format(**d))
 
 
 
