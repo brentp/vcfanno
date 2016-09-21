@@ -1,9 +1,14 @@
 from __future__ import print_function
+import locale
+
+def _to_str(s, enc=locale.getpreferredencoding()):
+    if isinstance(s, bytes):
+        return s.decode(enc)
+    return s
 
 import toolshed as ts
 def main(precision, path):
-
-    header = ["chrom", 
+    header = None
 
     tmpl = "{Chrom}\t{Pos}\t.\t{Ref}\t{Alt}\t1\tPASS\traw={RawScore:.%if};phred={PHRED:.%if}" % (precision, precision)
 
@@ -15,10 +20,11 @@ def main(precision, path):
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER INFO"""
 
     for i, line in enumerate(ts.nopen(path)):
+        line = _to_str(line)
         if i == 0:
             print(hdr.format(comment=line.strip("# ").strip()))
             continue
-        if line.startswith("#Chrom"):
+        if header is None and line.startswith("#Chrom"):
             header = line[1:].rstrip().split("\t")
             continue
         d = dict(zip(header, line.rstrip().split("\t")))
