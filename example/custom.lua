@@ -52,17 +52,6 @@ function split(str, sep)
         return fields
 end
 
-function join(tbl, sep)
-    if type(tbl) ~= "table" then
-        local otbl = {}
-        for j = 1,#tbl do
-            otbl[j] = tbl[j]
-        end
-        tbl = otbl
-    end
-    return table.concat(tbl, sep)
-end
-
 function contains(str, tok)
     return string.find(str, tok) ~= nil
 end
@@ -72,10 +61,11 @@ function div2(a, b)
     if(a == 0) then return "0.0" end
     return string.format("%.9f", (a + 0) / b)
 end
+
 function ratio(vals)
-	vals = vals[1] -- get 2 values per element. ref and alt counts.
-	if vals[2] == 0 then return "0.0" end
-	return string.format("%.9f", vals[2] / (vals[1] + vals[2]))
+    vals = vals[1] -- get 2 values per element. ref and alt counts.
+    if vals[2] == 0 then return "0.0" end
+    return string.format("%.9f", vals[2] / (vals[1] + vals[2]))
 end
 
 function clinvar_sig(vals)

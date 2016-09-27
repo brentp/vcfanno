@@ -28,6 +28,15 @@ CLINVAR_SIG['7'] = 'histocompatibility'
 CLINVAR_SIG['255'] = 'other'
 CLINVAR_SIG['.'] = '.'
 
+function intotbl(ud)
+    local tbl = {}
+    for i=1,#ud do
+        tbl[i] = ud[i]
+    end
+    return tbl
+end
+
+
 function clinvar_sig(vals)
     local t = type(vals)
     -- just a single-value
