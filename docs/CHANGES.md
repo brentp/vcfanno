@@ -1,3 +1,8 @@
+v0.1.1
+------
++ set number=1 when op=min see #40
+
+
 v0.1.0
 ------
 + drastically reduce the warning message output.

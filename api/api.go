@@ -351,7 +351,7 @@ func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number s
 	if htype != "" && (s.Op == "self" || s.Op == "first") {
 		ntype = htype
 	} else {
-		if s.Op == "mean" || s.Op == "max" {
+		if s.Op == "mean" || s.Op == "max" || s.Op == "min" {
 			ntype, number = "Float", "1"
 		} else if strings.HasSuffix(s.Name, "_float") {
 			s.Name = s.Name[:len(s.Name)-6]
