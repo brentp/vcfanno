@@ -1,7 +1,7 @@
 v0.1.1
 ------
 + set number=1 when op=min see #40
-
++ fix when we get -0 converted to just '-' (#42)
 
 v0.1.0
 ------
