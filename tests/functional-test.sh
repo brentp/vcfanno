@@ -102,3 +102,19 @@ assert_equal 2 $(grep -c ";left_ExonTranscript=" $STDOUT_FILE)
 assert_equal 3 $(grep -c ";right_ExonTranscript=" $STDOUT_FILE)
 assert_equal 3 $(grep -c ";right_ref_alt=A" $STDOUT_FILE)
 rm e.lua
+
+irefalt() {
+    vcfanno -permissive-overlap -base-path tests/dbnsfp/ tests/dbnsfp/conf.toml tests/dbnsfp/Calls_for_dbNSFP_example.vcf.gz | grep -v ^#
+}
+
+run check_iref_alt irefalt
+assert_in_stdout "nsalt=A,G,T"
+assert_exit_code 0
+
+irefalt_strict() {
+    vcfanno -base-path tests/dbnsfp/ tests/dbnsfp/conf.toml tests/dbnsfp/Calls_for_dbNSFP_example.vcf.gz | grep -v ^#
+}
+run check_iref_alt_strict irefalt_strict
+assert_in_stdout $'nsalt=T\t'
+assert_exit_code 0
+

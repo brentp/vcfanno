@@ -1,0 +1,5 @@
+[[annotation]]
+file="dbNSFP_ex.txt.gz"
+columns=[1,2,4,5]
+names=["nschrom", "nspos", "nsref", "nsalt"]
+ops=["first", "max", "uniq", "uniq"]
