@@ -175,6 +175,19 @@ func (a *Annotator) partition(r interfaces.Relatable) [][]interfaces.Relatable {
 	return parted
 }
 
+func sameInterval(v interfaces.IVariant, other interfaces.Relatable, strict bool) (*parsers.Interval, bool) {
+	if o, ok := other.(*parsers.Interval); ok {
+		return o, true
+	}
+	if o, ok := other.(*parsers.RefAltInterval); ok {
+		if !strict {
+			return &o.Interval, true
+		}
+		return &o.Interval, interfaces.Same(v, other, strict)
+	}
+	return nil, false
+}
+
 // collect applies the reduction (op) specified in src on the rels.
 func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, strict bool) ([]interface{}, error) {
 	coll := make([]interface{}, 0, len(rels))
@@ -223,7 +236,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			} else {
 				coll = append(coll, val)
 			}
-		} else if o, ok := other.(*parsers.Interval); ok {
+		} else if o, ok := sameInterval(v, other, strict); ok {
 			sval := string(o.Fields[src.Column-1])
 			if src.IsNumber() {
 

@@ -51,6 +51,39 @@ var sv1 = &vcfgo.Variant{
 	Info_:      vcfgo.NewInfoByte([]byte("DP=35;SVLEN=15;CIPOS=-5,5;CIEND=-8,8"), h),
 }
 
+var ira = &parsers.RefAltInterval{}
+
+func init() {
+	iv := parsers.NewInterval("chr1", 233, 234, [][]byte{[]byte("A"), []byte("G")}, 1, nil)
+	ira.Interval = *iv
+	ira.SetRefAlt([]int{0, 1})
+}
+
+// Test that the IRefAlt stuff works when we're matching ref and alt on something
+// that's not an IVariant.
+func (s *APISuite) TestIRefO(c *C) {
+	_, same := sameInterval(v1, ira, true)
+	c.Assert(same, Equals, true)
+
+	ira.Fields[0] = []byte("C")
+	_, same = sameInterval(v1, ira, true)
+	c.Assert(same, Equals, false)
+
+	ira.Fields[0] = []byte("A")
+	_, same = sameInterval(v1, ira, true)
+	c.Assert(same, Equals, true)
+
+	// other alternate in v1
+	ira.Fields[1] = []byte("G")
+	_, same = sameInterval(v1, ira, true)
+	c.Assert(same, Equals, true)
+
+	ira.Fields[1] = []byte("C")
+	_, same = sameInterval(v1, ira, true)
+	c.Assert(same, Equals, false)
+
+}
+
 func (s *APISuite) SetUpTest(c *C) {
 
 	h.Infos["DP"] = &vcfgo.Info{Id: "DP", Description: "depth", Number: "1", Type: "Integer"}

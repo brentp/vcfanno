@@ -2,6 +2,8 @@ v0.1.1
 ------
 + set number=1 when op=min see #40
 + fix when we get -0 converted to just '-' (#42)
++ when an annotation bed file has a header with 'ref' or 'reference' and 'alt' or 'alternate',
+  then match on the ref and alt values defined in those columns (not just on position as for bed).
 
 v0.1.0
 ------
