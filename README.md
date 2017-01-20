@@ -8,6 +8,13 @@ build:
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
+Installation
+============
+
+please download a static binary (executable) from [here](https://github.com/brentp/vcfanno/releases) and copy it into your '$PATH'.
+There are no dependencies.
+
+If you use [bioconda](https://bioconda.github.io/), you can install with: `conda install -c bioconda vcfanno`
 
 Mailing List
 ============
