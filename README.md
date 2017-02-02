@@ -82,6 +82,13 @@ conf file as desired. Files can be local as above, or available via http/https.
 
 Also see the additional usage section at the bottom for additional details.
 
+Typecasting values
+------------------
+
+It's possible to add field type info to the field name. By default, all fields will have `type=String`.
+To change the field type add `_int` or `_float` to the field name. This suffix will be parsed and removed,
+and your field will be of the desired type. By default, using `ops` of `mean`,`max`,`sum`,`div2` or `min` will result in `type=Float`, using `self` will get the type from the annotation VCF and other fields will have `type=String.
+
 Example
 -------
 
