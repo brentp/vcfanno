@@ -87,8 +87,8 @@ Typecasting values
 
 It's possible to add field type info to the field name. By default, all fields will have `type=String`.
 To change the field type add `_int` or `_float` to the field name. This suffix will be parsed and removed,
-and your field will be of the desired type. To force a `type=Flag` field, add `flag` to your `ops` list in the appopriate position.
-
+and your field will be of the desired type. To force a `type=Flag` field, add `flag` to your `ops` list in the appopriate
+position. Adding `mean`,`max`,`sum`, `div2` or `min` to the `ops` list will also result in corresponding fields being cast as `float`.
 
 Example
 -------
