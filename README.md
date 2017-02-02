@@ -82,6 +82,14 @@ conf file as desired. Files can be local as above, or available via http/https.
 
 Also see the additional usage section at the bottom for additional details.
 
+Typecasting values
+------------------
+
+It's possible to add field type info to the field name. By default, all fields will have `type=String`.
+To change the field type add `_int` or `_float` to the field name. This suffix will be parsed and removed,
+and your field will be of the desired type. To force a `type=Flag` field, add `flag` to your `ops` list in the appopriate position.
+
+
 Example
 -------
 
