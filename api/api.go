@@ -367,9 +367,7 @@ func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number s
 	if htype != "" && (s.Op == "self" || s.Op == "first") {
 		ntype = htype
 	} else {
-		if s.Op == "mean" || s.Op == "max" || s.Op == "min" {
-			ntype, number = "Float", "1"
-		} else if strings.HasSuffix(s.Name, "_float") {
+		if strings.HasSuffix(s.Name, "_float") {
 			s.Name = s.Name[:len(s.Name)-6]
 			ntype, number = "Float", "1"
 		} else if strings.HasSuffix(s.Name, "_int") {
@@ -378,6 +376,8 @@ func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number s
 		} else if strings.HasSuffix(s.Name, "_flag") || strings.Contains(s.Op, "flag(") {
 			s.Name = s.Name[:len(s.Name)-5]
 			ntype, number = "Flag", "0"
+		} else if s.Op == "mean" || s.Op == "max" || s.Op == "min" {
+			ntype, number = "Float", "1"
 		} else {
 			if s.Op == "flag" {
 				ntype, number = "Flag", "0"
