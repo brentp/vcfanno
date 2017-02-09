@@ -1,0 +1,5 @@
+[[annotation]]
+file="tmp_annotation.txt.gz"
+columns = [9, 10, 11, 15, 16, 17, 21, 22, 23, 27, 28, 29]
+names=["REF_60", "HET_60", "ALT_60", "REF_70", "HET_70", "ALT_70", "REF_80", "HET_80", "ALT_80", "REF_90", "HET_90", "ALT_90"]
+ops=["first", "first", "first", "first", "first", "first", "first", "first", "first", "first", "first", "first"]

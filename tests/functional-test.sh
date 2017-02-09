@@ -118,3 +118,13 @@ run check_iref_alt_strict irefalt_strict
 assert_in_stdout $'nsalt=T\t'
 assert_exit_code 0
 
+
+refaltend() {
+    ./vcfanno_linux64 -base-path tests/ref-alt-test/ tests/ref-alt-test/tmp_annotations.toml tests/ref-alt-test/tmp_calls.vcf.gz
+}
+run check_ref_alt_posns refaltend
+assert_exit_code 0
+assert_equal 3 $(grep -c ALT_60 $STDOUT_FILE)
+assert_equal 3 $(grep -c HET_60 $STDOUT_FILE)
+assert_equal 3 $(grep -c ALT_90 $STDOUT_FILE)
+assert_equal 3 $(grep -c HET_90 $STDOUT_FILE)
