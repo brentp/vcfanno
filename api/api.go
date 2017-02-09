@@ -183,7 +183,7 @@ func sameInterval(v interfaces.IVariant, other interfaces.Relatable, strict bool
 		if !strict {
 			return &o.Interval, true
 		}
-		return &o.Interval, interfaces.Same(v, other, strict)
+		return &o.Interval, interfaces.Same(v, o, strict)
 	}
 	return nil, false
 }

@@ -5,6 +5,7 @@ v0.1.1
 + when an annotation bed file has a header with 'ref' or 'reference' and 'alt' or 'alternate',
   then match on the ref and alt values defined in those columns (not just on position as for bed).
 + (vcfgo) allow double-digit number in header thanks @chapmanb
++ correct END position when using ref and alt from a file with only a position (infer end as start + len(ref)) [thanks Tomas].
 
 v0.1.0
 ------
