@@ -423,12 +423,13 @@ func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number s
 }
 
 // PostAnnotate happens after everything is done.
-func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfaces.Info, prefix string) error {
+func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfaces.Info, prefix string, id string) (error, string) {
 	var e, err error
 	vals := make([]interface{}, 0, 2)
 	fields := make([]string, 0, 2)
 	missing := make([]string, 0, 2)
 	var val interface{}
+	newid := ""
 	for i := range a.PostAnnos {
 		post := a.PostAnnos[i]
 		vals = vals[:0]
@@ -437,7 +438,11 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 		// lua code
 		if post.code != "" {
 			for _, field := range post.Fields {
-				val, e = info.Get(field)
+				if field == "ID" {
+					val = id
+				} else {
+					val, e = info.Get(field)
+				}
 				if val != nil {
 					vals = append(vals, val)
 					fields = append(fields, field)
@@ -516,7 +521,9 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 				}
 
 			} else {
-				if e := info.Set(prefix+post.Name, val); e != nil {
+				if post.Name == "ID" && prefix == "" {
+					newid = val
+				} else if e := info.Set(prefix+post.Name, val); e != nil {
 					err = e
 				}
 			}
@@ -539,12 +546,15 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 			// run this as long as we found any of the values.
 			if len(vals) != 0 {
 				fn := Reducers[post.Op]
-				info.Set(prefix+post.Name, fn(vals))
+				if post.Name == "ID" && prefix == "" {
+					newid = fmt.Sprintf("%s", fn(vals))
+				} else {
+					info.Set(prefix+post.Name, fn(vals))
+				}
 			}
 		}
-
 	}
-	return err
+	return err, newid
 }
 
 // Setup reads all the tabix indexes and setups up the Queryables
@@ -624,11 +634,12 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 
 	var err error
 	// if Both, call the interval, left, and right version to annotate.
+	id := v.(*parsers.Variant).IVariant.(*vcfgo.Variant).Id()
 	if ends == BOTH {
 		if e := a.AnnotateOne(v, a.Strict); e != nil {
 			err = e
 		}
-		if e := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), ""); e != nil {
+		if e, _ := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), "", id); e != nil {
 			err = e
 		}
 		if e := a.AnnotateEnds(v, LEFT); e != nil {
@@ -640,9 +651,12 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 	}
 	if ends == INTERVAL {
 		err := a.AnnotateOne(v, a.Strict)
-		err2 := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), "")
+		err2, newid := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), "", id)
 		if err != nil {
 			return err
+		}
+		if err2 == nil && newid != "" {
+			v.(*parsers.Variant).IVariant.(*vcfgo.Variant).Id_ = newid
 		}
 		return err2
 	}
@@ -677,7 +691,7 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 			val, err = v2.Info().Get(key)
 			variant.Info().Set(key, val)
 		}
-		err2 := a.PostAnnotate(v.Chrom(), int(l), int(r), variant.Info(), ends)
+		err2, _ := a.PostAnnotate(v.Chrom(), int(l), int(r), variant.Info(), ends, id)
 		if err2 != nil {
 			err = err2
 		}

@@ -156,6 +156,18 @@ indicate the fields (from the INFO) that will be available to the op, and the *o
 powerful. For an extensive example that demonstrates the utility of this type of approach, see
 [docs/examples/clinvar_exac.md](http://brentp.github.io/vcfanno/examples/clinvar_exac/).
 
+A user can set the ID field of the VCF in a `[[postannotation]]` block by using `name=ID`. For example:
+
+```
+[[postannotation]]
+name="ID"
+fields=["other_field", "ID"]
+op="lua:other_field .. ';' .. ID"
+type="String"
+```
+
+will take the value in `other_field`, concatenate it with the existing ID, and set the ID to that value.
+
 
 Binaries
 ========
