@@ -539,12 +539,16 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 					vals = append(vals, val)
 				} else {
 					if e != nil {
+						//log.Println(field, e, vals, chrom, start, end)
 						err = e
 					}
 				}
 			}
 			// run this as long as we found any of the values.
 			if len(vals) != 0 {
+				if post.Op == "div2" && len(vals) < 2 {
+					continue
+				}
 				fn := Reducers[post.Op]
 				if post.Name == "ID" && prefix == "" {
 					newid = fmt.Sprintf("%s", fn(vals))
