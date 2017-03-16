@@ -4,20 +4,19 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
-    <link rel="canonical" href="https://github.com/brentp/vcfanno/examples/cadd/"> 
-    <link rel="shortcut icon" href="../../img/favicon.ico">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">   
+    <link rel="shortcut icon" href="/brentp/vcfanno/img/favicon.ico">
 
-    <title>CADD - vcfanno</title>
+    <title>vcfanno</title>
 
-    <link href="../../css/bootstrap-custom.min.css" rel="stylesheet">
+    <link href="/brentp/vcfanno/css/bootstrap-custom.min.css" rel="stylesheet">
     <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
     <link rel="stylesheet" href="//cdn.jsdelivr.net/font-hack/2.018/css/hack.min.css">
     <link href='//fonts.googleapis.com/css?family=PT+Sans:400,400italic,700,700italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
     <link href='//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,600,700&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
-    <link href="../../css/base.css" rel="stylesheet">
-    <link href="../../css/cinder.css" rel="stylesheet">
-    <link rel="stylesheet" href="../../css/highlight.css">
+    <link href="/brentp/vcfanno/css/base.css" rel="stylesheet">
+    <link href="/brentp/vcfanno/css/cinder.css" rel="stylesheet">
+    <link rel="stylesheet" href="/brentp/vcfanno/css/highlight.css">
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -55,7 +54,7 @@
             
 
             <!-- Main title -->
-            <a class="navbar-brand" href="../..">vcfanno</a>
+            <a class="navbar-brand" href="/brentp/vcfanno/">vcfanno</a>
         </div>
 
         <!-- Expanded navigation -->
@@ -66,42 +65,42 @@
                 
                 
                     <li >
-                        <a href="../..">Home</a>
+                        <a href="/brentp/vcfanno/">Home</a>
                     </li>
                 
                 
                 
                     <li >
-                        <a href="../../performance_tips/">Performance</a>
+                        <a href="/brentp/vcfanno/performance_tips/">Performance</a>
                     </li>
                 
                 
                 
                     <li >
-                        <a href="../../CHANGES/">Changes</a>
+                        <a href="/brentp/vcfanno/CHANGES/">Changes</a>
                     </li>
                 
                 
                 
-                    <li class="dropdown active">
+                    <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
                         <ul class="dropdown-menu">
                         
                             
 <li >
-    <a href="../clinvar_exac/">ClinvarExac</a>
-</li>
-
-                        
-                            
-<li class="active">
-    <a href="./">CADD</a>
+    <a href="/brentp/vcfanno/examples/clinvar_exac/">ClinvarExac</a>
 </li>
 
                         
                             
 <li >
-    <a href="../exac_combine/exac_combine/">ExAC-Combine</a>
+    <a href="/brentp/vcfanno/examples/cadd/">CADD</a>
+</li>
+
+                        
+                            
+<li >
+    <a href="/brentp/vcfanno/examples/exac_combine/exac_combine/">ExAC-Combine</a>
 </li>
 
                         
@@ -119,13 +118,13 @@
                     </a>
                 </li>
                 
-                    <li >
-                        <a rel="next" href="../clinvar_exac/">
+                    <li class="disabled">
+                        <a rel="next" >
                             <i class="fa fa-arrow-left"></i> Previous
                         </a>
                     </li>
-                    <li >
-                        <a rel="prev" href="../exac_combine/exac_combine/">
+                    <li class="disabled">
+                        <a rel="prev" >
                             Next <i class="fa fa-arrow-right"></i>
                         </a>
                     </li>
@@ -147,66 +146,16 @@
 
     <div class="container">
         
-        <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
-    <ul class="nav bs-sidenav">
-    
-        <li class="first-level active"><a href="#annotate-with-cadd">Annotate with CADD</a></li>
-        
-            <li class="second-level"><a href="#setup">Setup</a></li>
-            
-        
-            <li class="second-level"><a href="#config">Config</a></li>
-            
-        
-            <li class="second-level"><a href="#annotation">Annotation</a></li>
-            
-        
-            <li class="second-level"><a href="#note">Note</a></li>
-            
-        
-    
-    </ul>
-</div></div>
-        <div class="col-md-9" role="main">
 
-<h1 id="annotate-with-cadd">Annotate with CADD</h1>
-<p>This documents how to use <code>vcfanno</code> to annotate a VCF with CADD scores.</p>
-<p><em>"CADD is a tool for scoring the deleteriousness of single nucleotide variants as well as insertion/deletions variants in the human genome."</em>
-Users of CADD should refer to the <a href="http://cadd.gs.washington.edu/info">web page</a> for citation and use requirements.</p>
-<h2 id="setup">Setup</h2>
-<p>In order to use CADD with <code>vcfanno</code>, we must convert the tsv format provided by CADD to VCF. We can do this with <a href="https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py">a
-python script</a>. After downloading the <em>All possible SNVs of GRCh37/hg19</em> filre from the <a href="http://cadd.gs.washington.edu/download">CADD website</a> we can run as:</p>
-<pre><code>python cadd2vcf.py whole_genome_SNVs.tsv.gz | bgzip -c &gt; cadd_v1.3.vcf.gz
-tabix cadd_v1.3.vcf.gz
-</code></pre>
+    <div class="row-fluid">
+      <div id="main-content" class="span12">
+        <h1 id="404-page-not-found" style="text-align: center">404</h1>
+        <p style="text-align: center"><strong>Page not found</strong></p>
+        <p style="text-align: center"><a href="/brentp/vcfanno">Home</a></p>
+      </div>
+    </div>
 
-<p>This will create a 50GB vcf.gz from the 80GB tsv.gz. 
-The entirety of the INFO field for a given record will look like: "raw=0.34;phred=6.05"</p>
-<h2 id="config">Config</h2>
-<p>From here, we can specify a conf file:</p>
-<pre><code>[[annotation]]
-file=&quot;cadd_v1.3.vcf.gz&quot;
-names=[&quot;cadd_phred&quot;, &quot;cadd_raw&quot;]
-ops=[&quot;mean&quot;, &quot;mean&quot;]
-fields=[&quot;phred&quot;, &quot;raw&quot;]
-</code></pre>
 
-<h2 id="annotation">Annotation</h2>
-<p>And we can run <code>vcfanno</code> as:</p>
-<pre><code>vcfanno -p 12 cadd.conf query.vcf &gt; query.anno.vcf
-</code></pre>
-
-<p>As an extreme case, we can run this on the ExAC VCF:</p>
-<pre><code class="Shell">vcfanno -p 18 cadd.conf ExAC.r0.3.sites.vep.tidy.vcf.gz | bgzip -c &gt; /tmp/exac-cadd.vcf.gz
-</code></pre>
-
-<p>This takes about 88 minutes on a good server. This time will improve in future versions but it
-is due to the large number of lines that must be parsed from the CADD VCF, even with the algorithm
-that allows it to avoid parsing annotation intervals that fall in large gaps in the query. By
-comparison, <code>bedtools intersect -sorted</code> takes 92 minutes for this same overlap.</p>
-<h2 id="note">Note</h2>
-<p>This will only work for single-nucleotide variants since the default for VCF is to match on REF and ALT.</p></div>
-        
     </div>
 
     <footer class="col-md-12 text-center">
@@ -215,15 +164,15 @@ comparison, <code>bedtools intersect -sorted</code> takes 92 minutes for this sa
         <small>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p></small>
     </footer>
 
-    <script src="../../js/jquery-1.10.2.min.js"></script>
-    <script src="../../js/bootstrap-3.0.3.min.js"></script>
-    <script src="../../js/highlight.pack.js"></script>
+    <script src="/brentp/vcfanno/js/jquery-1.10.2.min.js"></script>
+    <script src="/brentp/vcfanno/js/bootstrap-3.0.3.min.js"></script>
+    <script src="/brentp/vcfanno/js/highlight.pack.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
     <script>
-    var base_url = '../..';
+    var base_url = '/brentp/vcfanno';
     </script>
-    <script data-main="../../mkdocs/js/search.js" src="../../mkdocs/js/require.js"></script>
-    <script src="../../js/base.js"></script>
+    <script data-main="/brentp/vcfanno/mkdocs/js/search.js" src="/brentp/vcfanno/mkdocs/js/require.js"></script>
+    <script src="/brentp/vcfanno/js/base.js"></script>
 
     <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
         <div class="modal-dialog">

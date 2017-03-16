@@ -1,37 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        
-        
-        <link rel="canonical" href="https://github.com/brentp/vcfanno/">
-        <link rel="shortcut icon" href="./img/favicon.ico">
 
-	<title>vcfanno</title>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <link rel="canonical" href="https://github.com/brentp/vcfanno/"> 
+    <link rel="shortcut icon" href="./img/favicon.ico">
 
-        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
-        <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
-        <link rel="stylesheet" href="./css/highlight.css">
-        <link href="./css/base.css" rel="stylesheet">
+    <title>vcfanno</title>
 
-        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
-        <!--[if lt IE 9]>
+    <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/font-hack/2.018/css/hack.min.css">
+    <link href='//fonts.googleapis.com/css?family=PT+Sans:400,400italic,700,700italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,600,700&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href="./css/base.css" rel="stylesheet">
+    <link href="./css/cinder.css" rel="stylesheet">
+    <link rel="stylesheet" href="./css/highlight.css">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
             <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
             <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
         <![endif]-->
 
-        
-    </head>
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.5.18/webfont.js"></script>
+    <script>
+    WebFont.load({
+        google: {
+            families: ['Open Sans', 'PT Sans']
+        }
+    });
+    </script>
 
-    <body>
+    
+</head>
 
-        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+<body class="homepage" >
+
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
     <div class="container">
 
         <!-- Collapsed navigation -->
         <div class="navbar-header">
+            
             <!-- Expander button -->
             <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
                 <span class="sr-only">Toggle navigation</span>
@@ -39,6 +52,7 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
+            
 
             <!-- Main title -->
             <a class="navbar-brand" href=".">vcfanno</a>
@@ -46,135 +60,153 @@
 
         <!-- Expanded navigation -->
         <div class="navbar-collapse collapse">
-            <!-- Main navigation -->
-            <ul class="nav navbar-nav">
             
-            
-                <li class="active">
-                    <a href=".">Home</a>
-                </li>
-            
-            
-            
-                <li >
-                    <a href="performance_tips/">Performance</a>
-                </li>
-            
-            
-            
-                <li >
-                    <a href="CHANGES/">Changes</a>
-                </li>
-            
-            
-            
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
-                    <ul class="dropdown-menu">
-                    
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li class="active">
+                        <a href=".">Home</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="performance_tips/">Performance</a>
+                    </li>
+                
+                
+                
+                    <li >
+                        <a href="CHANGES/">Changes</a>
+                    </li>
+                
+                
+                
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
                         
+                            
 <li >
     <a href="examples/clinvar_exac/">ClinvarExac</a>
 </li>
 
-                    
                         
+                            
 <li >
     <a href="examples/cadd/">CADD</a>
 </li>
 
-                    
                         
+                            
 <li >
     <a href="examples/exac_combine/exac_combine/">ExAC-Combine</a>
 </li>
 
-                    
-                    </ul>
-                </li>
+                        
+                        </ul>
+                    </li>
+                
+                
+                </ul>
             
-            
-            </ul>
 
-            <!-- Search, Navigation and Repo links -->
             <ul class="nav navbar-nav navbar-right">
                 <li>
                     <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
                         <i class="fa fa-search"></i> Search
                     </a>
                 </li>
-                <li class="disabled">
-                    <a rel="next" >
-                        <i class="fa fa-arrow-left"></i> Previous
-                    </a>
-                </li>
-                <li >
-                    <a rel="prev" href="performance_tips/">
-                        Next <i class="fa fa-arrow-right"></i>
-                    </a>
-                </li>
                 
-                <li>
-                    <a href="https://github.com/brentp/vcfanno">
-                        
-                            <i class="fa fa-github"></i>
-                        
-                        GitHub
-                    </a>
-                </li>
+                    <li class="disabled">
+                        <a rel="next" >
+                            <i class="fa fa-arrow-left"></i> Previous
+                        </a>
+                    </li>
+                    <li >
+                        <a rel="prev" href="performance_tips/">
+                            Next <i class="fa fa-arrow-right"></i>
+                        </a>
+                    </li>
+                
+                
+                    <li>
+                        <a href="https://github.com/brentp/vcfanno">
+                            
+                                <i class="fa fa-github"></i>
+                            
+                            GitHub
+                        </a>
+                    </li>
                 
             </ul>
         </div>
     </div>
 </div>
 
-        <div class="container">
-            <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <div class="container">
+        
+        <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#vcfanno">vcfanno</a></li>
+        <li class="first-level active"><a href="#vcfanno">vcfanno</a></li>
         
     
-        <li class="main "><a href="#mailing-list">Mailing List</a></li>
+        <li class="first-level "><a href="#installation">Installation</a></li>
         
     
-        <li class="main "><a href="#overview">Overview</a></li>
+        <li class="first-level "><a href="#mailing-list">Mailing List</a></li>
         
     
-        <li class="main "><a href="#usage">Usage</a></li>
-        
-            <li><a href="#example">Example</a></li>
+        <li class="first-level "><a href="#overview">Overview</a></li>
         
     
-        <li class="main "><a href="#operations">Operations</a></li>
+        <li class="first-level "><a href="#usage">Usage</a></li>
+        
+            <li class="second-level"><a href="#typecasting-values">Typecasting values</a></li>
+            
+        
+            <li class="second-level"><a href="#example">Example</a></li>
+            
         
     
-        <li class="main "><a href="#postannotation">PostAnnotation</a></li>
+        <li class="first-level "><a href="#operations">Operations</a></li>
         
     
-        <li class="main "><a href="#binaries">Binaries</a></li>
+        <li class="first-level "><a href="#postannotation">PostAnnotation</a></li>
         
     
-        <li class="main "><a href="#preprocessing">Preprocessing</a></li>
+        <li class="first-level "><a href="#binaries">Binaries</a></li>
         
     
-        <li class="main "><a href="#development">Development</a></li>
+        <li class="first-level "><a href="#preprocessing">Preprocessing</a></li>
         
     
-        <li class="main "><a href="#additional-usage">Additional Usage</a></li>
+        <li class="first-level "><a href="#development">Development</a></li>
         
-            <li><a href="#-ends">-ends</a></li>
+    
+        <li class="first-level "><a href="#additional-usage">Additional Usage</a></li>
         
-            <li><a href="#-permissive-overlap">-permissive-overlap</a></li>
+            <li class="second-level"><a href="#-ends">-ends</a></li>
+            
         
-            <li><a href="#-p">-p</a></li>
+            <li class="second-level"><a href="#-permissive-overlap">-permissive-overlap</a></li>
+            
         
-            <li><a href="#-lua">-lua</a></li>
+            <li class="second-level"><a href="#-p">-p</a></li>
+            
+        
+            <li class="second-level"><a href="#-lua">-lua</a></li>
+            
+        
+    
+        <li class="first-level "><a href="#multi-allelics">Multi-Allelics</a></li>
         
     
     </ul>
 </div></div>
-            <div class="col-md-9" role="main">
+        <div class="col-md-9" role="main">
 
 <h1 id="vcfanno">vcfanno</h1>
 <!--
@@ -184,10 +216,14 @@ build:
 
 <p><a href="https://travis-ci.org/brentp/vcfanno"><img alt="Build Status" src="https://travis-ci.org/brentp/vcfanno.svg" /></a>
 <a href="http://brentp.github.io/vcfanno/"><img alt="Docs" src="https://img.shields.io/badge/docs-latest-blue.svg" /></a></p>
+<h1 id="installation">Installation</h1>
+<p>please download a static binary (executable) from <a href="https://github.com/brentp/vcfanno/releases">here</a> and copy it into your '$PATH'.
+There are no dependencies.</p>
+<p>If you use <a href="https://bioconda.github.io/">bioconda</a>, you can install with: <code>conda install -c bioconda vcfanno</code></p>
 <h1 id="mailing-list">Mailing List</h1>
 <p><a href="https://groups.google.com/forum/#!forum/vcfanno">Mailing List</a><a href="https://groups.google.com/forum/#!forum/vcfanno"><img alt="Mailing List" src="http://www.google.com/images/icons/product/groups-32.png" /></a></p>
 <h1 id="overview">Overview</h1>
-<p><img alt="overview" src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" title="overview" /></p>
+<p><img src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" width="676" height="367" /></p>
 <p>vcfanno annotates a VCF with any number of <em>sorted</em> and tabixed input BED, BAM, and VCF files in parallel.
 It does this by finding overlaps as it streams over the data and applying
 user-defined operations on the overlapping annotations.</p>
@@ -232,6 +268,11 @@ ops=[&quot;count&quot;, &quot;mean&quot;, &quot;concat&quot;]
 <code>operation</code> from the <code>ops</code> array. Users can add as many <code>[[annotation]]</code> blocks to the
 conf file as desired. Files can be local as above, or available via http/https.</p>
 <p>Also see the additional usage section at the bottom for additional details.</p>
+<h2 id="typecasting-values">Typecasting values</h2>
+<p>By default, using <code>ops</code> of <code>mean</code>,<code>max</code>,<code>sum</code>,<code>div2</code> or <code>min</code> will result in <code>type=Float</code>,
+using <code>self</code> will get the type from the annotation VCF and other fields will have <code>type=String.
+It's possible to add field type info to the field name. To change the field type add</code>_int<code>or</code>_float` to the field name. This suffix will be parsed and removed, and your fields
+will be of the desired type. </p>
 <h2 id="example">Example</h2>
 <p>the example directory contains the data and conf for a full example. To run, download
 the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a> for your system</p>
@@ -254,6 +295,7 @@ from a single annotation file--in this case, the op determines how the many valu
 are <code>reduced</code>. Valid operations are:</p>
 <ul>
 <li>lua:$lua // see section below for more details</li>
+<li>self // pull directly from the annotation and handle multi-allelics.</li>
 <li>mean</li>
 <li>max</li>
 <li>sum</li>
@@ -283,6 +325,15 @@ type=&quot;Float&quot;
 indicate the fields (from the INFO) that will be available to the op, and the <em>op</em> indicates the action to perform. This can be quite
 powerful. For an extensive example that demonstrates the utility of this type of approach, see
 <a href="http://brentp.github.io/vcfanno/examples/clinvar_exac/">docs/examples/clinvar_exac.md</a>.</p>
+<p>A user can set the ID field of the VCF in a <code>[[postannotation]]</code> block by using <code>name=ID</code>. For example:</p>
+<pre><code>[[postannotation]]
+name=&quot;ID&quot;
+fields=[&quot;other_field&quot;, &quot;ID&quot;]
+op=&quot;lua:other_field .. ';' .. ID&quot;
+type=&quot;String&quot;
+</code></pre>
+
+<p>will take the value in <code>other_field</code>, concatenate it with the existing ID, and set the ID to that value.</p>
 <h1 id="binaries">Binaries</h1>
 <p>binary executables are available <a href="https://github.com/brentp/vcfanno/releases/">here</a>
 for <em>linux</em>, <em>mac</em> (darwin), and <em>windows</em> for <em>32</em> and <em>64</em> bit platforms.</p>
@@ -345,45 +396,124 @@ equal to the number of alternate alleles. Example usage could be:</p>
 
 <p>See <a href="https://github.com/brentp/vcfanno/blob/master/example/conf.toml">example/conf.toml</a>
 and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.lua">example/custom.lua</a>
-for more examples.</p></div>
-        </div>
+for more examples.</p>
+<h1 id="multi-allelics">Multi-Allelics</h1>
+<p>A multi-allelic variant is simply a site where there are multiple, non-reference alleles seen in the population. These will
+appear as e.g. <code>REF="A", ALT="G,C"</code>. As of version 0.1, <code>vcfanno</code> will handle these fully with op="self".</p>
+<p>For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
+the annotation and shows how the query INFO will be filled:</p>
+<table>
+<thead>
+<tr>
+<th>query</th>
+<th>anno</th>
+<th>anno vals</th>
+<th>result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C,G</td>
+<td>C,G</td>
+<td>22,23</td>
+<td>22,23</td>
+</tr>
+<tr>
+<td>C,G</td>
+<td>C,T</td>
+<td>22,23</td>
+<td>22,.</td>
+</tr>
+<tr>
+<td>C,G</td>
+<td>T,G</td>
+<td>22,23</td>
+<td>.,23</td>
+</tr>
+<tr>
+<td>G,C</td>
+<td>C,G</td>
+<td>22,23</td>
+<td>23,22</td>
+</tr>
+<tr>
+<td>C,G</td>
+<td>C</td>
+<td>YYY</td>
+<td>YYY,.</td>
+</tr>
+<tr>
+<td>G,C,T</td>
+<td>C</td>
+<td>YYY</td>
+<td>.,YYY,.</td>
+</tr>
+<tr>
+<td>C,T</td>
+<td>G</td>
+<td>YYY</td>
+<td>.,.</td>
+</tr>
+<tr>
+<td>T,C</td>
+<td>C,T</td>
+<td>AA,BB</td>
+<td>BB,AA</td>
+</tr>
+</tbody>
+</table>
+<p>So values that are not present in the annotation are filled with '.' as a place-holder.</p></div>
+        
+    </div>
 
-        <footer class="col-md-12">
-            <hr>
-            
-            <center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
-        </footer>
+    <footer class="col-md-12 text-center">
+        <hr>
+        <p>
+        <small>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p></small>
+    </footer>
 
-        <script src="./js/jquery-1.10.2.min.js"></script>
-        <script src="./js/bootstrap-3.0.3.min.js"></script>
-        <script src="./js/highlight.pack.js"></script>
-        <script>var base_url = '.';</script>
-        <script data-main="./mkdocs/js/search.js" src="./mkdocs/js/require.js"></script>
-        <script src="./js/base.js"></script>
+    <script src="./js/jquery-1.10.2.min.js"></script>
+    <script src="./js/bootstrap-3.0.3.min.js"></script>
+    <script src="./js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+    var base_url = '.';
+    </script>
+    <script data-main="./mkdocs/js/search.js" src="./mkdocs/js/require.js"></script>
+    <script src="./js/base.js"></script>
 
-        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-                        <h4 class="modal-title" id="exampleModalLabel">Search</h4>
-                    </div>
-                    <div class="modal-body">
-                        <p>
-                            From here you can search these documents. Enter
-                            your search terms below.
-                        </p>
-                        <form role="form">
-                            <div class="form-group">
-                                <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
-                            </div>
-                        </form>
-                        <div id="mkdocs-search-results"></div>
-                    </div>
-                    <div class="modal-footer">
-                    </div>
+    <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span aria-hidden="true">&times;</span>
+                        <span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        From here you can search these documents. Enter your search terms below.
+                    </p>
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                        </div>
+                    </form>
+                    <div id="mkdocs-search-results"></div>
+                </div>
+                <div class="modal-footer">
                 </div>
             </div>
         </div>
+    </div>
+
     </body>
+
 </html>
+
+<!--
+MkDocs version : 0.16.2
+Build Date UTC : 2017-03-16 16:11:47
+-->
