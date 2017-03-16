@@ -269,7 +269,8 @@ Multi-Allelics
 ==============
 
 A multi-allelic variant is simply a site where there are multiple, non-reference alleles seen in the population. These will
-appear as e.g. `REF="A", ALT="G,C"`. As of version 0.1, `vcfanno` will handle these fully with op="self".
+appear as e.g. `REF="A", ALT="G,C"`. As of version 0.2, `vcfanno` will handle these fully with op="self" when the Number from
+the VCF  header is A (Number=A)
 
 For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
 the annotation and shows how the query INFO will be filled:

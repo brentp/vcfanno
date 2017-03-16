@@ -12,9 +12,9 @@ BASE=/data/gemini_install/data/gemini_data/
 
 V=vcfanno
 
-IRELATE_VERBOSE=TRUE IRELATE_MAX_GAP=500 run clinvar_common_pathogenic $V -lua docs/examples/clinvar_exac.lua -p 4 -base-path $BASE docs/examples/clinvar_exac.conf $BASE/clinvar_20160203.tidy.vcf.gz
-assert_equal 594 $(zgrep -wc common_pathogenic $STDOUT_FILE)
-assert_equal $(zgrep -cv ^# $STDOUT_FILE) $(zgrep -cv ^# $BASE/clinvar_20160203.tidy.vcf.gz)
+IRELATE_VERBOSE=TRUE IRELATE_MAX_GAP=500 run clinvar_common_pathogenic $V -lua docs/examples/clinvar_exac.lua -p 4 -base-path $BASE docs/examples/clinvar_exac.conf $BASE/clinvar_20170130.tidy.vcf.gz
+assert_equal 577 $(zgrep -wc common_pathogenic $STDOUT_FILE)
+assert_equal $(zgrep -cv ^# $STDOUT_FILE) $(zgrep -cv ^# $BASE/clinvar_20170130.tidy.vcf.gz)
 
 tail -1 $STDERR_FILE
 
