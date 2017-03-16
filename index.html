@@ -399,7 +399,8 @@ and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.lua">e
 for more examples.</p>
 <h1 id="multi-allelics">Multi-Allelics</h1>
 <p>A multi-allelic variant is simply a site where there are multiple, non-reference alleles seen in the population. These will
-appear as e.g. <code>REF="A", ALT="G,C"</code>. As of version 0.1, <code>vcfanno</code> will handle these fully with op="self".</p>
+appear as e.g. <code>REF="A", ALT="G,C"</code>. As of version 0.2, <code>vcfanno</code> will handle these fully with op="self" when the Number from
+the VCF  header is A (Number=A)</p>
 <p>For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
 the annotation and shows how the query INFO will be filled:</p>
 <table>
@@ -515,5 +516,5 @@ the annotation and shows how the query INFO will be filled:</p>
 
 <!--
 MkDocs version : 0.16.2
-Build Date UTC : 2017-03-16 16:11:47
+Build Date UTC : 2017-03-16 16:32:36
 -->
