@@ -1,0 +1,12 @@
+##fileformat=VCFv4.1
+##FILTER=<ID=PASS,Description="All filters passed">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	15274	.	A	G	100	PASS	AN=100
+1	66381	.	TATATA	AATATA,T	100	PASS	AN=100
+1	536895	.	T	C	100	PASS	AN=100
+1	565736	.	A	G,T	100	PASS	AN=100
+1	567747	.	C	A,G	100	PASS	AN=100
+1	569333	.	A	G,T	100	PASS	AN=100
+1	680024	.	G	A	100	PASS	AN=100
+1	706332	.	G	C,T	100	PASS	AN=100

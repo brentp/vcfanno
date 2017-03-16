@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"log"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -45,6 +46,8 @@ type Source struct {
 	File string
 	Op   string
 	Name string
+	// Number from header of annotation is A (Number=A)
+	NumberA bool
 	// column number in bed file or ...
 	Column int
 	// info name in VCF. (can also be ID).
@@ -188,6 +191,58 @@ func sameInterval(v interfaces.IVariant, other interfaces.Relatable, strict bool
 	return nil, false
 }
 
+func allEqual(a, b []string) bool {
+	for i, aa := range a {
+		if aa != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+// handleA converts the `val` to the correct slice of vals to match what's isnt
+// qAlts and oAlts. Then length of the returned value should always be equal
+// to the len of qAlts.
+// query| db    | db values  | result
+// C,G  | C,G | 22,23      | 22,23
+// C,G  | C,T | 22,23      | 22,.
+// C,G  | T,G | 22,23      | .,23
+// G,C  | C,G | 22,23      | 23,22
+func handleA(val interface{}, qAlts []string, oAlts []string) []interface{} {
+	// TODO: implement
+	vals := reflect.ValueOf(val)
+	if vals.Kind() != reflect.Slice {
+		log.Printf("WARNING: got single value %s for value with Number=A", val)
+		return []interface{}{val}
+	}
+	out := make([]interface{}, len(qAlts))
+	for i := 0; i < len(out); i++ {
+		out[i] = "."
+	}
+	altIdxs := make([]int, len(qAlts))
+	for iq, q := range qAlts {
+		var found bool
+		for io, o := range oAlts {
+			if q == o {
+				found = true
+				altIdxs[iq] = io
+				break
+			}
+		}
+		if !found {
+			altIdxs[iq] = -1
+		}
+	}
+
+	for i, ai := range altIdxs {
+		if ai == -1 {
+			continue
+		}
+		out[i] = vals.Index(ai).Interface()
+	}
+	return out
+}
+
 // collect applies the reduction (op) specified in src on the rels.
 func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, strict bool) ([]interface{}, error) {
 	coll := make([]interface{}, 0, len(rels))
@@ -216,11 +271,16 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				val, err = o.Info().Get(src.Field)
 				if err != nil {
 					finalerr = err
-					if val == "" {
-						continue
-					}
+				}
+				if val == "" || val == nil {
+					continue
 				}
 			}
+			// special-case 'self' when the annotation has Number=A and either query or anno have multiple alts
+			if src.NumberA && src.Op == "self" && len(rels) == 1 && (len(v.Alt()) > 1 || len(o.Alt()) > 1) {
+				return handleA(val, v.Alt(), o.Alt()), finalerr
+			}
+
 			if arr, ok := val.([]interface{}); ok {
 				if src.Op == "uniq" || src.Op == "concat" {
 					sarr := make([]string, len(arr))
@@ -231,9 +291,8 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				} else {
 					coll = append(coll, arr...)
 				}
-			} else if val == nil {
-				continue
 			} else {
+
 				coll = append(coll, val)
 			}
 		} else if o, ok := sameInterval(v, other, strict); o != nil {
@@ -593,7 +652,9 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	for i, file := range files {
 		if q, ok := queryables[i].(*bix.Bix); ok {
 			for _, src := range fmap[file] {
-				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field), q.GetHeaderNumber(src.Field))
+				num := q.GetHeaderNumber(src.Field)
+				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field), num)
+				src.NumberA = num == "A"
 			}
 		} else if _, ok := queryables[i].(*parsers.BamQueryable); ok {
 			for _, src := range fmap[file] {
