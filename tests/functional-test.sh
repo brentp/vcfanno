@@ -131,3 +131,11 @@ assert_equal 3 $(grep -c HET_60 $STDOUT_FILE)
 assert_equal 3 $(grep -c ALT_90 $STDOUT_FILE)
 assert_equal 3 $(grep -c HET_90 $STDOUT_FILE)
 cat $STDERR_FILE
+
+
+multiallelics() {
+    vcfanno tests/multiple-alts/ma.conf tests/multiple-alts/ma-query.vcf
+}
+run check_multiallelics multiallelics
+assert_exit_code 0
+
