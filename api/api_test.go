@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/brentp/irelate/interfaces"
@@ -282,4 +283,46 @@ func (s *APISuite) TestIdAnno(c *C) {
 	a.AnnotateOne(v, a.Strict)
 	c.Assert(v.Info().String(), Equals, "o_id=rs")
 
+}
+
+var handleATests = []struct {
+	query    []string
+	anno     []string
+	val      interface{}
+	expected []interface{}
+}{
+	{[]string{"C", "G"}, []string{"C", "G"}, []float32{22, 23}, []interface{}{float32(22), float32(23)}},
+	{[]string{"C", "G"}, []string{"C", "T"}, []float32{22, 23}, []interface{}{float32(22), "."}},
+	{[]string{"C", "G"}, []string{"T", "G"}, []float32{22, 23}, []interface{}{".", float32(23)}},
+	{[]string{"G", "C"}, []string{"C", "G"}, []float32{22, 23}, []interface{}{float32(23), float32(22)}},
+
+	// annotation has more alternates.
+	{[]string{"C"}, []string{"G", "C"}, []float32{22, 23}, []interface{}{float32(23)}},
+	{[]string{"C"}, []string{"G", "C", "T"}, []float32{22, 23, 24}, []interface{}{float32(23)}},
+
+	// query has more alternates:
+	{[]string{"G", "C"}, []string{"C"}, []float32{22}, []interface{}{".", float32(22)}},
+	{[]string{"G", "C", "T"}, []string{"C"}, []float32{22}, []interface{}{".", float32(22), "."}},
+	{[]string{"G", "C", "T"}, []string{"T", "G"}, []float32{22, 96}, []interface{}{float32(96), ".", float32(22)}},
+
+	// string types
+	{[]string{"C", "G"}, []string{"C", "T"}, []string{"A", "B"}, []interface{}{"A", "."}},
+	{[]string{"C", "G"}, []string{"T", "C"}, []string{"A", "B"}, []interface{}{"B", "."}},
+}
+
+// handleA converts the `val` to the correct slice of vals to match what's isnt
+// qAlts and oAlts. Then length of the returned value should always be equal
+// to the len of qAlts.
+// query| db    | db values  | result
+// C,G  | C,G | 22,23      | 22,23
+// C,G  | C,T | 22,23      | 22,.
+// C,G  | T,G | 22,23      | .,23
+// G,C  | C,G | 22,23      | 23,22
+func TestHandleA(t *testing.T) {
+	//func handleA(val interface{}, qAlts []string, oAlts []string) []interface{} {
+	for _, h := range handleATests {
+		if res := handleA(h.val, h.query, h.anno); !reflect.DeepEqual(h.expected, res) {
+			t.Errorf("expected: %v, got: %v. given query with alts: %s, and anno with alts: %s", h.expected, res, h.query, h.anno)
+		}
+	}
 }

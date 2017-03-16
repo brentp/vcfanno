@@ -8,6 +8,13 @@ build:
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
+Installation
+============
+
+please download a static binary (executable) from [here](https://github.com/brentp/vcfanno/releases) and copy it into your '$PATH'.
+There are no dependencies.
+
+If you use [bioconda](https://bioconda.github.io/), you can install with: `conda install -c bioconda vcfanno`
 
 Mailing List
 ============
@@ -15,7 +22,7 @@ Mailing List
 
 Overview
 ========
-![overview](https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png "overview")
+<img src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" width="676" height="367" />
 
 
 vcfanno annotates a VCF with any number of *sorted* and tabixed input BED, BAM, and VCF files in parallel.
@@ -75,6 +82,15 @@ conf file as desired. Files can be local as above, or available via http/https.
 
 Also see the additional usage section at the bottom for additional details.
 
+Typecasting values
+------------------
+
+By default, using `ops` of `mean`,`max`,`sum`,`div2` or `min` will result in `type=Float`,
+using `self` will get the type from the annotation VCF and other fields will have `type=String.
+It's possible to add field type info to the field name. To change the field type add `_int`
+or `_float` to the field name. This suffix will be parsed and removed, and your fields
+will be of the desired type. 
+
 Example
 -------
 
@@ -106,6 +122,7 @@ from a single annotation file--in this case, the op determines how the many valu
 are `reduced`. Valid operations are:
 
  + lua:$lua // see section below for more details
+ + self // pull directly from the annotation and handle multi-allelics.
  + mean
  + max
  + sum
@@ -139,6 +156,18 @@ where the type field is one of the types accepted in VCF format, the `name` is t
 indicate the fields (from the INFO) that will be available to the op, and the *op* indicates the action to perform. This can be quite
 powerful. For an extensive example that demonstrates the utility of this type of approach, see
 [docs/examples/clinvar_exac.md](http://brentp.github.io/vcfanno/examples/clinvar_exac/).
+
+A user can set the ID field of the VCF in a `[[postannotation]]` block by using `name=ID`. For example:
+
+```
+[[postannotation]]
+name="ID"
+fields=["other_field", "ID"]
+op="lua:other_field .. ';' .. ID"
+type="String"
+```
+
+will take the value in `other_field`, concatenate it with the existing ID, and set the ID to that value.
 
 
 Binaries
@@ -236,3 +265,24 @@ See [example/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/co
 and [example/custom.lua](https://github.com/brentp/vcfanno/blob/master/example/custom.lua)
 for more examples.
 
+Multi-Allelics
+==============
+
+A multi-allelic variant is simply a site where there are multiple, non-reference alleles seen in the population. These will
+appear as e.g. `REF="A", ALT="G,C"`. As of version 0.1, `vcfanno` will handle these fully with op="self".
+
+For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
+the annotation and shows how the query INFO will be filled:
+
+| query  | anno | anno vals  | result  |
+| ------ | ---- | ---------- | ------- |
+| C,G    | C,G  | 22,23      | 22,23   |
+| C,G    | C,T  | 22,23      | 22,.    |
+| C,G    | T,G  | 22,23      | .,23    |
+| G,C    | C,G  | 22,23      | 23,22   |
+| C,G    | C    | YYY        | YYY,.   |
+| G,C,T  | C    | YYY        | .,YYY,. |
+| C,T    | G    | YYY        | .,.     |
+| T,C    | C,T  | AA,BB      | BB,AA   | # note values are flipped
+
+So values that are not present in the annotation are filled with '.' as a place-holder.

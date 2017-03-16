@@ -1,3 +1,8 @@
+v0.1 (dev)
+----------
++ proper support for multi-allelics in query and in annotation with `op="self"`
++ allow post-annotation to set ID column
+
 v0.1.1
 ------
 + set number=1 when op=min see #40
