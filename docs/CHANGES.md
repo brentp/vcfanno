@@ -1,3 +1,7 @@
+v0.2.1
+------
++ correct order of error-checking on return from postannotation (affects users using ID annotation)
+
 v0.2
 ----
 + proper support for multi-allelics in query and in annotation with `op="self"`
