@@ -1,0 +1,17 @@
+[[annotation]]
+file="tests/id-test/dbsnp.small.vcf.gz"
+fields=["ID"]
+names=["rs_ids"]
+ops=["self"] 
+
+[[annotation]]
+file="tests/id-test/cosmic.small.vcf.gz"
+fields=["ID"]
+names=["cosmic_ids"]
+ops=["self"]
+
+[[postannotation]]
+name="ID"
+fields=["rs_ids", "cosmic_ids", "ID"]
+op="lua:setid(rs_ids, cosmic_ids, ID)"
+type="String"

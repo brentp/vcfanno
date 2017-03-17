@@ -139,3 +139,10 @@ multiallelics() {
 run check_multiallelics multiallelics
 assert_exit_code 0
 
+idtest() {
+    vcfanno -lua tests/id-test/some.lua tests/id-test/small.toml tests/id-test/small.vcf.gz
+}
+
+run check_ids idtest
+assert_exit_code 0
+assert_equal $(grep -v ^# $STDOUT_FILE | awk '$3 != "."' | wc -l) 2

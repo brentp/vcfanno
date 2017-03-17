@@ -113,3 +113,13 @@ function check_clinvar_aaf(clinvar_sig, max_aaf_all, aaf_cutoff)
     return contains(clinvar_sig, "pathogenic") and max_aaf_all > aaf_cutoff
 end
 
+function setid(...)
+	local t = {...}
+	local res = {}
+	for i, v in ipairs(t) do
+		if v ~= nil and v ~= "" then
+			res[#res+1] = v
+		end
+	end
+	return table.concat(res, ";")
+end
