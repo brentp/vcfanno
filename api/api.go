@@ -716,12 +716,12 @@ func (a *Annotator) AnnotateEnds(v interfaces.Relatable, ends string) error {
 	}
 	if ends == INTERVAL {
 		err := a.AnnotateOne(v, a.Strict)
-		if err != nil {
-			return err
-		}
 		err2, newid := a.PostAnnotate(v.Chrom(), int(v.Start()), int(v.End()), v.(interfaces.IVariant).Info(), "", id)
 		if newid != "" {
 			v.(*parsers.Variant).IVariant.(*vcfgo.Variant).Id_ = newid
+		}
+		if err != nil {
+			return err
 		}
 		return err2
 	}

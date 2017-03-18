@@ -1,3 +1,7 @@
+v0.2.2
+------
++ wholely fix order of error checking from postannotation (affects users using ID annotation) (thanks @vladsaveliev)
+
 v0.2.1
 ------
 + correct order of error-checking on return from postannotation (affects users using ID annotation)

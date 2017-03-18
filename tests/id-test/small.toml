@@ -1,8 +1,8 @@
 [[annotation]]
 file="tests/id-test/dbsnp.small.vcf.gz"
-fields=["ID"]
-names=["rs_ids"]
-ops=["self"] 
+fields=["ID", "CAF"]
+names=["rs_ids", "CAF"]
+ops=["self", "self"]
 
 [[annotation]]
 file="tests/id-test/cosmic.small.vcf.gz"
