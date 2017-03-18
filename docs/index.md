@@ -5,38 +5,18 @@ build:
  VERSION=0.1.0; goxc -build-ldflags "-X main.VERSION=$VERSION" -include docs/,example/,README.md -d /tmp/vcfanno/ -pv=$VERSION -bc='linux,darwin,windows,!arm'
 -->
 
+
 [![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
-Installation
-============
-
-please download a static binary (executable) from [here](https://github.com/brentp/vcfanno/releases) and copy it into your '$PATH'.
-There are no dependencies.
-
-If you use [bioconda](https://bioconda.github.io/), you can install with: `conda install -c bioconda vcfanno`
-
-Mailing List
-============
-[Mailing List](https://groups.google.com/forum/#!forum/vcfanno)[![Mailing List](http://www.google.com/images/icons/product/groups-32.png)](https://groups.google.com/forum/#!forum/vcfanno)
-
 Overview
 ========
-<img src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" width="676" height="367" />
 
+vcfanno allows you to quickly annotate your VCF with any number of INFO fields from any number of VCFs or BED files.
+It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will base
+added to the info of the query VCF.
 
-vcfanno annotates a VCF with any number of *sorted* and tabixed input BED, BAM, and VCF files in parallel.
-It does this by finding overlaps as it streams over the data and applying
-user-defined operations on the overlapping annotations.
-
-In order to parallelize, work is broken down as follows. A slice (array) of query intervals is accumulated 
-until a specified number is reached (usually ~5K-25K) or a gap cutoff is exceeded; at that point, the
-bounds of the region are used to perform a tabix (or any regional) query on the database files. This is
-all done in [irelate](https://github.com/brentp/irelate). `vcfanno` then iterates over the streams that
-result from the tabix queries and finds intersections with the query stream. This is a parallel chrom-sweep.
-This method avoids problems with chromosome order.
-
-For VCF, values are pulled by name from the INFO field.
+For VCF, values are pulled by name from the INFO field with special-cases of *ID* and *FILTER* to pull from those VCF columns.
 For BED, values are pulled from (1-based) column number.
 For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 
@@ -44,6 +24,8 @@ For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop and over 30K variants per second using 12 processes on a server.
 
 We are actively developing `vcfanno` and appreciate feedback and bug reports.
+
+<img src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" width="676" height="367" />
 
 Usage
 =====
@@ -59,8 +41,10 @@ Where conf.toml looks like:
 ```
 [[annotation]]
 file="ExAC.vcf"
-fields = ["AC_AFR", "AC_AMR", "AC_EAS"]
-ops=["first", "first", "min"]
+# ID and FILTER are special columns is a special field that pull the ID and FILTER columns from the vcf
+fields = ["AC_AFR", "AC_AMR", "AC_EAS", "ID", "FILTER"]
+ops=["self", "self", "min", "self", "self"]
+names=["exac_ac_afr", "exac_ac_amr", "exac_ac_eas", "exac_id", "exac_filter"]
 
 [[annotation]]
 file="fitcons.bed"
@@ -82,14 +66,6 @@ conf file as desired. Files can be local as above, or available via http/https.
 
 Also see the additional usage section at the bottom for additional details.
 
-Typecasting values
-------------------
-
-By default, using `ops` of `mean`,`max`,`sum`,`div2` or `min` will result in `type=Float`,
-using `self` will get the type from the annotation VCF and other fields will have `type=String.
-It's possible to add field type info to the field name. To change the field type add `_int`
-or `_float` to the field name. This suffix will be parsed and removed, and your fields
-will be of the desired type. 
 
 Example
 -------
@@ -113,6 +89,15 @@ and after:
 AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;lua_sum=0.061
 ```
 
+Typecasting values
+------------------
+
+By default, using `ops` of `mean`,`max`,`sum`,`div2` or `min` will result in `type=Float`,
+using `self` will get the type from the annotation VCF and other fields will have `type=String.
+It's possible to add field type info to the field name. To change the field type add `_int`
+or `_float` to the field name. This suffix will be parsed and removed, and your fields
+will be of the desired type. 
+
 Operations
 ==========
 
@@ -133,6 +118,9 @@ are `reduced`. Valid operations are:
  + uniq
  + first 
  + flag   // presense/absence via vcf flag
+
+
+In nearly all cases, **if you are annotating with a VCF. use `self`**
 
 Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.
 
@@ -169,19 +157,7 @@ type="String"
 
 will take the value in `other_field`, concatenate it with the existing ID, and set the ID to that value.
 
-
-Binaries
-========
-
-binary executables are available [here](https://github.com/brentp/vcfanno/releases/)
-for *linux*, *mac* (darwin), and *windows* for *32* and *64* bit platforms.
-
-Development
-===========
-
-This, and the associated go libraries ([vcfgo](https://github.com/brentp/vcfgo),
-[irelate](https://github.com/brentp/irelate), [xopen](https://github.com/brentp/xopen),
-[goluaez](https://github.com/brentp/goluaez) are under active development.
+see the `setid` function in `examples/custom.lua` for a more robust method of doing this.
 
 Additional Usage
 ================
@@ -252,6 +228,19 @@ op="lua:ref .. '/' .. alt[1]"
 See [example/conf.toml](https://github.com/brentp/vcfanno/blob/master/example/conf.toml)
 and [example/custom.lua](https://github.com/brentp/vcfanno/blob/master/example/custom.lua)
 for more examples.
+
+Mailing List
+============
+[Mailing List](https://groups.google.com/forum/#!forum/vcfanno)[![Mailing List](http://www.google.com/images/icons/product/groups-32.png)](https://groups.google.com/forum/#!forum/vcfanno)
+
+Installation
+============
+
+please download a static binary (executable) from [here](https://github.com/brentp/vcfanno/releases) and copy it into your '$PATH'.
+There are no dependencies.
+
+If you use [bioconda](https://bioconda.github.io/), you can install with: `conda install -c bioconda vcfanno`
+
 
 Multi-Allelics
 ==============

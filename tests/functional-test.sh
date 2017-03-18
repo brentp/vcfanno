@@ -146,3 +146,5 @@ idtest() {
 run check_ids idtest
 assert_exit_code 0
 assert_equal $(grep -v ^# $STDOUT_FILE | awk '$3 != "."' | wc -l) 2
+assert_in_stdout "rs9996;COSM4590035;COSM4590034"
+assert_in_stdout "cosmic_filter=QQ,ZZ"

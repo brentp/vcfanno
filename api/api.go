@@ -50,7 +50,7 @@ type Source struct {
 	NumberA bool
 	// column number in bed file or ...
 	Column int
-	// info name in VCF. (can also be ID).
+	// info name in VCF. (can also be ID or FILTER).
 	Field string
 	// 0-based index of the file order this source is from.
 	Index int
@@ -266,6 +266,13 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				if val == "." || val == "" {
 					continue
 				}
+				val = strings.Replace(val.(string), ";", ",", -1)
+			} else if src.Field == "FILTER" {
+				val = o.(interfaces.VarWrap).IVariant.(*vcfgo.Variant).Filter
+				if val == "." || val == "" || val == "PASS" {
+					continue
+				}
+				val = strings.Replace(val.(string), ";", ",", -1)
 			} else {
 				var err error
 				val, err = o.Info().Get(src.Field)

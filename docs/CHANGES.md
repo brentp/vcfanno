@@ -1,3 +1,8 @@
+v0.2.3
+------
++ allow pulling the 'FILTER' field from a VCF by specifing 'FILTER' in the `fields`
+
+
 v0.2.2
 ------
 + wholely fix order of error checking from postannotation (affects users using ID annotation) (thanks @vladsaveliev)

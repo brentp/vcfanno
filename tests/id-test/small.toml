@@ -6,9 +6,9 @@ ops=["self", "self"]
 
 [[annotation]]
 file="tests/id-test/cosmic.small.vcf.gz"
-fields=["ID"]
-names=["cosmic_ids"]
-ops=["self"]
+fields=["ID", "FILTER"]
+names=["cosmic_ids", "cosmic_filter"]
+ops=["self", "self"]
 
 [[postannotation]]
 name="ID"
