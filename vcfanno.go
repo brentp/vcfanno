@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/biogo/hts/bgzf"
 	"github.com/brentp/irelate"
 	"github.com/brentp/irelate/interfaces"
 	"github.com/brentp/irelate/parsers"
@@ -24,7 +25,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.2.3"
+var VERSION = "0.2.4"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
@@ -126,7 +127,20 @@ see: https://github.com/brentp/vcfanno
 	defer os.Stdout.Close()
 
 	var err error
-	qrdr, err := xopen.Ropen(queryFile)
+	var qrdr io.Reader
+	// try to parallelizing reading if we have plenty of CPUs and it's (possibly)
+	// a bgzf file.
+	if len(config.Annotation) < runtime.GOMAXPROCS(0) && strings.HasSuffix(queryFile, ".gz") {
+		if rdr, err := os.Open(queryFile); err == nil {
+			qrdr, err = bgzf.NewReader(rdr, 2)
+			if err == nil {
+				log.Printf("using 2 worker threads to decompress query file")
+			}
+		}
+	}
+	if qrdr == nil {
+		qrdr, err = xopen.Ropen(queryFile)
+	}
 	if err != nil {
 		log.Fatal(fmt.Errorf("error opening query file %s: %s", queryFile, err))
 	}

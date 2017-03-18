@@ -1,3 +1,7 @@
+v0.2.4
+------
++ 30-40% speed improvement when annotating with few, large files by parallelizing decompression.
+
 v0.2.3
 ------
 + allow pulling the 'FILTER' field from a VCF by specifing 'FILTER' in the `fields`

@@ -3,7 +3,9 @@ package api
 import (
 	"fmt"
 	"log"
+	"os"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -632,6 +634,25 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 	return err, newid
 }
 
+func imax(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func getSize(path string) int64 {
+	f, err := os.Open(path)
+	if err != nil {
+		return -1
+	}
+	fi, err := f.Stat()
+	if err != nil {
+		return -1
+	}
+	return fi.Size()
+}
+
 // Setup reads all the tabix indexes and setups up the Queryables
 func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	files, fmap, err := a.setupStreams()
@@ -640,6 +661,14 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	}
 	var wg sync.WaitGroup
 	wg.Add(len(files))
+	workers := 1
+	if runtime.GOMAXPROCS(0) > len(files) && len(files) > 0 {
+		workers = imax(2, runtime.GOMAXPROCS(0)/len(files))
+		if workers > 3 {
+			workers = 3
+		}
+		log.Printf("vcfanno: using ~%d workers per file", workers)
+	}
 
 	queryables := make([]interfaces.Queryable, len(files))
 	for i, file := range files {
@@ -649,7 +678,13 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 			if strings.HasSuffix(file, ".bam") {
 				q, err = parsers.NewBamQueryable(file, 2)
 			} else {
-				q, err = bix.New(file, 1)
+				if getSize(file) > 2320303098 {
+					q, err = bix.New(file, workers+1)
+				} else if getSize(file) < 120303098 {
+					q, err = bix.New(file, 1)
+				} else {
+					q, err = bix.New(file, workers)
+				}
 			}
 			if err != nil {
 				log.Fatal(err)
