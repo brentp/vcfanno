@@ -277,16 +277,17 @@ are <code>reduced</code>. Valid operations are:</p>
 <ul>
 <li>lua:$lua // see section below for more details</li>
 <li>self // pull directly from the annotation and handle multi-allelics.</li>
-<li>mean</li>
-<li>max</li>
-<li>sum</li>
-<li>div2</li>
-<li>min</li>
 <li>concat // comma delimited list of output</li>
 <li>count  // count the number of overlaps</li>
-<li>uniq</li>
+<li>div2</li>
+<li>delete // for postannotation only. allows removing a field from the query vcf's INFO.</li>
 <li>first </li>
-<li>flag   // presense/absence via vcf flag</li>
+<li>flag // presense/absence via vcf flag</li>
+<li>max</li>
+<li>mean</li>
+<li>min</li>
+<li>sum</li>
+<li>uniq</li>
 </ul>
 <p>In nearly all cases, <strong>if you are annotating with a VCF. use <code>self</code></strong></p>
 <p>Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.</p>
@@ -491,5 +492,5 @@ the annotation and shows how the query INFO will be filled:</p>
 
 <!--
 MkDocs version : 0.16.2
-Build Date UTC : 2017-03-18 02:55:42
+Build Date UTC : 2017-03-18 03:56:13
 -->
