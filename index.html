@@ -153,21 +153,15 @@
         <li class="first-level active"><a href="#vcfanno">vcfanno</a></li>
         
     
-        <li class="first-level "><a href="#installation">Installation</a></li>
-        
-    
-        <li class="first-level "><a href="#mailing-list">Mailing List</a></li>
-        
-    
         <li class="first-level "><a href="#overview">Overview</a></li>
         
     
         <li class="first-level "><a href="#usage">Usage</a></li>
         
-            <li class="second-level"><a href="#typecasting-values">Typecasting values</a></li>
+            <li class="second-level"><a href="#example">Example</a></li>
             
         
-            <li class="second-level"><a href="#example">Example</a></li>
+            <li class="second-level"><a href="#typecasting-values">Typecasting values</a></li>
             
         
     
@@ -175,12 +169,6 @@
         
     
         <li class="first-level "><a href="#postannotation">PostAnnotation</a></li>
-        
-    
-        <li class="first-level "><a href="#binaries">Binaries</a></li>
-        
-    
-        <li class="first-level "><a href="#development">Development</a></li>
         
     
         <li class="first-level "><a href="#additional-usage">Additional Usage</a></li>
@@ -198,6 +186,12 @@
             
         
     
+        <li class="first-level "><a href="#mailing-list">Mailing List</a></li>
+        
+    
+        <li class="first-level "><a href="#installation">Installation</a></li>
+        
+    
         <li class="first-level "><a href="#multi-allelics">Multi-Allelics</a></li>
         
     
@@ -213,29 +207,17 @@ build:
 
 <p><a href="https://travis-ci.org/brentp/vcfanno"><img alt="Build Status" src="https://travis-ci.org/brentp/vcfanno.svg" /></a>
 <a href="http://brentp.github.io/vcfanno/"><img alt="Docs" src="https://img.shields.io/badge/docs-latest-blue.svg" /></a></p>
-<h1 id="installation">Installation</h1>
-<p>please download a static binary (executable) from <a href="https://github.com/brentp/vcfanno/releases">here</a> and copy it into your '$PATH'.
-There are no dependencies.</p>
-<p>If you use <a href="https://bioconda.github.io/">bioconda</a>, you can install with: <code>conda install -c bioconda vcfanno</code></p>
-<h1 id="mailing-list">Mailing List</h1>
-<p><a href="https://groups.google.com/forum/#!forum/vcfanno">Mailing List</a><a href="https://groups.google.com/forum/#!forum/vcfanno"><img alt="Mailing List" src="http://www.google.com/images/icons/product/groups-32.png" /></a></p>
 <h1 id="overview">Overview</h1>
-<p><img src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" width="676" height="367" /></p>
-<p>vcfanno annotates a VCF with any number of <em>sorted</em> and tabixed input BED, BAM, and VCF files in parallel.
-It does this by finding overlaps as it streams over the data and applying
-user-defined operations on the overlapping annotations.</p>
-<p>In order to parallelize, work is broken down as follows. A slice (array) of query intervals is accumulated 
-until a specified number is reached (usually ~5K-25K) or a gap cutoff is exceeded; at that point, the
-bounds of the region are used to perform a tabix (or any regional) query on the database files. This is
-all done in <a href="https://github.com/brentp/irelate">irelate</a>. <code>vcfanno</code> then iterates over the streams that
-result from the tabix queries and finds intersections with the query stream. This is a parallel chrom-sweep.
-This method avoids problems with chromosome order.</p>
-<p>For VCF, values are pulled by name from the INFO field.
+<p>vcfanno allows you to quickly annotate your VCF with any number of INFO fields from any number of VCFs or BED files.
+It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will base
+added to the info of the query VCF.</p>
+<p>For VCF, values are pulled by name from the INFO field with special-cases of <em>ID</em> and <em>FILTER</em> to pull from those VCF columns.
 For BED, values are pulled from (1-based) column number.
 For BAM, depth (<code>count</code>), "mapq" and "seq" are currently supported.</p>
 <p><code>vcfanno</code> is written in <a href="http://golang.org">go</a> and it supports custom user-scripts written in lua.
 It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop and over 30K variants per second using 12 processes on a server.</p>
 <p>We are actively developing <code>vcfanno</code> and appreciate feedback and bug reports.</p>
+<p><img src="https://raw.githubusercontent.com/brentp/vcfanno/master/docs/img/vcfanno-overview-final.png" width="676" height="367" /></p>
 <h1 id="usage">Usage</h1>
 <p>After downloading the <a href="https://github.com/brentp/vcfanno/releases/">binary for your system</a> (see section below) usage looks like:</p>
 <pre><code class="Shell">  ./vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz
@@ -244,8 +226,10 @@ It can annotate more than 8,000 variants per second with 34 annotations from 9 f
 <p>Where conf.toml looks like:</p>
 <pre><code>[[annotation]]
 file=&quot;ExAC.vcf&quot;
-fields = [&quot;AC_AFR&quot;, &quot;AC_AMR&quot;, &quot;AC_EAS&quot;]
-ops=[&quot;first&quot;, &quot;first&quot;, &quot;min&quot;]
+# ID and FILTER are special columns is a special field that pull the ID and FILTER columns from the vcf
+fields = [&quot;AC_AFR&quot;, &quot;AC_AMR&quot;, &quot;AC_EAS&quot;, &quot;ID&quot;, &quot;FILTER&quot;]
+ops=[&quot;self&quot;, &quot;self&quot;, &quot;min&quot;, &quot;self&quot;, &quot;self&quot;]
+names=[&quot;exac_ac_afr&quot;, &quot;exac_ac_amr&quot;, &quot;exac_ac_eas&quot;, &quot;exac_id&quot;, &quot;exac_filter&quot;]
 
 [[annotation]]
 file=&quot;fitcons.bed&quot;
@@ -265,11 +249,6 @@ ops=[&quot;count&quot;, &quot;mean&quot;, &quot;concat&quot;]
 <code>operation</code> from the <code>ops</code> array. Users can add as many <code>[[annotation]]</code> blocks to the
 conf file as desired. Files can be local as above, or available via http/https.</p>
 <p>Also see the additional usage section at the bottom for additional details.</p>
-<h2 id="typecasting-values">Typecasting values</h2>
-<p>By default, using <code>ops</code> of <code>mean</code>,<code>max</code>,<code>sum</code>,<code>div2</code> or <code>min</code> will result in <code>type=Float</code>,
-using <code>self</code> will get the type from the annotation VCF and other fields will have <code>type=String.
-It's possible to add field type info to the field name. To change the field type add</code>_int<code>or</code>_float` to the field name. This suffix will be parsed and removed, and your fields
-will be of the desired type. </p>
 <h2 id="example">Example</h2>
 <p>the example directory contains the data and conf for a full example. To run, download
 the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a> for your system</p>
@@ -285,6 +264,11 @@ the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a>
 <pre><code>AB=0.2824;ABP=56.8661;AC=11;AF=0.3438;AN=32;AO=45;CIGAR=1X;TYPE=snp;AC_AFR=0;AC_AMR=0;AC_EAS=0;fitcons_mean=0.061;lua_sum=0.061
 </code></pre>
 
+<h2 id="typecasting-values">Typecasting values</h2>
+<p>By default, using <code>ops</code> of <code>mean</code>,<code>max</code>,<code>sum</code>,<code>div2</code> or <code>min</code> will result in <code>type=Float</code>,
+using <code>self</code> will get the type from the annotation VCF and other fields will have <code>type=String.
+It's possible to add field type info to the field name. To change the field type add</code>_int<code>or</code>_float` to the field name. This suffix will be parsed and removed, and your fields
+will be of the desired type. </p>
 <h1 id="operations">Operations</h1>
 <p>In most cases, we will have a single annotation entry for each entry (variant)
 in the query VCF. However, it is possible that there will be multiple annotations
@@ -304,6 +288,7 @@ are <code>reduced</code>. Valid operations are:</p>
 <li>first </li>
 <li>flag   // presense/absence via vcf flag</li>
 </ul>
+<p>In nearly all cases, <strong>if you are annotating with a VCF. use <code>self</code></strong></p>
 <p>Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.</p>
 <h1 id="postannotation">PostAnnotation</h1>
 <p>One of the most powerful features of <code>vcfanno</code> is the embedded scripting language, lua, combined with <em>postannotation</em>.
@@ -331,13 +316,7 @@ type=&quot;String&quot;
 </code></pre>
 
 <p>will take the value in <code>other_field</code>, concatenate it with the existing ID, and set the ID to that value.</p>
-<h1 id="binaries">Binaries</h1>
-<p>binary executables are available <a href="https://github.com/brentp/vcfanno/releases/">here</a>
-for <em>linux</em>, <em>mac</em> (darwin), and <em>windows</em> for <em>32</em> and <em>64</em> bit platforms.</p>
-<h1 id="development">Development</h1>
-<p>This, and the associated go libraries (<a href="https://github.com/brentp/vcfgo">vcfgo</a>,
-<a href="https://github.com/brentp/irelate">irelate</a>, <a href="https://github.com/brentp/xopen">xopen</a>,
-<a href="https://github.com/brentp/goluaez">goluaez</a> are under active development.</p>
+<p>see the <code>setid</code> function in <code>examples/custom.lua</code> for a more robust method of doing this.</p>
 <h1 id="additional-usage">Additional Usage</h1>
 <h2 id="-ends">-ends</h2>
 <p>For annotating large variants, such as CNVs or structural variants (SVs), it can be useful to
@@ -387,6 +366,12 @@ equal to the number of alternate alleles. Example usage could be:</p>
 <p>See <a href="https://github.com/brentp/vcfanno/blob/master/example/conf.toml">example/conf.toml</a>
 and <a href="https://github.com/brentp/vcfanno/blob/master/example/custom.lua">example/custom.lua</a>
 for more examples.</p>
+<h1 id="mailing-list">Mailing List</h1>
+<p><a href="https://groups.google.com/forum/#!forum/vcfanno">Mailing List</a><a href="https://groups.google.com/forum/#!forum/vcfanno"><img alt="Mailing List" src="http://www.google.com/images/icons/product/groups-32.png" /></a></p>
+<h1 id="installation">Installation</h1>
+<p>please download a static binary (executable) from <a href="https://github.com/brentp/vcfanno/releases">here</a> and copy it into your '$PATH'.
+There are no dependencies.</p>
+<p>If you use <a href="https://bioconda.github.io/">bioconda</a>, you can install with: <code>conda install -c bioconda vcfanno</code></p>
 <h1 id="multi-allelics">Multi-Allelics</h1>
 <p>A multi-allelic variant is simply a site where there are multiple, non-reference alleles seen in the population. These will
 appear as e.g. <code>REF="A", ALT="G,C"</code>. As of version 0.2, <code>vcfanno</code> will handle these fully with op="self" when the Number from
@@ -506,5 +491,5 @@ the annotation and shows how the query INFO will be filled:</p>
 
 <!--
 MkDocs version : 0.16.2
-Build Date UTC : 2017-03-17 20:53:04
+Build Date UTC : 2017-03-18 02:55:42
 -->
