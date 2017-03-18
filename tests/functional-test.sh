@@ -150,3 +150,8 @@ assert_in_stdout "rs9996;COSM4590035;COSM4590034"
 assert_in_stdout "cosmic_filter=QQ,ZZ"
 # test delete
 assert_equal $(grep -c "NS=" $STDOUT_FILE) 0
+# test that Description is transferred from CAF
+assert_in_stdout "comma delimited list of allele frequencies based on 1000Genomes"
+# make sure that ID didn't get added to the header as we're just updating the ID column.
+assert_equal $(grep -c "ID=ID" $STDOUT_FILE) 0
+assert_equal $(grep -c "ID=FILTER" $STDOUT_FILE) 0

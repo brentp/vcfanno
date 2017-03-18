@@ -426,9 +426,8 @@ func (s *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix s
 }
 
 // UpdateHeader does what it suggests but handles left and right ends for svs
-func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number string) {
+func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number string, desc string) {
 	ntype := "String"
-	var desc string
 	// for 'self' and 'first', we can get the type from the header of the annotation file.
 	if htype != "" && (s.Op == "self" || s.Op == "first") {
 		ntype = htype
@@ -464,7 +463,7 @@ func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number s
 		}
 	}
 	if (s.Op == "first" || s.Op == "self") && htype == ntype {
-		desc = fmt.Sprintf("transfered from matched variants in %s", s.File)
+		desc = fmt.Sprintf("%s (from %s)", desc, s.File)
 	} else if strings.HasSuffix(s.File, ".bam") && s.Field == "" {
 		desc = fmt.Sprintf("calculated by coverage from %s", s.File)
 	} else if s.Field == "DP2" {
@@ -666,7 +665,8 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 		if q, ok := queryables[i].(*bix.Bix); ok {
 			for _, src := range fmap[file] {
 				num := q.GetHeaderNumber(src.Field)
-				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field), num)
+				desc := q.GetHeaderDescription(src.Field)
+				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field), num, desc)
 				src.NumberA = num == "A"
 			}
 		} else if _, ok := queryables[i].(*parsers.BamQueryable); ok {
@@ -675,7 +675,7 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 				if src.IsNumber() {
 					htype = "Float"
 				}
-				src.UpdateHeader(query, a.Ends, htype, "1")
+				src.UpdateHeader(query, a.Ends, htype, "1", "")
 			}
 		} else {
 			log.Printf("type not known: %T\n", queryables[i])
@@ -683,6 +683,9 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	}
 
 	for _, post := range a.PostAnnos {
+		if post.Name == "" || post.Name == "ID" || post.Name == "FILTER" {
+			continue
+		}
 		query.AddInfoToHeader(post.Name, ".", post.Type, fmt.Sprintf("calculated field: %s", post.Name))
 	}
 	return queryables, nil

@@ -2,7 +2,7 @@ v0.2.3
 ------
 + allow pulling the 'FILTER' field from a VCF by specifing 'FILTER' in the `fields`
 + add new op for postannotation only 'delete' which can be used to remove fields from the INFO.
-
++ use Description from annotation as Description in annotated file (thanks @xuyangy for the implementation #43)
 
 v0.2.2
 ------
