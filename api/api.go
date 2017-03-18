@@ -619,7 +619,13 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 				if post.Name == "ID" && prefix == "" {
 					newid = fmt.Sprintf("%s", fn(vals))
 				} else {
-					info.Set(prefix+post.Name, fn(vals))
+					if post.Op == "delete" {
+						for _, f := range post.Fields {
+							info.(*vcfgo.InfoByte).Delete(prefix + f)
+						}
+					} else {
+						info.Set(prefix+post.Name, fn(vals))
+					}
 				}
 			}
 		}

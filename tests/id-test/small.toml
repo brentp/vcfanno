@@ -15,3 +15,7 @@ name="ID"
 fields=["rs_ids", "cosmic_ids", "ID"]
 op="lua:setid(rs_ids, cosmic_ids, ID)"
 type="String"
+
+[[postannotation]]
+fields=["NS"]
+op="delete"

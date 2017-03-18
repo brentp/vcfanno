@@ -195,6 +195,12 @@ func _strings(vals []interface{}, uniq bool) []string {
 	return s
 }
 
+// delete is not used but we need it for a place-holder.
+func delete(vals []interface{}) interface{} {
+	panic("do not use")
+	return nil
+}
+
 func uniq(vals []interface{}) interface{} {
 	return strings.Join(_strings(vals, true), ",")
 }
@@ -234,12 +240,13 @@ func overlap(a, b interfaces.IPosition) bool {
 
 var Reducers = map[string]Reducer{
 	"self":   Reducer(self),
+	"concat": Reducer(concat),
+	"count":  Reducer(count),
+	"delete": Reducer(delete),
 	"mean":   Reducer(mean),
 	"sum":    Reducer(sum),
 	"max":    Reducer(max),
 	"min":    Reducer(min),
-	"concat": Reducer(concat),
-	"count":  Reducer(count),
 	"uniq":   Reducer(uniq),
 	"first":  Reducer(first),
 	"flag":   Reducer(vflag),

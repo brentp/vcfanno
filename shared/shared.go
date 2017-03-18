@@ -120,10 +120,14 @@ func CheckPostAnno(p *PostAnnotation) error {
 		return fmt.Errorf("must specify an 'op' for postannotation")
 	}
 	if p.Name == "" {
-		return fmt.Errorf("must specify a 'name' for postannotation")
+		if p.Op != "delete" {
+			return fmt.Errorf("must specify a 'name' for postannotation")
+		}
 	}
 	if !(p.Type == "Float" || p.Type == "String" || p.Type == "Integer" || p.Type == "Flag") {
-		return fmt.Errorf("must specify a type for postannotation that is 'Flag', 'Float', 'Integer' or 'String'")
+		if p.Op != "delete" {
+			return fmt.Errorf("must specify a type for postannotation that is 'Flag', 'Float', 'Integer' or 'String'")
+		}
 	}
 	return nil
 }

@@ -108,17 +108,17 @@ are `reduced`. Valid operations are:
 
  + lua:$lua // see section below for more details
  + self // pull directly from the annotation and handle multi-allelics.
- + mean
- + max
- + sum
- + div2
- + min
  + concat // comma delimited list of output
  + count  // count the number of overlaps
- + uniq
+ + div2
+ + delete // for postannotation only. allows removing a field from the query vcf's INFO.
  + first 
- + flag   // presense/absence via vcf flag
-
+ + flag // presense/absence via vcf flag
+ + max
+ + mean
+ + min
+ + sum
+ + uniq
 
 In nearly all cases, **if you are annotating with a VCF. use `self`**
 

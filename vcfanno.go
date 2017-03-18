@@ -99,7 +99,7 @@ see: https://github.com/brentp/vcfanno
 		r := config.PostAnnotation[i]
 		err := CheckPostAnno(&r)
 		if err != nil {
-			log.Fatal(fmt.Sprintf("error in postannotaion section %s err: %s", r.Name, err))
+			log.Fatal(fmt.Sprintf("error in postannotation section %s err: %s", r.Name, err))
 		}
 		if len(r.Op) > 4 && r.Op[:4] == "lua:" && *lua == "" {
 			log.Fatal("ERROR: requested lua op without specifying -lua flag")
