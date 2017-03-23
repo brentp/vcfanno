@@ -132,9 +132,16 @@ see: https://github.com/brentp/vcfanno
 	// a bgzf file.
 	if len(config.Annotation) < runtime.GOMAXPROCS(0) && strings.HasSuffix(queryFile, ".gz") {
 		if rdr, err := os.Open(queryFile); err == nil {
-			qrdr, err = bgzf.NewReader(rdr, 2)
-			if err == nil {
-				log.Printf("using 2 worker threads to decompress query file")
+			if st, err := rdr.Stat(); err == nil && st.Size() > 2320303098 {
+				qrdr, err = bgzf.NewReader(rdr, 4)
+				if err == nil {
+					log.Printf("using 4 worker threads to decompress query file")
+				}
+			} else {
+				qrdr, err = bgzf.NewReader(rdr, 2)
+				if err == nil {
+					log.Printf("using 2 worker threads to decompress query file")
+				}
 			}
 		}
 	}

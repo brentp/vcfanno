@@ -42,8 +42,21 @@ func sum(vals []interface{}) interface{} {
 	return s
 }
 
+// only fully supports ints and assumes the 2nd value is not a list.
 func div2(vals []interface{}) interface{} {
-	if vals[0] == 0 {
+	if avals, ok := vals[0].([]int); ok && len(avals) > 1 {
+		res := make([]string, len(avals))
+		b := vals[1].(int)
+		for i, a := range avals {
+			if a == 0 || b == 0 {
+				res[i] = "0"
+				continue
+			}
+			res[i] = fmt.Sprintf("%.5g", float64(a)/float64(b))
+		}
+		return strings.Join(res, ",")
+	}
+	if vals[0] == 0 || vals[1] == 0 {
 		return 0
 	}
 	return asfloat32(vals[0]) / asfloat32(vals[1])

@@ -721,7 +721,14 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 		if post.Name == "" || post.Name == "ID" || post.Name == "FILTER" {
 			continue
 		}
-		query.AddInfoToHeader(post.Name, ".", post.Type, fmt.Sprintf("calculated field: %s", post.Name))
+		number := "."
+		if strings.Contains(strings.ToLower(post.Name), "af_") || strings.Contains(strings.ToLower(post.Name), "_af") {
+			number = "A"
+		}
+		if post.Type == "Flag" {
+			number = "0"
+		}
+		query.AddInfoToHeader(post.Name, number, post.Type, fmt.Sprintf("calculated field: %s", post.Name))
 	}
 	return queryables, nil
 }

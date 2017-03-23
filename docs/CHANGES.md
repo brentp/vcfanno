@@ -1,6 +1,8 @@
 v0.2.4
 ------
 + 30-40% speed improvement when annotating with few, large files by parallelizing decompression.
++ handle multiple values to div2 (mostly for multi-allelics)
++ if `_af` or `af_` is in the `name` then make Number=A for a `postannotation`.
 
 v0.2.3
 ------
