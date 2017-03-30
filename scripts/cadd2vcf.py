@@ -10,7 +10,7 @@ import toolshed as ts
 def main(precision, path):
     header = None
 
-    tmpl = "{Chrom}\t{Pos}\t.\t{Ref}\t{Alt}\t1\tPASS\traw={RawScore:.%if};phred={PHRED:.%if}" % (precision, precision)
+    tmpl = "{chrom}\t{pos}\t.\t{ref}\t{alt}\t1\tPASS\traw={rawscore:.%if};phred={phred:.%if}" % (precision, precision)
 
     hdr = """\
 ##fileformat=VCFv4.1
@@ -25,11 +25,11 @@ def main(precision, path):
             print(hdr.format(comment=line.strip("# ").strip()))
             continue
         if header is None and line.startswith("#Chrom"):
-            header = line[1:].rstrip().split("\t")
+            header = line[1:].lower().rstrip().split("\t")
             continue
         d = dict(zip(header, line.rstrip().split("\t")))
-        d['PHRED'] = float(d['PHRED'])
-        d['RawScore'] = float(d['RawScore'])
+        d['phred'] = float(d['phred'])
+        d['rawscore'] = float(d['rawscore'])
         print(tmpl.format(**d))
 
 
