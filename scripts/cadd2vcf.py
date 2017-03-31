@@ -24,7 +24,7 @@ def main(precision, path):
         if i == 0:
             print(hdr.format(comment=line.strip("# ").strip()))
             continue
-        if header is None and line.startswith("#Chrom"):
+        if header is None and line.lower().startswith("#chrom"):
             header = line[1:].lower().rstrip().split("\t")
             continue
         d = dict(zip(header, line.rstrip().split("\t")))
