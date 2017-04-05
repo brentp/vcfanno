@@ -53,14 +53,25 @@ end
 join = table.concat
 
 function check_clinvar_aaf(clinvar_sig, max_aaf_all, aaf_cutoff)
-	-- didn't find an aaf for this so can't be common
-	if max_aaf_all == nil then
-		return false
-	end
-	if type(clinvar_sig) ~= "string" then
-    	clinvar_sig = join(clinvar_sig, ",")
+    -- didn't find an aaf for this so can't be common
+    if max_aaf_all == nil or clinvar_sig == nil then
+        return false
     end
-	return contains(clinvar_sig, "pathogenic") and max_aaf_all > aaf_cutoff
+    if type(clinvar_sig) ~= "string" then
+        clinvar_sig = join(clinvar_sig, ",")
+    end
+    if false == contains(clinvar_sig, "pathogenic") then
+        return false
+    end
+    if type(max_aaf_all) ~= "table" then
+        return max_aaf_all > aaf_cutoff
+    end
+    for i, aaf in pairs(max_aaf_all) do
+        if aaf > aaf_cutoff then
+            return true
+        end
+    end
+    return false
 end
 
 function div(a, b)
