@@ -1,3 +1,7 @@
+v0.2.5
+------
++ better error messages
+
 v0.2.4
 ------
 + 30-40% speed improvement when annotating with few, large files by parallelizing decompression.
