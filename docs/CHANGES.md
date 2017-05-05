@@ -1,3 +1,7 @@
+v0.2.6
+------
++ fix race condition from 0.2.4 by reverting some speed improvements from that release.
+
 v0.2.5
 ------
 + better error messages
