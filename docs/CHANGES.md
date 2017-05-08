@@ -1,3 +1,7 @@
+v0.2.7 (dev)
+------------
++ restore multiple threads per annotation file after fix in biogo/hts (#64)
+
 v0.2.6
 ------
 + fix race condition from 0.2.4 by reverting some speed improvements from that release.

@@ -661,7 +661,6 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 	var wg sync.WaitGroup
 	wg.Add(len(files))
 	queryables := make([]interfaces.Queryable, len(files))
-	workers := 1
 	for i, file := range files {
 		go func(idx int, file string) {
 			var q interfaces.Queryable
@@ -669,7 +668,11 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 			if strings.HasSuffix(file, ".bam") {
 				q, err = parsers.NewBamQueryable(file, 2)
 			} else {
-				q, err = bix.New(file, workers)
+				if getSize(file) > 2320303098 {
+					q, err = bix.New(file, 2)
+				} else {
+					q, err = bix.New(file, 1)
+				}
 			}
 			if err != nil {
 				log.Fatal(err)
