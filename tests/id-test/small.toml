@@ -13,7 +13,7 @@ ops=["self", "self"]
 [[postannotation]]
 name="ID"
 fields=["rs_ids", "cosmic_ids", "ID"]
-op="lua:setid(rs_ids, cosmic_ids, ID)"
+op="setid"
 type="String"
 
 [[postannotation]]

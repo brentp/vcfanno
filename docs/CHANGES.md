@@ -1,6 +1,9 @@
 v0.2.7 (dev)
 ------------
 + restore multiple threads per annotation file after fix in biogo/hts (#64)
++ add `setid` builtin to set the ID field and remove need for lua and fix some bugs.
++ fix bug in `self` with multiple alternates when there were multiple overlaps (thanks Matthew).
++ fix for #68, #69
 
 v0.2.6
 ------

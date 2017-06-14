@@ -228,6 +228,12 @@ func first(vals []interface{}) interface{} {
 	}
 	return vals[0]
 }
+func setid(vals []interface{}) interface{} {
+	if len(vals) == 0 {
+		return nil
+	}
+	return strings.Replace(strings.Join(_strings(vals, false), ";"), ",", ";", -1)
+}
 
 func self(vals []interface{}) interface{} {
 	if len(vals) == 0 {
@@ -265,4 +271,5 @@ var Reducers = map[string]Reducer{
 	"flag":   Reducer(vflag),
 	"div2":   Reducer(div2),
 	"DP2":    Reducer(dp2),
+	"setid":  Reducer(setid),
 }

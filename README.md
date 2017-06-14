@@ -111,7 +111,6 @@ this case, the op determines how the many values are `reduced`. Valid operations
  + concat   // comma delimited list of output
  + count    // count the number of overlaps
  + div2     // given two values a, b return a / b.
- + delete   // for postannotation only. allows removing a field from the query vcf's INFO.
  + first    // take only the first value. 
  + flag     // presense/absence via vcf flag
  + max      // numbers only
@@ -119,6 +118,11 @@ this case, the op determines how the many values are `reduced`. Valid operations
  + min      // numbers only
  + sum      // numbers only
  + uniq     // comma-delimited list of uniq vlues
+
+There are some operations that are only for `postannotation`:
+ 
+ + delete   // remove fields from the query vcf's INFO.
+ + setid    // set the ID file of the query vcf with values from its INFO.
 
 In nearly all cases, **if you are annotating with a VCF. use `self`**
 

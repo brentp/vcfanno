@@ -1,0 +1,5 @@
+##fileformat=VCFv4.1
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">
+##contig=<ID=1,length=249250621>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	15274	rs201931625	A	G,T	323338.22	PASS	AC=35,65

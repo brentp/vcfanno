@@ -285,7 +285,8 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				}
 			}
 			// special-case 'self' when the annotation has Number=A and either query or anno have multiple alts
-			if src.NumberA && src.Op == "self" && len(rels) == 1 && (len(v.Alt()) > 1 || len(o.Alt()) > 1) {
+			// note that if len(rels) > 1, we could miss some since we return here. however, that shouldn't happen as we are matching on ref and alt and we wouldn't know what to do anyway.
+			if src.NumberA && src.Op == "self" && (len(v.Alt()) > 1 || len(o.Alt()) > 1) {
 				return handleA(val, v.Alt(), o.Alt()), finalerr
 			}
 
@@ -688,6 +689,10 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 		if q, ok := queryables[i].(*bix.Bix); ok {
 			for _, src := range fmap[file] {
 				num := q.GetHeaderNumber(src.Field)
+				// must set this to accurately represent multi-allelics.
+				if num == "1" && src.Op == "self" {
+					num = "A"
+				}
 				desc := q.GetHeaderDescription(src.Field)
 				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field), num, desc)
 				src.NumberA = num == "A"

@@ -13,12 +13,12 @@ Overview
 ========
 
 vcfanno allows you to quickly annotate your VCF with any number of INFO fields from any number of VCFs or BED files.
-It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will base
+It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will
 added to the info of the query VCF.
 
-For VCF, values are pulled by name from the INFO field with special-cases of *ID* and *FILTER* to pull from those VCF columns.
-For BED, values are pulled from (1-based) column number.
-For BAM, depth (`count`), "mapq" and "seq" are currently supported.
++ For VCF, values are pulled by name from the INFO field with special-cases of *ID* and *FILTER* to pull from those VCF columns.
++ For BED, values are pulled from (1-based) column number.
++ For BAM, depth (`count`), "mapq" and "seq" are currently supported.
 
 `vcfanno` is written in [go](http://golang.org) and it supports custom user-scripts written in lua.
 It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop and over 30K variants per second using 12 processes on a server.
@@ -64,7 +64,7 @@ So from `ExAC.vcf` we will pull the fields from the info field and apply the cor
 `operation` from the `ops` array. Users can add as many `[[annotation]]` blocks to the
 conf file as desired. Files can be local as above, or available via http/https.
 
-Also see the additional usage section at the bottom for additional details.
+See the additional usage section at the bottom for more.
 
 
 Example
@@ -95,34 +95,38 @@ Typecasting values
 By default, using `ops` of `mean`,`max`,`sum`,`div2` or `min` will result in `type=Float`,
 using `self` will get the type from the annotation VCF and other fields will have `type=String.
 It's possible to add field type info to the field name. To change the field type add `_int`
-or `_float` to the field name. This suffix will be parsed and removed, and your fields
+or `_float` to the field name. This suffix will be parsed and removed, and your field
 will be of the desired type. 
 
 Operations
 ==========
 
 In most cases, we will have a single annotation entry for each entry (variant)
-in the query VCF. However, it is possible that there will be multiple annotations
-from a single annotation file--in this case, the op determines how the many values
-are `reduced`. Valid operations are:
+in the query VCF, in which case the `self` op is the best choice. However, it is
+possible that there will be multiple annotations from a single annotation file--in
+this case, the op determines how the many values are `reduced`. Valid operations are:
 
  + lua:$lua // see section below for more details
- + self // pull directly from the annotation and handle multi-allelics.
- + concat // comma delimited list of output
- + count  // count the number of overlaps
- + div2
- + delete // for postannotation only. allows removing a field from the query vcf's INFO.
- + first 
- + flag // presense/absence via vcf flag
- + max
- + mean
- + min
- + sum
- + uniq
+ + self     // pull directly from the annotation and handle multi-allelics.
+ + concat   // comma delimited list of output
+ + count    // count the number of overlaps
+ + div2     // given two values a, b return a / b.
+ + first    // take only the first value. 
+ + flag     // presense/absence via vcf flag
+ + max      // numbers only
+ + mean     // numbers only
+ + min      // numbers only
+ + sum      // numbers only
+ + uniq     // comma-delimited list of uniq vlues
+
+There are some operations that are only for `postannotation`:
+ 
+ + delete   // remove fields from the query vcf's INFO.
+ + setid    // set the ID file of the query vcf with values from its INFO.
 
 In nearly all cases, **if you are annotating with a VCF. use `self`**
 
-Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.
+Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage' are supported).
 
 PostAnnotation
 ==============
@@ -252,7 +256,8 @@ the VCF  header is A (Number=A)
 For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
 the annotation and shows how the query INFO will be filled:
 
-| query  | anno | anno vals  | result  |
+| query  | anno | anno vals  |         |
+| ALTS   | ALTS | from INFO  | result  |
 | ------ | ---- | ---------- | ------- |
 | C,G    | C,G  | 22,23      | 22,23   |
 | C,G    | C,T  | 22,23      | 22,.    |

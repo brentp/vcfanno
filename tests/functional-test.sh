@@ -155,3 +155,12 @@ assert_in_stdout "comma delimited list of allele frequencies based on 1000Genome
 # make sure that ID didn't get added to the header as we're just updating the ID column.
 assert_equal $(grep -c "ID=ID" $STDOUT_FILE) 0
 assert_equal $(grep -c "ID=FILTER" $STDOUT_FILE) 0
+
+fn_self_test_with_A_and_many_overlaps() {
+    vcfanno tests/testVA/vcfanno.config tests/testVA/test-input.vcf
+}
+
+run self_test_with_A_and_many_overlaps fn_self_test_with_A_and_many_overlaps
+assert_exit_code 0
+assert_equal $(tail -1 $STDOUT_FILE | cut -f 8) "AC=35,65;GN_AF=0.3717,0.6122"
+assert_in_stdout "ID=GN_AF,Number=A"
