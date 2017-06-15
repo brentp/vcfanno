@@ -209,17 +209,20 @@ func allEqual(a, b []string) bool {
 // C,G  | C,T | 22,23      | 22,.
 // C,G  | T,G | 22,23      | .,23
 // G,C  | C,G | 22,23      | 23,22
-func handleA(val interface{}, qAlts []string, oAlts []string) []interface{} {
-	// TODO: implement
+func handleA(val interface{}, qAlts []string, oAlts []string, out []interface{}) []interface{} {
 	vals := reflect.ValueOf(val)
+
 	if vals.Kind() != reflect.Slice {
-		log.Printf("WARNING: got single value %s for value with Number=A", val)
-		return []interface{}{val}
+		val = []interface{}{val}
+		vals = reflect.ValueOf(val)
 	}
-	out := make([]interface{}, len(qAlts))
-	for i := 0; i < len(out); i++ {
-		out[i] = "."
+	if out == nil {
+		out = make([]interface{}, len(qAlts))
+		for i := 0; i < len(out); i++ {
+			out[i] = "."
+		}
 	}
+
 	altIdxs := make([]int, len(qAlts))
 	for iq, q := range qAlts {
 		var found bool
@@ -234,9 +237,15 @@ func handleA(val interface{}, qAlts []string, oAlts []string) []interface{} {
 			altIdxs[iq] = -1
 		}
 	}
-
 	for i, ai := range altIdxs {
 		if ai == -1 {
+			continue
+		}
+		if ai >= vals.Len() {
+			log.Printf("WARNING: out of bounds with ref: %s, alt: %s, vals: %s", qAlts, oAlts, val)
+			if vals.Len() == 1 {
+				out[i] = vals.Index(0).Interface()
+			}
 			continue
 		}
 		out[i] = vals.Index(ai).Interface()
@@ -284,10 +293,30 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 					continue
 				}
 			}
+
+			/*
+				if src.Field == "ID" || src.Field == "FILTER" {
+					coll = append(coll, val)
+					continue
+				}
+			*/
 			// special-case 'self' when the annotation has Number=A and either query or anno have multiple alts
 			// note that if len(rels) > 1, we could miss some since we return here. however, that shouldn't happen as we are matching on ref and alt and we wouldn't know what to do anyway.
-			if src.NumberA && src.Op == "self" && (len(v.Alt()) > 1 || len(o.Alt()) > 1) {
-				return handleA(val, v.Alt(), o.Alt()), finalerr
+			if src.NumberA && src.Op == "self" && src.Field != "ID" && src.Field != "FILTER" {
+				var out []interface{}
+				if len(coll) > 0 {
+					out = coll[0].([]interface{})
+				} else {
+					out = make([]interface{}, len(v.Alt()))
+					coll = append(coll, out)
+				}
+				if len(v.Alt()) == 1 && len(o.Alt()) == 1 && v.Alt()[0] == o.Alt()[0] {
+					out[0] = val
+				} else {
+					handleA(val, v.Alt(), o.Alt(), out)
+				}
+				// coll updated in-place via out
+				continue
 			}
 
 			if arr, ok := val.([]interface{}); ok {

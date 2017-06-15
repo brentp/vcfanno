@@ -321,8 +321,30 @@ var handleATests = []struct {
 func TestHandleA(t *testing.T) {
 	//func handleA(val interface{}, qAlts []string, oAlts []string) []interface{} {
 	for _, h := range handleATests {
-		if res := handleA(h.val, h.query, h.anno); !reflect.DeepEqual(h.expected, res) {
+		if res := handleA(h.val, h.query, h.anno, nil); !reflect.DeepEqual(h.expected, res) {
 			t.Errorf("expected: %v, got: %v. given query with alts: %s, and anno with alts: %s", h.expected, res, h.query, h.anno)
 		}
 	}
+}
+
+func TestHandlAMulti(t *testing.T) {
+
+	out := handleA("AAA", []string{"C", "G"}, []string{"G"}, nil)
+
+	if !reflect.DeepEqual(out, []interface{}{".", "AAA"}) {
+		t.Errorf("expected '.,AAA', got %v", out)
+	}
+
+	// overwrite the same
+	handleA("XXX", []string{"C", "G"}, []string{"G"}, out)
+	if !reflect.DeepEqual(out, []interface{}{".", "XXX"}) {
+		t.Errorf("expected '.,XXX', got %v", out)
+	}
+
+	// set the next value.
+	handleA("OOO", []string{"C", "G"}, []string{"C"}, out)
+	if !reflect.DeepEqual(out, []interface{}{"OOO", "XXX"}) {
+		t.Errorf("expected 'OOO,XXX', got %v", out)
+	}
+
 }
