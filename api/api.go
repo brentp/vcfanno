@@ -201,6 +201,24 @@ func allEqual(a, b []string) bool {
 	return true
 }
 
+// given the output from handleA and the alts:
+// append new values to the appropriate alt.
+// 22,33, A,G -> 22,33
+// then XX, G -> 22,33|G
+// then YY, A -> 22|YY,33|G
+func byAlt(in []interface{}, qAlts []string, existing [][]string) [][]string {
+	if existing == nil {
+		existing = make([][]string, len(qAlts))
+	}
+	for i, v := range in {
+		if v == "." || v == "" || v == nil {
+			continue
+		}
+		existing[i] = append(existing[i], fmt.Sprintf("%v", v))
+	}
+	return existing
+}
+
 // handleA converts the `val` to the correct slice of vals to match what's isnt
 // qAlts and oAlts. Then length of the returned value should always be equal
 // to the len of qAlts.
@@ -257,6 +275,7 @@ func handleA(val interface{}, qAlts []string, oAlts []string, out []interface{})
 func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, strict bool) ([]interface{}, error) {
 	coll := make([]interface{}, 0, len(rels))
 	var val interface{}
+	var valByAlt [][]string
 	var finalerr error
 	for _, other := range rels {
 		if int(other.Source())-1 != src.Index {
@@ -293,15 +312,17 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 					continue
 				}
 			}
+			if src.Op == "by_alt" {
+				// with alt uses handleA machinery and then concats each value with then
+				// alternate allele.
+				out := make([]interface{}, len(v.Alt()))
+				handleA(val, v.Alt(), o.Alt(), out)
+				valByAlt = byAlt(out, v.Alt(), valByAlt)
+				continue
+			}
 
-			/*
-				if src.Field == "ID" || src.Field == "FILTER" {
-					coll = append(coll, val)
-					continue
-				}
-			*/
 			// special-case 'self' when the annotation has Number=A and either query or anno have multiple alts
-			// note that if len(rels) > 1, we could miss some since we return here. however, that shouldn't happen as we are matching on ref and alt and we wouldn't know what to do anyway.
+			// so that we get the alts matched up.
 			if src.NumberA && src.Op == "self" && src.Field != "ID" && src.Field != "FILTER" {
 				var out []interface{}
 				if len(coll) > 0 {
@@ -390,6 +411,15 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			coll = []interface{}{msg}
 		}
 	}
+	if valByAlt != nil {
+		for _, v := range valByAlt {
+			if len(v) == 0 {
+				coll = append(coll, ".")
+			} else {
+				coll = append(coll, strings.Join(v, "|"))
+			}
+		}
+	}
 	return coll, finalerr
 }
 
@@ -460,7 +490,10 @@ func (s *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix s
 func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number string, desc string) {
 	ntype := "String"
 	// for 'self' and 'first', we can get the type from the header of the annotation file.
-	if htype != "" && (s.Op == "self" || s.Op == "first") {
+	if s.Op == "by_alt" {
+		number = "A"
+		ntype = htype
+	} else if htype != "" && (s.Op == "self" || s.Op == "first") {
 		ntype = htype
 	} else {
 		if strings.HasSuffix(s.Name, "_float") {

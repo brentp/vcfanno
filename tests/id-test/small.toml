@@ -2,7 +2,7 @@
 file="tests/id-test/dbsnp.small.vcf.gz"
 fields=["ID", "CAF"]
 names=["rs_ids", "CAF"]
-ops=["self", "self"]
+ops=["by_alt", "self"]
 
 [[annotation]]
 file="tests/id-test/cosmic.small.vcf.gz"

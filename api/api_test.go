@@ -348,3 +348,33 @@ func TestHandlAMulti(t *testing.T) {
 	}
 
 }
+
+// given the output from handleA and the alts:
+// append new values to the appropriate alt.
+// 22,33, A,G -> 22,33
+// then XX, G -> 22,33|G
+// then YY, A -> 22|YY,33|G
+//  func byAlt(in []interface{}, qAlts []string, existing [][]string) [][]string {
+
+var byAltTests = []struct {
+	in  []interface{}
+	out [][]string
+}{
+	{[]interface{}{"AAA", "."}, [][]string{[]string{"AAA"}, nil}},
+	{[]interface{}{"AAA", "BBB"}, [][]string{[]string{"AAA"}, []string{"BBB"}}},
+	{[]interface{}{".", "BBB"}, [][]string{nil, []string{"BBB"}}},
+}
+
+func TestByAlt(t *testing.T) {
+
+	qAlts := []string{"C", "T"}
+	for _, tt := range byAltTests {
+		var existing [][]string
+
+		existing = byAlt(tt.in, qAlts, existing)
+
+		if !reflect.DeepEqual(existing, tt.out) {
+			t.Fatalf("got %v. expected %v", existing, tt.out)
+		}
+	}
+}

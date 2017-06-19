@@ -138,6 +138,8 @@ multiallelics() {
 }
 run check_multiallelics multiallelics
 assert_exit_code 0
+assert_in_stdout "STR_by=hello,goodbye|goodbye-again"
+assert_in_stdout "AF_by=0.000599042|0.99,0.00299521"
 
 idtest() {
     vcfanno -lua tests/id-test/some.lua tests/id-test/small.toml tests/id-test/small.vcf.gz

@@ -272,4 +272,5 @@ var Reducers = map[string]Reducer{
 	"div2":   Reducer(div2),
 	"DP2":    Reducer(dp2),
 	"setid":  Reducer(setid),
+	"by_alt": Reducer(concat),
 }
