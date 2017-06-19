@@ -117,8 +117,8 @@ this case, the op determines how the many values are `reduced`. Valid operations
  + mean     // numbers only
  + min      // numbers only
  + sum      // numbers only
- + uniq     // comma-delimited list of uniq vlues
- + by_alt   // comma-delimited by alt, pipe-delimited (|) for multiple annos for the same alt.
+ + uniq     // comma-delimited list of uniq values
+ + by_alt   // comma-delimited by alt (Number=A), pipe-delimited (|) for multiple annos for the same alt.
 
 There are some operations that are only for `postannotation`:
  
