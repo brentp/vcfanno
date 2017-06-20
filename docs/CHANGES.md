@@ -1,12 +1,12 @@
-v0.2.7 (dev)
-------------
+v0.2.7
+------
 + restore multiple threads per annotation file after fix in biogo/hts (#64)
 + new op `setid` builtin to set the ID field and remove need for lua and fix some bugs.
 + fix bug in `self` with multiple alternates when there were multiple overlaps (thanks Matthew).
 + fix for #68, #69 -- with Number=A, op="self", the output will always have a number of elements
   equal to the number of alternates. If there are > 1 annos for a given site, later values will
   overwrite previous.
-+ new `op` by_alt that will have Number=A and will append multiple annotations for the same alternate
++ new op `by_alt` that will have Number=A and will append multiple annotations for the same alternate
   (from the same file) and output them as pipe-delimited. e.g with 2 alts, it might look like: `0.111,0.222|0.333`
   when the 1st alternate has a single value and the 2nd alternate has 2 values.
 
