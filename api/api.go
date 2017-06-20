@@ -214,7 +214,7 @@ func byAlt(in []interface{}, qAlts []string, existing [][]string) [][]string {
 		if v == "." || v == "" || v == nil {
 			continue
 		}
-		existing[i] = append(existing[i], fmt.Sprintf("%v", v))
+		existing[i] = append(existing[i], vcfgo.ItoS("", v))
 	}
 	return existing
 }
@@ -489,10 +489,10 @@ func (s *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix s
 // UpdateHeader does what it suggests but handles left and right ends for svs
 func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number string, desc string) {
 	ntype := "String"
-	// for 'self' and 'first', we can get the type from the header of the annotation file.
 	if s.Op == "by_alt" {
 		number = "A"
-		ntype = htype
+		ntype = "String"
+		// for 'self' and 'first', we can get the type from the header of the annotation file.
 	} else if htype != "" && (s.Op == "self" || s.Op == "first") {
 		ntype = htype
 	} else {
