@@ -132,6 +132,15 @@ assert_equal 3 $(grep -c ALT_90 $STDOUT_FILE)
 assert_equal 3 $(grep -c HET_90 $STDOUT_FILE)
 cat $STDERR_FILE
 
+astar() {
+vcfanno tests/astar/astar.conf tests/astar/astar.vcf
+}
+
+run check_astar astar
+assert_exit_code 0
+assert_in_stdout "ExAC_AF=0.021771,0"
+assert_instdout "ExAC_AN=17546;ExAC_Hom=7,.;"
+
 
 multiallelics() {
     vcfanno tests/multiple-alts/ma.conf tests/multiple-alts/ma-query.vcf

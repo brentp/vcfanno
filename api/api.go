@@ -752,9 +752,11 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 			for _, src := range fmap[file] {
 				num := q.GetHeaderNumber(src.Field)
 				// must set this to accurately represent multi-allelics.
-				if num == "1" && src.Op == "self" {
-					num = "A"
-				}
+				/*
+					if num == "1" && src.Op == "self" {
+						num = "A"
+					}
+				*/
 				desc := q.GetHeaderDescription(src.Field)
 				src.UpdateHeader(query, a.Ends, q.GetHeaderType(src.Field), num, desc)
 				src.NumberA = num == "A"
