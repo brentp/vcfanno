@@ -260,7 +260,7 @@ func handleA(val interface{}, qAlts []string, oAlts []string, out []interface{})
 			continue
 		}
 		if ai >= vals.Len() {
-			log.Printf("WARNING: out of bounds with ref: %s, alt: %s, vals: %s", qAlts, oAlts, val)
+			log.Printf("WARNING: out of bounds with query: %v, anno: %v, vals: %v", qAlts, oAlts, vals)
 			if vals.Len() == 1 {
 				out[i] = vals.Index(0).Interface()
 			}
