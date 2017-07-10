@@ -1,3 +1,7 @@
+v0.2.8
+------
++ fix fo #71 for out of bounds warning followed by panic.
+
 v0.2.7
 ------
 + restore multiple threads per annotation file after fix in biogo/hts (#64)
