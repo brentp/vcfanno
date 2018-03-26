@@ -14,7 +14,7 @@ Overview
 ========
 
 vcfanno allows you to quickly annotate your VCF with any number of INFO fields from any number of VCFs or BED files.
-It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will
+It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will be
 added to the info of the query VCF.
 
 + For VCF, values are pulled by name from the INFO field with special-cases of *ID* and *FILTER* to pull from those VCF columns.
@@ -42,7 +42,7 @@ Where conf.toml looks like:
 ```
 [[annotation]]
 file="ExAC.vcf"
-# ID and FILTER are special columns is a special field that pull the ID and FILTER columns from the vcf
+# ID and FILTER are special fields that pull the ID and FILTER columns from the VCF
 fields = ["AC_AFR", "AC_AMR", "AC_EAS", "ID", "FILTER"]
 ops=["self", "self", "min", "self", "self"]
 names=["exac_ac_afr", "exac_ac_amr", "exac_ac_eas", "exac_id", "exac_filter"]
@@ -71,8 +71,8 @@ See the additional usage section at the bottom for more.
 Example
 -------
 
-the example directory contains the data and conf for a full example. To run, download
-the [appropriate binary](https://github.com/brentp/vcfanno/releases/) for your system
+The example directory contains the data and conf for a full example. To run, download
+the [appropriate binary](https://github.com/brentp/vcfanno/releases/) for your system.
 
 Then, you can annotate with:
 
@@ -94,7 +94,7 @@ Typecasting values
 ------------------
 
 By default, using `ops` of `mean`,`max`,`sum`,`div2` or `min` will result in `type=Float`,
-using `self` will get the type from the annotation VCF and other fields will have `type=String.
+using `self` will get the type from the annotation VCF and other fields will have `type=String`.
 It's possible to add field type info to the field name. To change the field type add `_int`
 or `_float` to the field name. This suffix will be parsed and removed, and your field
 will be of the desired type. 
@@ -107,28 +107,28 @@ in the query VCF, in which case the `self` op is the best choice. However, it is
 possible that there will be multiple annotations from a single annotation file--in
 this case, the op determines how the many values are `reduced`. Valid operations are:
 
- + lua:$lua // see section below for more details
- + self     // pull directly from the annotation and handle multi-allelics.
- + concat   // comma delimited list of output
- + count    // count the number of overlaps
- + div2     // given two values a, b return a / b.
- + first    // take only the first value. 
- + flag     // presense/absence via vcf flag
- + max      // numbers only
- + mean     // numbers only
- + min      // numbers only
- + sum      // numbers only
- + uniq     // comma-delimited list of uniq values
- + by_alt   // comma-delimited by alt (Number=A), pipe-delimited (|) for multiple annos for the same alt.
+ + `lua:$lua` // see section below for more details
+ + `self`     // pull directly from the annotation and handle multi-allelics
+ + `concat`   // comma delimited list of output
+ + `count`    // count the number of overlaps
+ + `div2`     // given two values a and b, return a / b
+ + `first`   // take only the first value
+ + `flag`   // presense/absence via VCF flag
+ + `max`   // numbers only
+ + `mean`   // numbers only
+ + `min`   // numbers only
+ + `sum`   // numbers only
+ + `uniq`   // comma-delimited list of uniq values
+ + `by_alt`   // comma-delimited by alt (Number=A), pipe-delimited (|) for multiple annos for the same alt.
 
 There are some operations that are only for `postannotation`:
  
- + delete   // remove fields from the query vcf's INFO.
- + setid    // set the ID file of the query vcf with values from its INFO.
+ + `delete`   // remove fields from the query VCF's INFO
+ + `setid`    // set the ID file of the query VCF with values from its INFO
 
-In nearly all cases, **if you are annotating with a VCF. use `self`**
+In nearly all cases, **if you are annotating with a VCF, use `self`**
 
-Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage' are supported).
+Note that when the file is a BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage' are supported).
 
 PostAnnotation
 ==============
@@ -136,7 +136,7 @@ One of the most powerful features of `vcfanno` is the embedded scripting languag
 `[[postannotation]]` blocks occur after all the annotations have been applied. They are similar, but in the fields
 column, they request a number of columns from the query file (including the new columns added in annotation). For example
 if we have AC and AN columns indicating the alternate count and the number of chromosomes, respectively, we could create
-a new allele frequency column, *AF* with this block:
+a new allele frequency column, *AF*, with this block:
 
 ```
 [[postannotation]]
@@ -146,8 +146,8 @@ name="AF"
 type="Float"
 ```
 
-where the type field is one of the types accepted in VCF format, the `name` is the name of the field that is created, the *fields*
-indicate the fields (from the INFO) that will be available to the op, and the *op* indicates the action to perform. This can be quite
+where `type` is one of the types accepted in VCF format, `name` is the name of the field that is created, `fields`
+indicates the fields (from the INFO) that will be available to the op, and `op` indicates the action to perform. This can be quite
 powerful. For an extensive example that demonstrates the utility of this type of approach, see
 [docs/examples/clinvar_exac.md](http://brentp.github.io/vcfanno/examples/clinvar_exac/).
 
@@ -177,8 +177,8 @@ flag to `vcfanno`. e.g.:
 ```Shell
 vcfanno -ends example/conf.toml example/query.vcf.gz
 ```
-In this case, the names field in the *conf* file contains, "fitcons\_mean". The output will contain
-`fitcons\_mean` as before along with `left\_fitcons\_mean` and `right\_fitcons\_mean` for any variants
+In this case, the `names` field in the `conf` file contains "fitcons\_mean". The output will contain
+`fitcons_mean` as before along with `left_fitcons_mean` and `right_fitcons_mean` for any variants
 that are longer than 1 base. The *left* end will be for the single-base at the lowest base of the variant
 and the *right* end will be for the single base at the higher numbered base of the variant.
 
@@ -199,15 +199,15 @@ up to 15 or so cores.
 -lua
 ----
 
-custom in ops (lua). For use when the built-in `ops` don't supply the needed reduction.
+Custom in ops (lua). For use when the built-in `ops` don't supply the needed reduction.
 
-we embed the lua engine [go-lua](https://github.com/yuin/gopher-lua) so that it's 
-possible to create a custom op if it is not provided. For example if the users wants to
+We embed the lua engine [go-lua](https://github.com/yuin/gopher-lua) so that it's
+possible to create a custom op if it is not provided. For example if the user wants to
 
     "lua:function sum(t) local sum = 0; for i=1,#t do sum = sum + t[i] end return sum end"
 
 where the last value (in this case sum) is returned as the annotation value. It is encouraged
-to instead define lua functions in separate `.lua` file and point to it when calling
+to instead define lua functions in a separate `.lua` file and point to it when calling
 `vcfanno` using the `-lua` flag. So, in an external file, "some.lua", instead put:
 
 ```lua
@@ -242,7 +242,7 @@ Mailing List
 Installation
 ============
 
-please download a static binary (executable) from [here](https://github.com/brentp/vcfanno/releases) and copy it into your '$PATH'.
+Please download a static binary (executable) from [here](https://github.com/brentp/vcfanno/releases) and copy it into your '$PATH'.
 There are no dependencies.
 
 If you use [bioconda](https://bioconda.github.io/), you can install with: `conda install -c bioconda vcfanno`
@@ -253,13 +253,12 @@ Multi-Allelics
 
 A multi-allelic variant is simply a site where there are multiple, non-reference alleles seen in the population. These will
 appear as e.g. `REF="A", ALT="G,C"`. As of version 0.2, `vcfanno` will handle these fully with op="self" when the Number from
-the VCF  header is A (Number=A)
+the VCF header is A (Number=A)
 
 For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
-the annotation and shows how the query INFO will be filled:
+the annotation, and shows how the query INFO will be filled:
 
-| query  | anno | anno vals  |         |
-| ALTS   | ALTS | from INFO  | result  |
+| query ALTS  | anno ALTS | anno vals from INFO  | result |
 | ------ | ---- | ---------- | ------- |
 | C,G    | C,G  | 22,23      | 22,23   |
 | C,G    | C,T  | 22,23      | 22,.    |
@@ -268,6 +267,6 @@ the annotation and shows how the query INFO will be filled:
 | C,G    | C    | YYY        | YYY,.   |
 | G,C,T  | C    | YYY        | .,YYY,. |
 | C,T    | G    | YYY        | .,.     |
-| T,C    | C,T  | AA,BB      | BB,AA   | # note values are flipped
+| T,C    | C,T  | AA,BB      | BB,AA   |
 
-So values that are not present in the annotation are filled with '.' as a place-holder.
+Note the flipped values in the result column, and that values that are not present in the annotation are filled with '.' as a place-holder.
