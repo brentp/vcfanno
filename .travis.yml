@@ -5,10 +5,10 @@ os:
   - osx
 
 go:
-  - 1.6
   - 1.7
   - 1.8
-  - tip
+  - 1.9
+  - 1.10
 
 before_install:
   - go get github.com/axw/gocov/gocov

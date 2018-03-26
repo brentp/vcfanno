@@ -23,6 +23,23 @@ default value is 100. For example:
 GOGC=2000 vcfanno -p 12 a.conf a.vcf
 ```
 
+CSI
+---
+
+For very dense files such as CADD, or even gnomAD or ExAC, it is recommended to index
+with csi, this allows finer resolution in the index. When a .csi file is present, `vcfanno`
+will prefer it over a .tbi. For example, using:
+
+```
+tabix -m 12 --csi $file
+```
+
+will work for most cases. When a csi is present, it seems to be best to lower the
+`IRELATE_MAX_GAP` (see below) to 1000 or lower. Doing this, we can see a **50 % speed improvement** when
+using a csi-index ExAC file to annotate a clinvar file.
+
+Experiment with what works best for each scenario.
+
 Max Gap / Chunk Size
 --------------------
 
@@ -37,7 +54,8 @@ sets, it is best to have this value be large so that each annotation worker
 gets enough work to keep it busy.
 
 The default gap size is `5000` bases. Users can alter this using the
-environment variable `IRELATE_MAX_GAP`.
+environment variable `IRELATE_MAX_GAP`. When using a csi index this can
+be much lower, for example `1000`
 
 The default chunk size is `8000` query intervals. Users can alter this using the
 environment variable `IRELATE_MAX_CHUNK`.

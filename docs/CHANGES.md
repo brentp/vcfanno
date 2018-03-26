@@ -1,3 +1,7 @@
+v0.2.9
+------
++ support for CSI indexes. If present, a .csi file will be preferred over a .tbi.
+
 v0.2.8
 ------
 + fix fo #71 for out of bounds warning followed by panic.

@@ -14,10 +14,11 @@ BASE=/data/gemini_install/data/gemini_data/
 go build -a
 V=./vcfanno
 
-IRELATE_MAX_GAP=500 run clinvar_common_pathogenic $V -lua docs/examples/clinvar_exac.lua -p 4 -base-path $BASE docs/examples/clinvar_exac.conf $BASE/clinvar_20170130.tidy.vcf.gz
+GOGC=900 IRELATE_MAX_GAP=600 run clinvar_common_pathogenic $V -lua docs/examples/clinvar_exac.lua -p 4 -base-path $BASE docs/examples/clinvar_exac.conf $BASE/clinvar_20170130.tidy.vcf.gz
 assert_equal 577 $(zgrep -wc common_pathogenic $STDOUT_FILE)
 assert_equal $(zgrep -cv ^# $STDOUT_FILE) $(zgrep -cv ^# $BASE/clinvar_20170130.tidy.vcf.gz)
 
+exit 0
 #tail -1 $STDERR_FILE
 
 run exac_combine vcfanno -base-path $BASE docs/examples/exac_combine/exac_combine.conf $BASE/ExAC.r0.3.sites.vep.tidy.vcf.gz 
