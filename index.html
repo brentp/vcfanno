@@ -209,11 +209,13 @@ build:
 <a href="http://brentp.github.io/vcfanno/"><img alt="Docs" src="https://img.shields.io/badge/docs-latest-blue.svg" /></a></p>
 <h1 id="overview">Overview</h1>
 <p>vcfanno allows you to quickly annotate your VCF with any number of INFO fields from any number of VCFs or BED files.
-It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will base
+It uses a simple conf file to allow the user to specify the source annotation files and fields and how they will
 added to the info of the query VCF.</p>
-<p>For VCF, values are pulled by name from the INFO field with special-cases of <em>ID</em> and <em>FILTER</em> to pull from those VCF columns.
-For BED, values are pulled from (1-based) column number.
-For BAM, depth (<code>count</code>), "mapq" and "seq" are currently supported.</p>
+<ul>
+<li>For VCF, values are pulled by name from the INFO field with special-cases of <em>ID</em> and <em>FILTER</em> to pull from those VCF columns.</li>
+<li>For BED, values are pulled from (1-based) column number.</li>
+<li>For BAM, depth (<code>count</code>), "mapq" and "seq" are currently supported.</li>
+</ul>
 <p><code>vcfanno</code> is written in <a href="http://golang.org">go</a> and it supports custom user-scripts written in lua.
 It can annotate more than 8,000 variants per second with 34 annotations from 9 files on a modest laptop and over 30K variants per second using 12 processes on a server.</p>
 <p>We are actively developing <code>vcfanno</code> and appreciate feedback and bug reports.</p>
@@ -248,7 +250,7 @@ ops=[&quot;count&quot;, &quot;mean&quot;, &quot;concat&quot;]
 <p>So from <code>ExAC.vcf</code> we will pull the fields from the info field and apply the corresponding
 <code>operation</code> from the <code>ops</code> array. Users can add as many <code>[[annotation]]</code> blocks to the
 conf file as desired. Files can be local as above, or available via http/https.</p>
-<p>Also see the additional usage section at the bottom for additional details.</p>
+<p>See the additional usage section at the bottom for more.</p>
 <h2 id="example">Example</h2>
 <p>the example directory contains the data and conf for a full example. To run, download
 the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a> for your system</p>
@@ -267,30 +269,35 @@ the <a href="https://github.com/brentp/vcfanno/releases/">appropriate binary</a>
 <h2 id="typecasting-values">Typecasting values</h2>
 <p>By default, using <code>ops</code> of <code>mean</code>,<code>max</code>,<code>sum</code>,<code>div2</code> or <code>min</code> will result in <code>type=Float</code>,
 using <code>self</code> will get the type from the annotation VCF and other fields will have <code>type=String.
-It's possible to add field type info to the field name. To change the field type add</code>_int<code>or</code>_float` to the field name. This suffix will be parsed and removed, and your fields
+It's possible to add field type info to the field name. To change the field type add</code>_int<code>or</code>_float` to the field name. This suffix will be parsed and removed, and your field
 will be of the desired type. </p>
 <h1 id="operations">Operations</h1>
 <p>In most cases, we will have a single annotation entry for each entry (variant)
-in the query VCF. However, it is possible that there will be multiple annotations
-from a single annotation file--in this case, the op determines how the many values
-are <code>reduced</code>. Valid operations are:</p>
+in the query VCF, in which case the <code>self</code> op is the best choice. However, it is
+possible that there will be multiple annotations from a single annotation file--in
+this case, the op determines how the many values are <code>reduced</code>. Valid operations are:</p>
 <ul>
 <li>lua:$lua // see section below for more details</li>
-<li>self // pull directly from the annotation and handle multi-allelics.</li>
-<li>concat // comma delimited list of output</li>
-<li>count  // count the number of overlaps</li>
-<li>div2</li>
-<li>delete // for postannotation only. allows removing a field from the query vcf's INFO.</li>
-<li>first </li>
-<li>flag // presense/absence via vcf flag</li>
-<li>max</li>
-<li>mean</li>
-<li>min</li>
-<li>sum</li>
-<li>uniq</li>
+<li>self     // pull directly from the annotation and handle multi-allelics.</li>
+<li>concat   // comma delimited list of output</li>
+<li>count    // count the number of overlaps</li>
+<li>div2     // given two values a, b return a / b.</li>
+<li>first    // take only the first value. </li>
+<li>flag     // presense/absence via vcf flag</li>
+<li>max      // numbers only</li>
+<li>mean     // numbers only</li>
+<li>min      // numbers only</li>
+<li>sum      // numbers only</li>
+<li>uniq     // comma-delimited list of uniq values</li>
+<li>by_alt   // comma-delimited by alt (Number=A), pipe-delimited (|) for multiple annos for the same alt.</li>
+</ul>
+<p>There are some operations that are only for <code>postannotation</code>:</p>
+<ul>
+<li>delete   // remove fields from the query vcf's INFO.</li>
+<li>setid    // set the ID file of the query vcf with values from its INFO.</li>
 </ul>
 <p>In nearly all cases, <strong>if you are annotating with a VCF. use <code>self</code></strong></p>
-<p>Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage') are supported.</p>
+<p>Note that when the file is BAM, the operation is determined by the field name ('seq', 'mapq', 'DP2', 'coverage' are supported).</p>
 <h1 id="postannotation">PostAnnotation</h1>
 <p>One of the most powerful features of <code>vcfanno</code> is the embedded scripting language, lua, combined with <em>postannotation</em>.
 <code>[[postannotation]]</code> blocks occur after all the annotations have been applied. They are similar, but in the fields
@@ -379,66 +386,17 @@ appear as e.g. <code>REF="A", ALT="G,C"</code>. As of version 0.2, <code>vcfanno
 the VCF  header is A (Number=A)</p>
 <p>For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
 the annotation and shows how the query INFO will be filled:</p>
-<table>
-<thead>
-<tr>
-<th>query</th>
-<th>anno</th>
-<th>anno vals</th>
-<th>result</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>C,G</td>
-<td>C,G</td>
-<td>22,23</td>
-<td>22,23</td>
-</tr>
-<tr>
-<td>C,G</td>
-<td>C,T</td>
-<td>22,23</td>
-<td>22,.</td>
-</tr>
-<tr>
-<td>C,G</td>
-<td>T,G</td>
-<td>22,23</td>
-<td>.,23</td>
-</tr>
-<tr>
-<td>G,C</td>
-<td>C,G</td>
-<td>22,23</td>
-<td>23,22</td>
-</tr>
-<tr>
-<td>C,G</td>
-<td>C</td>
-<td>YYY</td>
-<td>YYY,.</td>
-</tr>
-<tr>
-<td>G,C,T</td>
-<td>C</td>
-<td>YYY</td>
-<td>.,YYY,.</td>
-</tr>
-<tr>
-<td>C,T</td>
-<td>G</td>
-<td>YYY</td>
-<td>.,.</td>
-</tr>
-<tr>
-<td>T,C</td>
-<td>C,T</td>
-<td>AA,BB</td>
-<td>BB,AA</td>
-</tr>
-</tbody>
-</table>
+<p>| query  | anno | anno vals  |         |
+| ALTS   | ALTS | from INFO  | result  |
+| ------ | ---- | ---------- | ------- |
+| C,G    | C,G  | 22,23      | 22,23   |
+| C,G    | C,T  | 22,23      | 22,.    |
+| C,G    | T,G  | 22,23      | .,23    |
+| G,C    | C,G  | 22,23      | 23,22   |
+| C,G    | C    | YYY        | YYY,.   |
+| G,C,T  | C    | YYY        | .,YYY,. |
+| C,T    | G    | YYY        | .,.     |
+| T,C    | C,T  | AA,BB      | BB,AA   | # note values are flipped</p>
 <p>So values that are not present in the annotation are filled with '.' as a place-holder.</p></div>
         
     </div>
@@ -492,5 +450,5 @@ the annotation and shows how the query INFO will be filled:</p>
 
 <!--
 MkDocs version : 0.16.2
-Build Date UTC : 2017-03-18 03:56:13
+Build Date UTC : 2018-03-26 16:48:07
 -->

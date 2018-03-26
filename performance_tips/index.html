@@ -158,6 +158,9 @@
             <li class="second-level"><a href="#garbage-collection">Garbage Collection</a></li>
             
         
+            <li class="second-level"><a href="#csi">CSI</a></li>
+            
+        
             <li class="second-level"><a href="#max-gap-chunk-size">Max Gap / Chunk Size</a></li>
             
         
@@ -181,6 +184,17 @@ default value is 100. For example:</p>
 <pre><code>GOGC=2000 vcfanno -p 12 a.conf a.vcf
 </code></pre>
 
+<h2 id="csi">CSI</h2>
+<p>For very dense files such as CADD, or even gnomAD or ExAC, it is recommended to index
+with csi, this allows finer resolution in the index. When a .csi file is present, <code>vcfanno</code>
+will prefer it over a .tbi. For example, using:</p>
+<pre><code>tabix -m 12 --csi $file
+</code></pre>
+
+<p>will work for most cases. When a csi is present, it seems to be best to lower the
+<code>IRELATE_MAX_GAP</code> (see below) to 1000 or lower. Doing this, we can see a <strong>50 % speed improvement</strong> when
+using a csi-index ExAC file to annotate a clinvar file.</p>
+<p>Experiment with what works best for each scenario.</p>
 <h2 id="max-gap-chunk-size">Max Gap / Chunk Size</h2>
 <p>The parallel chrom-sweep algorithm has a gap size parameter that determines
 when a chunk of records from the the query file is sent to be annotated and 
@@ -192,7 +206,8 @@ will need to parse fewer unneeded records. However, given sparse annotation
 sets, it is best to have this value be large so that each annotation worker
 gets enough work to keep it busy.</p>
 <p>The default gap size is <code>5000</code> bases. Users can alter this using the
-environment variable <code>IRELATE_MAX_GAP</code>.</p>
+environment variable <code>IRELATE_MAX_GAP</code>. When using a csi index this can
+be much lower, for example <code>1000</code></p>
 <p>The default chunk size is <code>8000</code> query intervals. Users can alter this using the
 environment variable <code>IRELATE_MAX_CHUNK</code>.</p>
 <pre><code>IRELATE_MAX_CHUNK=12000 IRELATE_MAX_GAP=5000 vcfanno -p 12 a.conf a.vcf

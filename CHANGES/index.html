@@ -150,7 +150,25 @@
         <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="first-level active"><a href="#v023">v0.2.3</a></li>
+        <li class="first-level active"><a href="#v029">v0.2.9</a></li>
+        
+    
+        <li class="first-level "><a href="#v028">v0.2.8</a></li>
+        
+    
+        <li class="first-level "><a href="#v027">v0.2.7</a></li>
+        
+    
+        <li class="first-level "><a href="#v026">v0.2.6</a></li>
+        
+    
+        <li class="first-level "><a href="#v025">v0.2.5</a></li>
+        
+    
+        <li class="first-level "><a href="#v024">v0.2.4</a></li>
+        
+    
+        <li class="first-level "><a href="#v023">v0.2.3</a></li>
         
     
         <li class="first-level "><a href="#v022">v0.2.2</a></li>
@@ -199,6 +217,40 @@
 </div></div>
         <div class="col-md-9" role="main">
 
+<h2 id="v029">v0.2.9</h2>
+<ul>
+<li>support for CSI indexes. If present, a .csi file will be preferred over a .tbi.</li>
+</ul>
+<h2 id="v028">v0.2.8</h2>
+<ul>
+<li>fix fo #71 for out of bounds warning followed by panic.</li>
+</ul>
+<h2 id="v027">v0.2.7</h2>
+<ul>
+<li>restore multiple threads per annotation file after fix in biogo/hts (#64)</li>
+<li>new op <code>setid</code> builtin to set the ID field and remove need for lua and fix some bugs.</li>
+<li>fix bug in <code>self</code> with multiple alternates when there were multiple overlaps (thanks Matthew).</li>
+<li>fix for #68, #69 -- with Number=A, op="self", the output will always have a number of elements
+  equal to the number of alternates. If there are &gt; 1 annos for a given site, later values will
+  overwrite previous.</li>
+<li>new op <code>by_alt</code> that will have Number=A and will append multiple annotations for the same alternate
+  (from the same file) and output them as pipe-delimited. e.g with 2 alts, it might look like: <code>0.111,0.222|0.333</code>
+  when the 1st alternate has a single value and the 2nd alternate has 2 values.</li>
+</ul>
+<h2 id="v026">v0.2.6</h2>
+<ul>
+<li>fix race condition from 0.2.4 by reverting some speed improvements from that release.</li>
+</ul>
+<h2 id="v025">v0.2.5</h2>
+<ul>
+<li>better error messages</li>
+</ul>
+<h2 id="v024">v0.2.4</h2>
+<ul>
+<li>30-40% speed improvement when annotating with few, large files by parallelizing decompression.</li>
+<li>handle multiple values to div2 (mostly for multi-allelics)</li>
+<li>if <code>_af</code> or <code>af_</code> is in the <code>name</code> then make Number=A for a <code>postannotation</code>.</li>
+</ul>
 <h2 id="v023">v0.2.3</h2>
 <ul>
 <li>allow pulling the 'FILTER' field from a VCF by specifing 'FILTER' in the <code>fields</code></li>
