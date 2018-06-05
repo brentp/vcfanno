@@ -1,0 +1,5 @@
+[[annotation]]
+file="tests/overwrite-multiple-alts/a/whole.vcf.gz"
+fields=["raw"]
+names=["CADD"]
+ops=["self"]

@@ -1,0 +1,11 @@
+[[annotation]]
+file="tests/overwrite-multiple-alts/b/cadd_indels.vcf.gz"
+fields=["phred", "raw"]
+names=["CADD_SCALED","CADD"]
+ops=["self","self"]
+
+[[annotation]]
+file="tests/overwrite-multiple-alts/b/whole_genome_snv_slice.vcf.gz"
+fields=["phred", "raw"]
+names=["CADD_SCALED","CADD"]
+ops=["self","self"]

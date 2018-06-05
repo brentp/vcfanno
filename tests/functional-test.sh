@@ -95,6 +95,15 @@ assert_exit_code 0
 # there should be 0 non-header lines without 'max_maf' since we are annotating self.
 assert_equal 0 $(grep -v max_maf $STDOUT_FILE | grep -cv ^#)
 
+
+run check_overwrite_a vcfanno tests/overwrite-multiple-alts/a/conf.toml tests/overwrite-multiple-alts/a/input.vcf
+assert_exit_code 0
+assert_in_stderr "using op 'self' when with Number='1' for 'raw' from 'tests/overwrite-multiple-alts/a/whole.vcf.gz' can"
+
+run check_overwrite_b vcfanno tests/overwrite-multiple-alts/b/conf.toml tests/overwrite-multiple-alts/b/input.vcf
+assert_exit_code 0
+assert_in_stdout "CADD_SCALED=1.9,0.6;CADD=-0.1,-0.3"
+
 touch e.lua
 run check_ends_overlap vcfanno -lua e.lua -base-path tests/citest/at/ -ends tests/citest/at/conf.toml tests/citest/at/test.vcf | grep -v ^#
 assert_exit_code 0
@@ -139,7 +148,7 @@ vcfanno tests/astar/astar.conf tests/astar/astar.vcf
 run check_astar astar
 assert_exit_code 0
 assert_in_stdout "ExAC_AF=0.021771,0"
-assert_instdout "ExAC_AN=17546;ExAC_Hom=7,.;"
+assert_in_stdout "ExAC_AN=17546;ExAC_Hom=7,.;"
 
 
 multiallelics() {

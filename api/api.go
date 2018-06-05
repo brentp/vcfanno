@@ -324,6 +324,7 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 			// special-case 'self' when the annotation has Number=A and either query or anno have multiple alts
 			// so that we get the alts matched up.
 			if src.NumberA && src.Op == "self" && src.Field != "ID" && src.Field != "FILTER" {
+				//if (src.NumberA) && src.Op == "self" && src.Field != "ID" && src.Field != "FILTER" {
 				var out []interface{}
 				if len(coll) > 0 {
 					out = coll[0].([]interface{})
@@ -466,6 +467,17 @@ func (a *Annotator) AnnotateOne(r interfaces.Relatable, strict bool, end ...stri
 	return e
 }
 
+func v0len(vals []interface{}) int {
+	if len(vals) == 0 {
+		return -1
+	}
+	if v, ok := vals[0].([]interface{}); ok {
+		return len(v)
+	}
+	return -1
+
+}
+
 // AnnotateOne annotates a single variant with the vals
 func (s *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix string) {
 	if len(vals) == 0 {
@@ -481,6 +493,37 @@ func (s *Source) AnnotateOne(v interfaces.IVariant, vals []interface{}, prefix s
 			v.Info().Set(prefix+s.Name, luaval)
 		}
 	} else {
+		if len(vals) > 0 && s.Op == "self" && len(v.Alt()) > 1 && (len(vals) > 1 || v0len(vals) > 1) {
+			// multiple annotations writing to a mult-allelic. grab the current and replace any empty
+			// incoming vals with the current ones.
+			// there is a lot of BS here to check that the current info values and in the incoming
+			// vals are the same length.
+			current, _ := v.Info().Get(prefix + s.Name)
+			if current != nil && reflect.ValueOf(current).Kind() == reflect.Slice {
+				cv := reflect.ValueOf(current)
+				rv := reflect.ValueOf(vals)
+				if rv.Kind() == reflect.Slice {
+					if rv.Len() == 1 {
+						vals = rv.Index(0).Interface().([]interface{})
+						rv = reflect.ValueOf(vals)
+					}
+					if rv.Kind() == reflect.Slice && rv.Len() == cv.Len() {
+						for i, v := range vals {
+							if v == nil {
+								newv := cv.Index(i)
+								// don't set vals if we just got the zero value out of necessity.
+								// this kinda works around a bug in vcfgo where it returns the empty value
+								// for missing which, e.g. for float is 0.
+								if reflect.Zero(newv.Type()) != newv {
+									vals[i] = cv.Index(i).Interface()
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
 		val := Reducers[s.Op](vals)
 		v.Info().Set(prefix+s.Name, val)
 	}
@@ -752,6 +795,10 @@ func (a *Annotator) Setup(query HeaderUpdater) ([]interfaces.Queryable, error) {
 			for _, src := range fmap[file] {
 				num := q.GetHeaderNumber(src.Field)
 				// must set this to accurately represent multi-allelics.
+				if num == "1" && src.Op == "self" {
+					log.Printf("WARNING: using op 'self' when with Number='1' for '%s' from '%s' can result in out-of-order values when the query is multi-allelic", src.Field, src.File)
+					log.Printf("       : this is not an issue if the query has been decomposed.")
+				}
 				/*
 					if num == "1" && src.Op == "self" {
 						num = "A"
