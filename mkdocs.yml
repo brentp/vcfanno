@@ -9,5 +9,6 @@ pages:
     - ClinvarExac: examples/clinvar_exac.md
     - CADD: examples/cadd.md
     - ExAC-Combine: examples/exac_combine/exac_combine.md
+    - SV + GFF: examples/gff_sv/gff_sv.md
 theme: cinder
 

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"os"
@@ -358,6 +359,10 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 		} else if o, ok := sameInterval(v, other, strict); o != nil {
 			if !ok {
 				continue
+			}
+			if src.Column-1 >= len(o.Fields) {
+				log.Println(src)
+				log.Println(string(bytes.Join(o.Fields, []byte{'\t'})))
 			}
 			sval := string(o.Fields[src.Column-1])
 			if src.IsNumber() {
