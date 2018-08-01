@@ -152,9 +152,6 @@
     
         <li class="first-level active"><a href="#annotate-with-cadd">Annotate with CADD</a></li>
         
-            <li class="second-level"><a href="#setup">Setup</a></li>
-            
-        
             <li class="second-level"><a href="#config">Config</a></li>
             
         
@@ -173,22 +170,13 @@
 <p>This documents how to use <code>vcfanno</code> to annotate a VCF with CADD scores.</p>
 <p><em>"CADD is a tool for scoring the deleteriousness of single nucleotide variants as well as insertion/deletions variants in the human genome."</em>
 Users of CADD should refer to the <a href="http://cadd.gs.washington.edu/info">web page</a> for citation and use requirements.</p>
-<h2 id="setup">Setup</h2>
-<p>In order to use CADD with <code>vcfanno</code>, we must convert the tsv format provided by CADD to VCF. We can do this with <a href="https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py">a
-python script</a>. After downloading the <em>All possible SNVs of GRCh37/hg19</em> filre from the <a href="http://cadd.gs.washington.edu/download">CADD website</a> we can run as:</p>
-<pre><code>python cadd2vcf.py whole_genome_SNVs.tsv.gz | bgzip -c &gt; cadd_v1.3.vcf.gz
-tabix cadd_v1.3.vcf.gz
-</code></pre>
-
-<p>This will create a 50GB vcf.gz from the 80GB tsv.gz. 
-The entirety of the INFO field for a given record will look like: "raw=0.34;phred=6.05"</p>
 <h2 id="config">Config</h2>
 <p>From here, we can specify a conf file:</p>
 <pre><code>[[annotation]]
-file=&quot;cadd_v1.3.vcf.gz&quot;
-names=[&quot;cadd_phred&quot;, &quot;cadd_raw&quot;]
+file=&quot;whole_genome_SNVs.tsv.gz&quot;
+names=[&quot;cadd_raw&quot;, &quot;cadd_phred&quot;]
 ops=[&quot;mean&quot;, &quot;mean&quot;]
-fields=[&quot;phred&quot;, &quot;raw&quot;]
+columns=[4, 5]
 </code></pre>
 
 <h2 id="annotation">Annotation</h2>
