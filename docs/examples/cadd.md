@@ -6,20 +6,6 @@ This documents how to use `vcfanno` to annotate a VCF with CADD scores.
 *"CADD is a tool for scoring the deleteriousness of single nucleotide variants as well as insertion/deletions variants in the human genome."*
 Users of CADD should refer to the [web page](http://cadd.gs.washington.edu/info) for citation and use requirements.
 
-Setup
------
-
-In order to use CADD with `vcfanno`, we must convert the tsv format provided by CADD to VCF. We can do this with [a
-python script](https://github.com/brentp/vcfanno/blob/master/scripts/cadd2vcf.py). After downloading the *All possible SNVs of GRCh37/hg19* filre from the [CADD website](http://cadd.gs.washington.edu/download) we can run as:
-
-```
-python cadd2vcf.py whole_genome_SNVs.tsv.gz | bgzip -c > cadd_v1.3.vcf.gz
-tabix cadd_v1.3.vcf.gz
-```
-
-This will create a 50GB vcf.gz from the 80GB tsv.gz. 
-The entirety of the INFO field for a given record will look like: "raw=0.34;phred=6.05"
-
 Config
 ------
 
@@ -27,10 +13,10 @@ From here, we can specify a conf file:
 
 ```
 [[annotation]]
-file="cadd_v1.3.vcf.gz"
-names=["cadd_phred", "cadd_raw"]
+file="whole_genome_SNVs.tsv.gz"
+names=["cadd_raw", "cadd_phred"]
 ops=["mean", "mean"]
-fields=["phred", "raw"]
+columns=[4, 5]
 ```
 
 Annotation
