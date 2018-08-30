@@ -1,3 +1,8 @@
+v0.3.0
+------
++ support for NON_REF to match any ALT allele (#92)
++ more work on multiple alts (#87)
+
 v0.2.9
 ------
 + support for CSI indexes. If present, a .csi file will be preferred over a .tbi.
