@@ -1,3 +1,7 @@
+v0.3.1 (dev)
+------
++ allow empty description in VCF header (sigven/pcgr#49)
+
 v0.3.0
 ------
 + support for NON_REF to match any ALT allele (#92)
