@@ -1,4 +1,4 @@
-v0.3.1 (dev)
+v0.3.1
 ------
 + allow empty description in VCF header (sigven/pcgr#49)
 
