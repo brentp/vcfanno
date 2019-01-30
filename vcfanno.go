@@ -25,7 +25,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.3.1"
+var VERSION = "0.3.2"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
@@ -137,12 +137,16 @@ see: https://github.com/brentp/vcfanno
 				if err == nil {
 					log.Printf("using 4 worker threads to decompress query file")
 				}
+				qrdr = nil
 			} else {
 				qrdr, err = bgzf.NewReader(rdr, 2)
 				if err == nil {
 					log.Printf("using 2 worker threads to decompress query file")
 				}
+				qrdr = nil
 			}
+		} else {
+			log.Fatal(err)
 		}
 	}
 	if qrdr == nil {

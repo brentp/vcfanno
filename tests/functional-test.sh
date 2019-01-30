@@ -56,6 +56,9 @@ names=["nef"]
 fields=["xxx"]
 EOF
 
+run check_not_bgz vcfanno -p 4 tests/notbgz/a.conf tests/notbgz/notbgz.vcf.gz
+assert exit_code 0
+
 run check_field_warning vcfanno -lua example/custom.lua __t.conf example/exac.vcf.gz
 assert_exit_code 0
 assert_in_stderr "xxx not found in header"
