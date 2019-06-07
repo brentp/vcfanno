@@ -128,22 +128,24 @@ see: https://github.com/brentp/vcfanno
 
 	var err error
 	var qrdr io.Reader
-	// try to parallelizing reading if we have plenty of CPUs and it's (possibly)
+	// try to parallelize reading if we have plenty of CPUs and it's (possibly)
 	// a bgzf file.
-	if len(config.Annotation) < runtime.GOMAXPROCS(0) && strings.HasSuffix(queryFile, ".gz") {
+	if len(config.Annotation) < runtime.GOMAXPROCS(0) && strings.HasSuffix(queryFile, ".gz") || strings.HasSuffix(queryFile, ".bgz") {
 		if rdr, err := os.Open(queryFile); err == nil {
 			if st, err := rdr.Stat(); err == nil && st.Size() > 2320303098 {
 				qrdr, err = bgzf.NewReader(rdr, 4)
 				if err == nil {
-					log.Printf("using 4 worker threads to decompress query file")
+					log.Printf("using 4 worker threads to decompress bgzip file")
+				} else {
+					qrdr = nil
 				}
-				qrdr = nil
 			} else {
 				qrdr, err = bgzf.NewReader(rdr, 2)
 				if err == nil {
-					log.Printf("using 2 worker threads to decompress query file")
+					log.Printf("using 2 worker threads to decompress bgzip file")
+				} else {
+					qrdr = nil
 				}
-				qrdr = nil
 			}
 		} else {
 			log.Fatal(err)
@@ -151,6 +153,7 @@ see: https://github.com/brentp/vcfanno
 	}
 	if qrdr == nil {
 		qrdr, err = xopen.Ropen(queryFile)
+		log.Printf("falling back to non-bgzip")
 	}
 	if err != nil {
 		log.Fatal(fmt.Errorf("error opening query file %s: %s", queryFile, err))
