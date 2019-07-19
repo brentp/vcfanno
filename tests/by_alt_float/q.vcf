@@ -1,0 +1,7 @@
+##fileformat=VCFv4.2
+##contig=<ID=chr2,length=242193529,assembly=GRCh38>
+##INFO=<ID=AF,Number=.,Type=Float,Description="">
+##INFO=<ID=AQ,Number=.,Type=Integer,Description="">
+##hailversion=0.2.9-8588a25687af
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr2	41647	2_41647_A_G	A	G	1328.0	.	AF=1.56250e-02;AQ=1328

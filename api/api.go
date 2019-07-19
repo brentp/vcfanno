@@ -540,6 +540,13 @@ func (s *Source) UpdateHeader(r HeaderUpdater, ends bool, htype string, number s
 	if s.Op == "by_alt" {
 		number = "A"
 		ntype = "String"
+		if strings.HasSuffix(s.Name, "_float") {
+			ntype = "Float"
+			s.Name = s.Name[:len(s.Name)-6]
+		} else if strings.HasSuffix(s.Name, "_int") {
+			ntype = "Integer"
+			s.Name = s.Name[:len(s.Name)-4]
+		}
 		// for 'self' and 'first', we can get the type from the header of the annotation file.
 	} else if htype != "" && (s.Op == "self" || s.Op == "first") {
 		ntype = htype

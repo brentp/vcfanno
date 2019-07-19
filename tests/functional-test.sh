@@ -187,3 +187,10 @@ run self_test_with_A_and_many_overlaps fn_self_test_with_A_and_many_overlaps
 assert_exit_code 0
 assert_equal $(tail -1 $STDOUT_FILE | cut -f 8) "AC=35,65;GN_AF=0.3717,0.6122"
 assert_in_stdout "ID=GN_AF,Number=A"
+
+
+run check_by_alts_float vcfanno -base-path tests/by_alt_float/ tests/by_alt_float/conf.toml tests/by_alt_float/q.vcf
+assert_exit_code 0
+assert_equal $(tail -1 $STDOUT_FILE | cut -f 8) "AF=1.56250e-02;AQ=1328;CADD_RAW=0.591814"
+go install -a
+

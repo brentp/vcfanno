@@ -1,0 +1,5 @@
+[[annotation]]
+names = ["CADD_RAW_float"]
+file = "annotation.tsv.gz"
+columns = [5]
+ops = ["by_alt"]
