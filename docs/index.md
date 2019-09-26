@@ -257,9 +257,8 @@ the VCF  header is A (Number=A)
 For example this table lists Alt columns query and annotation (assuming the REFs and position match) along with the values from
 the annotation and shows how the query INFO will be filled:
 
-| query  | anno | anno vals  |         |
-| ALTS   | ALTS | from INFO  | result  |
-| ------ | ---- | ---------- | ------- |
+| query ALTS | anno ALTS | anno vals from INFO | result | note |
+| ------ | ---- | ---------- | ------- | ---- |
 | C,G    | C,G  | 22,23      | 22,23   |
 | C,G    | C,T  | 22,23      | 22,.    |
 | C,G    | T,G  | 22,23      | .,23    |
