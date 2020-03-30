@@ -54,9 +54,7 @@ func (a *Annotation) Flatten(index int) ([]*Source, error) {
 		}
 	}
 	if !(xopen.Exists(a.File) || a.File == "-") {
-		if !(xopen.Exists(a.File) || a.File == "-") {
-			return nil, fmt.Errorf("[Flatten] unable to open file: %s in %s\n", a.File)
-		}
+		return nil, fmt.Errorf("[Flatten] unable to open file: %s\n", a.File)
 	}
 
 	n := len(a.Ops)
