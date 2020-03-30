@@ -30,7 +30,7 @@ type Annotation struct {
 // Flatten turns an annotation into a slice of Sources. Pass in the index of the file.
 // having it as a Source makes the code cleaner, but it's simpler for the user to
 // specify multiple ops per file in the toml config.
-func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
+func (a *Annotation) Flatten(index int) ([]*Source, error) {
 	if len(a.Ops) == 0 {
 		if !strings.HasSuffix(a.File, ".bam") {
 			return nil, fmt.Errorf("no ops specified for %s\n", a.File)
@@ -54,12 +54,7 @@ func (a *Annotation) Flatten(index int, basepath string) ([]*Source, error) {
 		}
 	}
 	if !(xopen.Exists(a.File) || a.File == "-") {
-		if basepath != "" {
-			a.File = basepath + "/" + a.File
-		}
-		if !(xopen.Exists(a.File) || a.File == "-") {
-			return nil, fmt.Errorf("[Flatten] unable to open file: %s in %s\n", a.File, basepath)
-		}
+		return nil, fmt.Errorf("[Flatten] unable to open file: %s\n", a.File)
 	}
 
 	n := len(a.Ops)
@@ -103,7 +98,7 @@ func (c Config) Sources() ([]*Source, error) {
 	}
 	var s []*Source
 	for i, a := range annos {
-		flats, err := a.Flatten(i, c.Base)
+		flats, err := a.Flatten(i)
 		if err != nil {
 			return nil, err
 		}
