@@ -194,3 +194,8 @@ assert_exit_code 0
 assert_equal $(tail -1 $STDOUT_FILE | cut -f 8) "AF=1.56250e-02;AQ=1328;CADD_RAW=0.591814"
 go install -a
 
+
+run check_missing_postanno vcfanno -lua tests/missing_postanno/o.lua tests/missing_postanno/o.conf tests/missing_postanno/o.vcf
+assert_exit_code 0
+assert_in_stdout "exome_af=-1"
+

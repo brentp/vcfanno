@@ -638,7 +638,7 @@ func (a *Annotator) PostAnnotate(chrom string, start int, end int, info interfac
 				}
 			}
 			// we need to try even if it didn't get all values.
-			if len(vals) == 0 && len(post.Fields) > 0 {
+			if len(vals) == 0 && len(post.Fields) == 0 {
 				continue
 			}
 

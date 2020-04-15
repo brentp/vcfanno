@@ -1,0 +1,4 @@
+##fileformat=VCFv4.1
+##INFO=<ID=exome_af,Number=1,Type=Float,Description="xxx">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+chr1	123456	.	G	T	.	PASS	.
