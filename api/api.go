@@ -105,7 +105,7 @@ type PostAnnotation struct {
 	Vms [8]*goluaez.State
 }
 
-// NewAnnotator returns an Annotator with the sources, seeded with some javascript.
+// NewAnnotator returns an Annotator with the sources, seeded with some lua.
 // If ends is true, it will annotate the 1 base ends of the interval as well as the
 // interval itself. If strict is true, when overlapping variants, they must share
 // the ref allele and at least 1 alt allele.

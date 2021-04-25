@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+
 	//_ "net/http/pprof"
 	"os"
 	"runtime"
@@ -57,7 +58,7 @@ see: https://github.com/brentp/vcfanno
 	ends := flag.Bool("ends", false, "annotate the start and end as well as the interval itself.")
 	notstrict := flag.Bool("permissive-overlap", false, "annotate with an overlapping variant even it doesn't"+
 		" share the same ref and alt alleles. Default is to require exact match between variants.")
-	lua := flag.String("lua", "", "optional path to a file containing custom javascript functions to be used as ops")
+	lua := flag.String("lua", "", "optional path to a file containing custom lua functions to be used as ops")
 	base := flag.String("base-path", "", "optional base-path to prepend to annotation files in the config")
 	procs := flag.Int("p", 2, "number of processes to use.")
 	flag.Parse()
