@@ -26,7 +26,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.3.2"
+var VERSION = "0.3.3"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
@@ -69,7 +69,7 @@ see: https://github.com/brentp/vcfanno
 
 `, os.Args[0])
 		flag.PrintDefaults()
-		return
+    os.Exit(2)
 	}
 	queryFile := inFiles[1]
 	if !(xopen.Exists(queryFile) || queryFile == "") {

@@ -7,11 +7,14 @@ test -e ssshtest || wget -q https://raw.githubusercontent.com/ryanlayer/ssshtest
 set -o nounset
 
 
-go install -race -a
+go install -race -a github.com/brentp/vcfanno
 
 run check_self_number vcfanno -base-path tests/data/ -lua example/custom.lua tests/data/number.conf tests/data/number-input.vcf
 assert_equal 0 $(grep -c "lua error in postannotation" $STDERR_FILE)
 cat $STDERR_FILE
+
+run check_empty_args_gives_non_zero_exit vcfanno
+assert_exit_code 2
 
 run check_example vcfanno -lua example/custom.lua example/conf.toml example/query.vcf.gz
 assert_equal $(zgrep -cv ^# example/query.vcf.gz) $(grep -cv ^# $STDOUT_FILE)
