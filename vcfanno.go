@@ -69,7 +69,7 @@ see: https://github.com/brentp/vcfanno
 
 `, os.Args[0])
 		flag.PrintDefaults()
-    os.Exit(2)
+		os.Exit(2)
 	}
 	queryFile := inFiles[1]
 	if !(xopen.Exists(queryFile) || queryFile == "") {
@@ -212,6 +212,7 @@ see: https://github.com/brentp/vcfanno
 	maxChunk := envGet("IRELATE_MAX_CHUNK", 8000)
 
 	// make a new writer from the string header.
+	query.Header.Extras = append(query.Header.Extras, fmt.Sprintf("##vcfanno=%s", VERSION))
 	out, err = vcfgo.NewWriter(out, query.Header)
 
 	stream := irelate.PIRelate(maxChunk, maxGap, qstream, *ends, fn, queryables...)
