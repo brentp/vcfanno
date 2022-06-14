@@ -7,7 +7,7 @@ build:
 -->
 
 
-[![Build Status](https://travis-ci.com/brentp/vcfanno.svg)](https://travis-ci.com/brentp/vcfanno)
+[![Build Status](https://app.travis-ci.com/brentp/vcfanno.svg?branch=master)](https://app.travis-ci.com/brentp/vcfanno)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
 If you use vcfanno, please cite [the paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0973-5)
