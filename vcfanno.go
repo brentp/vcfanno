@@ -26,7 +26,7 @@ import (
 	"github.com/brentp/xopen"
 )
 
-var VERSION = "0.3.3"
+var VERSION = "0.3.4"
 
 func envGet(name string, vdefault int) int {
 	sval := os.Getenv(name)
