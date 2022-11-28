@@ -7,7 +7,10 @@ test -e ssshtest || wget -q https://raw.githubusercontent.com/ryanlayer/ssshtest
 set -o nounset
 
 
-go install -race -a github.com/brentp/vcfanno
+go build -race -a
+export PATH=.:$PATH
+echo using $(which vcfanno)
+
 
 run check_self_number vcfanno -base-path tests/data/ -lua example/custom.lua tests/data/number.conf tests/data/number-input.vcf
 assert_equal 0 $(grep -c "lua error in postannotation" $STDERR_FILE)
@@ -23,6 +26,10 @@ assert_equal 6 $(grep ^# $STDOUT_FILE | grep -c lua)
 # 1 is for 2:98688 (bedtools intersect -v -a example/query.vcf.gz -b example/fitcons.bed.gz)
 # so lua_start doesn't exist.
 assert_equal 3 $(grep -c "not found in" $STDERR_FILE)
+
+run check_samples vcfanno -base-path tests/citest/ tests/citest/conf.toml  tests/citest/test.vcf
+n=$(grep -c ^#CHROM $STDOUT_FILE)
+assert_equal $n 1
 
 run check_ends vcfanno -ends -lua example/custom.lua example/conf.toml example/query.vcf.gz
 n=$(grep -v ^# $STDOUT_FILE | grep -c right_)

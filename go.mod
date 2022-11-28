@@ -8,7 +8,7 @@ require (
 	github.com/brentp/bix v0.0.0-20190718140914-00aa7a7f205d
 	github.com/brentp/goluaez v0.0.0-20160116211227-dd35d08e32e7
 	github.com/brentp/irelate v0.0.1
-	github.com/brentp/vcfgo v0.0.0-20220919165057-adf3b5d20c55
+	github.com/brentp/vcfgo v0.0.0-20221128230736-759c0d32541e
 	github.com/brentp/xopen v0.0.0-20181116180855-111b45cadc7d
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/yuin/gluare v0.0.0-20170607022532-d7c94f1a80ed // indirect
