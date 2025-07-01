@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/biogo/hts v1.4.2
-	github.com/brentp/bix v0.0.0-20190718140914-00aa7a7f205d
+	github.com/brentp/bix v0.0.0-20250701183917-000f089eabc0
 	github.com/brentp/goluaez v0.0.0-20160116211227-dd35d08e32e7
 	github.com/brentp/irelate v0.0.1
 	github.com/brentp/vcfgo v0.0.0-20221128230736-759c0d32541e
