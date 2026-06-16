@@ -25,6 +25,18 @@ jobs:
             goos: darwin
             goarch: amd64
             output: vcfanno_osx
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            output: vcfanno_osx_aarch64
+          - os: ubuntu-latest
+            goos: windows
+            goarch: amd64
+            output: vcfanno_windows64.exe
+          - os: ubuntu-latest
+            goos: windows
+            goarch: arm64
+            output: vcfanno_windows_aarch64.exe
 
     runs-on: ${{ matrix.os }}
 
