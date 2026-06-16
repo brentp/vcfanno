@@ -1,16 +1,14 @@
 module github.com/brentp/vcfanno
 
-go 1.22.5
-
-toolchain go1.23.0
+go 1.23.0
 
 require (
 	github.com/BurntSushi/toml v0.3.1
-	github.com/biogo/hts v1.4.2
+	github.com/biogo/hts v1.4.5
 	github.com/brentp/bix v0.0.0-20250701183917-000f089eabc0
 	github.com/brentp/goluaez v0.0.0-20160116211227-dd35d08e32e7
-	github.com/brentp/irelate v0.0.1
-	github.com/brentp/vcfgo v0.0.0-20250830201408-17ff4962f4ab
+	github.com/brentp/irelate v0.0.2
+	github.com/brentp/vcfgo v0.0.0-20250902214554-a31336cef488
 	github.com/brentp/xopen v0.0.0-20181116180855-111b45cadc7d
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c
 )

@@ -4,6 +4,7 @@ vcfanno
 build:
  CGO_ENABLED=0 GOARCH=amd64 go build -o vcfanno_linux64 --ldflags '-extldflags "-static"' vcfanno.go
  GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -o vcfanno_osx --ldflags '-extldflags "-static"' vcfanno.go
+GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o vcfanno_linux_aarch64 --ldflags '-extldflags "-static"' vcfanno.go
 -->
 
 
