@@ -21,10 +21,10 @@ jobs:
             goos: linux
             goarch: arm64
             output: vcfanno_linux_aarch64
-          - os: ubuntu-latest
-            goos: windows
+          - os: macos-latest
+            goos: darwin
             goarch: amd64
-            output: vcfanno_windows64.exe
+            output: vcfanno_osx
 
     runs-on: ${{ matrix.os }}
 
@@ -43,6 +43,15 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
         run: go build -o ${{ matrix.output }} --ldflags '-extldflags "-static"' vcfanno.go
+
+      - name: Verify cgo is disabled
+        run: go version -m ${{ matrix.output }} | grep -q "CGO_ENABLED=0"
+
+      - name: Verify Linux static binary
+        if: matrix.goos == 'linux'
+        run: |
+          file ${{ matrix.output }}
+          ldd ${{ matrix.output }} 2>&1 | grep -q "not a dynamic executable"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

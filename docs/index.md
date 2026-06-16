@@ -6,7 +6,7 @@ build:
 -->
 
 
-[![Build Status](https://travis-ci.org/brentp/vcfanno.svg)](https://travis-ci.org/brentp/vcfanno)
+[![CI](https://github.com/brentp/vcfanno/actions/workflows/ci.yml/badge.svg)](https://github.com/brentp/vcfanno/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
 Overview

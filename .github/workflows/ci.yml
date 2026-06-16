@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Go ${{ matrix.go-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        go-version:
+          - "1.23.x"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build
+        run: go build -o vcfanno vcfanno.go
+
+      - name: Run Go tests
+        run: go test ./...
+
+      - name: Install shell test helper
+        run: |
+          curl -fsSL -o ssshtest https://raw.githubusercontent.com/ryanlayer/ssshtest/master/ssshtest
+
+      - name: Run functional tests
+        run: ./tests/functional-test.sh

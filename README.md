@@ -8,7 +8,7 @@ GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o vcfanno_linux_aarch64 --ldflag
 -->
 
 
-[![Build Status](https://app.travis-ci.com/brentp/vcfanno.svg?branch=master)](https://app.travis-ci.com/brentp/vcfanno)
+[![CI](https://github.com/brentp/vcfanno/actions/workflows/ci.yml/badge.svg)](https://github.com/brentp/vcfanno/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://brentp.github.io/vcfanno/)
 
 If you use vcfanno, please cite [the paper](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0973-5)
