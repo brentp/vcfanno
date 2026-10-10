@@ -124,6 +124,12 @@ this case, the op determines how the many values are `reduced`. Valid operations
  + `uniq`   // comma-delimited list of uniq values
  + `by_alt`   // comma-delimited by alt (Number=A), pipe-delimited (|) for multiple annos for the same alt.
 
+For BED annotations, `mean`, `min`, `max`, and `sum` skip values that cannot be
+parsed as numbers (such as `NA` or `.`), while reporting a parse warning. If no
+valid values remain, no annotation is added. Genuine zeroes are retained.
+`count` counts all overlaps regardless of the field value; string operations
+such as `self` preserve missing-value text.
+
 There are some operations that are only for `postannotation`:
  
  + `delete`   // remove fields from the query VCF's INFO
