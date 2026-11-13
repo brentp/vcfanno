@@ -365,11 +365,12 @@ func collect(v interfaces.IVariant, rels []interfaces.Relatable, src *Source, st
 				log.Println(string(bytes.Join(o.Fields, []byte{'\t'})))
 			}
 			sval := string(o.Fields[src.Column-1])
-			if src.IsNumber() {
+			if src.IsNumber() && src.Op != "count" {
 
 				v, e := strconv.ParseFloat(sval, 32)
 				if e != nil {
 					finalerr = e
+					continue
 				}
 				coll = append(coll, v)
 			} else {
